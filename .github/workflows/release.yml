@@ -1,0 +1,62 @@
+name: Release Skills Plugin
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Update Version and Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Update plugin.json version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # Update version in plugin.json
+          jq --arg v "$VERSION" '.version = $v' .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
+          # Update version in marketplace.json
+          jq --arg v "$VERSION" '.plugins[0].version = $v' .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
+          echo "Updated plugin.json and marketplace.json to version $VERSION"
+          cat .claude-plugin/plugin.json
+
+      - name: Create release archive
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # Create a tarball of the plugin contents
+          tar -czf deriva-skills-${VERSION}.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            .claude-plugin/ \
+            skills/
+
+      - name: Draft GitHub Release
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release archive
+        uses: softprops/action-gh-release@v1
+        with:
+          files: deriva-skills-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
