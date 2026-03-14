@@ -1,29 +1,73 @@
 #!/usr/bin/env python3
-"""Run skill description optimization for all DerivaML MCP skills."""
+"""Run skill description optimization for all DerivaML skills.
+
+Requires the skill-creator plugin to be installed in Claude Code.
+The script discovers paths dynamically rather than using hardcoded locations.
+"""
 
 import json
 import os
 import sys
 from pathlib import Path
 
-# Add skill-creator to path
-SKILL_CREATOR = Path(os.path.expanduser(
-    "~/.claude/plugins/cache/claude-plugins-official/skill-creator/205b6e0b3036/skills/skill-creator"
-))
+
+def _find_skill_creator() -> Path | None:
+    """Find the skill-creator plugin in the Claude Code plugin cache."""
+    cache_dir = Path.home() / ".claude" / "plugins" / "cache" / "claude-plugins-official" / "skill-creator"
+    if not cache_dir.exists():
+        return None
+    # Find the most recent version directory
+    version_dirs = [d for d in cache_dir.iterdir() if d.is_dir() and (d / "skills" / "skill-creator").is_dir()]
+    if not version_dirs:
+        return None
+    # Sort by modification time, most recent first
+    version_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+    return version_dirs[0] / "skills" / "skill-creator"
+
+
+def _find_skills_dir() -> Path | None:
+    """Find the deriva-skills repository root.
+
+    Tries walking up from this script's location first, then checks
+    common development directory patterns.
+    """
+    # This script lives inside the skills repo: skills/optimization/run_all.py
+    script_dir = Path(__file__).resolve().parent
+    # Walk up to find repo root
+    for parent in [script_dir, *script_dir.parents]:
+        if (parent / ".claude-plugin" / "plugin.json").exists():
+            return parent / "skills"
+        if parent == parent.parent:
+            break
+
+    return None
+
+
+SKILL_CREATOR = _find_skill_creator()
+if SKILL_CREATOR is None:
+    print("ERROR: skill-creator plugin not found in Claude Code plugin cache.", file=sys.stderr)
+    print("  Install it with: /plugin install skill-creator", file=sys.stderr)
+    sys.exit(1)
+
 sys.path.insert(0, str(SKILL_CREATOR))
 os.chdir(SKILL_CREATOR)
 
 from scripts.run_loop import run_loop
 from scripts.utils import parse_skill_md
 
-DERIVA_MCP = Path("/Users/carl/GitHub/deriva-mcp")
-OPT_DIR = DERIVA_MCP / "plugin" / "skills" / "optimization"
+SKILLS_DIR = _find_skills_dir()
+if SKILLS_DIR is None:
+    print("ERROR: Could not find deriva-skills repository.", file=sys.stderr)
+    print("  Run this script from within the deriva-skills repo.", file=sys.stderr)
+    sys.exit(1)
+
+OPT_DIR = SKILLS_DIR / "optimization"
 RESULTS_DIR = OPT_DIR / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
 
 # Map skill names to paths
 SKILL_MAP = {}
-for skill_md in (DERIVA_MCP / "plugin" / "skills").rglob("SKILL.md"):
+for skill_md in SKILLS_DIR.rglob("SKILL.md"):
     skill_dir = skill_md.parent
     name, description, content = parse_skill_md(skill_dir)
     if name:
