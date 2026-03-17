@@ -16,6 +16,10 @@ Tables are the foundation of a Deriva catalog schema. Choose the right table typ
 | Asset table | `create_asset_table` | Files with auto URL/Filename/Length/MD5 columns |
 | Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data |
 
+## Automatic Safeguards
+
+> The MCP server automatically checks for near-duplicate entities when creating tables or asset tables. If a similar table already exists, the tool response includes a `similar_existing` field with suggestions and a warning. Review these before proceeding — the existing table may already serve your purpose.
+
 ## Key Decisions
 
 ### Naming Conventions

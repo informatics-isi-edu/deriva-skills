@@ -46,6 +46,10 @@ Every term must have a description that defines its meaning in context — not j
 **Bad term descriptions:**
 - "Pneumonia" or "This is the pneumonia term" or leaving it empty
 
+## Automatic Safeguards
+
+> The MCP server automatically checks for near-duplicate vocabularies when calling `create_vocabulary`. If a similar vocabulary already exists, the tool response includes a `similar_existing` field with suggestions. It also provides "did you mean?" suggestions when `add_term` or `delete_term` references a vocabulary or term that doesn't exist.
+
 ## Creating a Vocabulary
 
 Call `create_vocabulary` with:

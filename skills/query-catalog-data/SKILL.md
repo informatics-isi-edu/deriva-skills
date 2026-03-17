@@ -56,5 +56,6 @@ denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
 - Column names are case-sensitive — check schema first
 - Use `denormalize_dataset` to resolve FK RIDs into readable values
 - Pin to specific dataset versions for reproducibility
+- If a table or column name is misspelled, the MCP server will suggest similar entities in the error response — check for a `suggestions` field with "did you mean?" candidates
 
 For the full guide with query patterns, feature queries, provenance tracking, and troubleshooting, read `references/workflow.md`.

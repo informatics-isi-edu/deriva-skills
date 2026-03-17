@@ -27,6 +27,10 @@ Every feature should have a description that explains what it measures or annota
 
 Since features are multivalued (multiple executions can produce different values for the same record), note whether the feature is intended for ground truth annotation, model predictions, or computed metrics.
 
+## Automatic Safeguards
+
+> The MCP server automatically checks for near-duplicate features when calling `create_feature`. If a similar feature already exists, the tool response includes a `similar_existing` field with suggestions and a warning. It also provides "did you mean?" suggestions when `fetch_table_features` references a table that doesn't exist.
+
 ## Critical Rules
 
 1. **Vocabulary must exist first** — create the vocabulary table and add terms before creating a term-based feature.

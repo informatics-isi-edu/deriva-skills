@@ -55,7 +55,10 @@ This guide covers common problems encountered when running DerivaML executions a
 
 **Cause**: Wrong catalog connection, dataset was deleted, or the RID is incorrect.
 
+> **RAG-powered recovery:** The MCP server automatically suggests similar datasets when a dataset is not found. Check the tool response for a `suggestions` field with "did you mean?" candidates before manual lookup.
+
 **Solution**:
+- Check the tool response for automatic suggestions — if the name was misspelled or the RID was close, the server will suggest alternatives.
 - Verify you are connected to the correct catalog with `connect_catalog` or check the active catalog.
 - Check the dataset resources to list available datasets.
 - Use `validate_rids` to confirm the RID is valid and belongs to a dataset table.
@@ -112,7 +115,10 @@ This guide covers common problems encountered when running DerivaML executions a
 
 **Cause**: The feature was not created, or the name does not match exactly.
 
+> **RAG-powered recovery:** The MCP server automatically suggests similar features when one is not found. Check the tool response for a `suggestions` field with "did you mean?" candidates.
+
 **Solution**:
+- Check the tool response for automatic suggestions — misspelled or abbreviated feature names will trigger "did you mean?" with similar matches.
 - Check the feature resources to list existing features.
 - Feature names are case-sensitive. Verify exact spelling.
 - **Tool**: `create_feature` to create the feature if it does not exist.
@@ -156,7 +162,10 @@ This guide covers common problems encountered when running DerivaML executions a
 
 **Cause**: The term was not added to the vocabulary, or the name does not match exactly.
 
+> **RAG-powered recovery:** The MCP server automatically suggests similar vocabulary terms when one is not found. Check the tool response for a `suggestions` field with "did you mean?" candidates.
+
 **Solution**:
+- Check the tool response for automatic suggestions — misspelled or abbreviated term names will trigger "did you mean?" with similar matches from the same vocabulary.
 - Check the relevant vocabulary resource to list existing terms.
 - Vocabulary term names are case-sensitive.
 - **Tool**: `add_term` to add the missing term to the appropriate vocabulary.

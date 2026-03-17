@@ -25,6 +25,10 @@ Every dataset should have a description that explains its composition, purpose, 
 
 For split datasets, the description should note the split strategy and rationale (why this ratio, why this stratification column).
 
+## Automatic Safeguards
+
+> The MCP server provides "did you mean?" suggestions when dataset operations reference entities that don't exist (e.g., wrong RID, misspelled table name). Check the tool response for a `suggestions` field with similar candidates.
+
 ## Workflow Summary
 
 The standard sequence for creating a dataset:
