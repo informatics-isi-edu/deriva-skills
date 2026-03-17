@@ -41,32 +41,36 @@ A bag for a specific dataset version includes:
 
 ## How Bag Contents Are Determined
 
-The export algorithm uses **FK path traversal** from registered element types to determine what to include.
+A bag contains two categories of data: **directly included members** and **FK-reachable rows**. Understanding this distinction is essential for predicting what a bag will contain and diagnosing missing data.
 
-### Starting points
+### 1. Directly included members
 
-Only tables registered as **dataset element types** (via `add_dataset_element_type`) that have members in this dataset serve as traversal starting points. Unregistered tables or registered tables with no members are not starting points.
+These are the records you explicitly added to the dataset with `add_dataset_members`. They come from tables registered as **dataset element types** (via `add_dataset_element_type`). Only element-type tables that have members in this dataset serve as export starting points — unregistered tables or registered tables with no members are not starting points.
 
-### Traversal rules
+### 2. FK-reachable rows (related records)
 
-From each starting-point record, the export follows foreign key relationships:
+From each directly included member, the export follows foreign key relationships to pull in related data. This is how a dataset with only Subject members can also include Images, feature values, and vocabulary terms — they are reachable via FK paths from the Subject records.
 
-- **Both FK directions are followed.** Outgoing FKs (this table references another) and incoming FKs (another table references this one).
+**Traversal rules:**
+
+- **Both FK directions are followed.** Outgoing FKs (this table references another) and incoming FKs (another table references this one). For example, from a Subject record, the export follows both the Subject→Species FK (outgoing) and the Image→Subject FK (incoming).
 - **Vocabulary tables are natural terminators.** Controlled vocabulary terms are collected and exported separately — they don't generate further FK traversal.
 - **Feature tables are automatically included.** Feature annotation tables (e.g., `Image_Classification`) for reachable element types are added to the export.
 - **Element type boundaries.** A registered element type that has *no members* in this dataset acts as a traversal boundary — the export won't follow FK paths through it. This prevents expensive joins that would return empty results.
 
-### Union semantics for multi-path tables
+### Multi-path inclusion (union semantics)
 
-When the same table is reachable via multiple FK paths (e.g., Image reachable through both Subject→Image and Encounter→Image), all paths are queried. The actual bag contains the **union** of all rows reached by any path. The `estimate_bag_size` tool approximates this by taking the maximum count across paths — the true count may be larger when paths produce non-overlapping rows.
+The same table can be reachable via multiple FK paths. For example, if your schema has both Subject→Image and Encounter→Image relationships, and the dataset contains both Subject and Encounter members, then Images are reachable through two different paths. The bag contains the **union** of all rows reached by any path — an Image included via either path will appear in the bag.
+
+This means you may see more rows for a table than you'd expect from any single FK relationship. The `estimate_bag_size` tool approximates this by taking the maximum count across paths — the true count may be larger when paths produce non-overlapping rows.
 
 ### Example
 
 A dataset with `Subject` members where the schema has Subject → Image FK:
-- Subject records are exported (starting points)
-- Image records referencing those Subjects are included (inbound FK traversal)
-- Image_Classification records for those Images are included (feature table)
-- Vocabulary terms (e.g., Diagnosis, Species) referenced by any included record are collected separately
+- **Directly included:** Subject records (these are the dataset members — the starting points)
+- **FK-reachable:** Image records that reference those Subjects (inbound FK traversal from Image→Subject)
+- **FK-reachable:** Image_Classification records for those Images (feature table, auto-included)
+- **FK-reachable:** Vocabulary terms (e.g., Diagnosis, Species) referenced by any included record (collected separately)
 
 If `Image` is also a registered element type but has no members in this dataset, it acts as a boundary and Image records would *not* be traversed through.
 
@@ -75,8 +79,10 @@ If `Image` is also a registered element type but has no members in this dataset,
 Each bag is tied to a **catalog snapshot** — the exact catalog state at the time the dataset version was created. This means:
 
 - The same dataset RID + version always produces the same data
-- Changes made to the catalog after the version was created (new features, updated records) are **not** included in existing versions
+- Changes made to the catalog after the version was created (new features, updated records, new members) are **not** included in existing versions
 - To capture recent changes, call `increment_dataset_version` first, then download the new version
+
+> **Common mistake:** A bag does NOT contain everything in the catalog — it contains only what was reachable from the dataset's members at the time the version was created. If you add new members, upload new feature values, or modify records *after* the version was created, those changes are invisible to that version. You must call `increment_dataset_version` to create a new snapshot that captures the current state, then download that new version. This is the most common source of "my data is missing from the bag" errors.
 
 ## Materialization
 
@@ -132,6 +138,12 @@ Call `estimate_bag_size` with `dataset_rid` and `version`. Returns row counts an
 - Verify the bag includes the expected tables
 - Decide whether to increase the timeout or use `exclude_tables`
 - Estimate disk space needed
+
+Supports the same `exclude_tables` parameter as `download_dataset`, so you can preview the effect of pruning FK branches before committing to a download:
+
+```
+estimate_bag_size(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Institution"])
+```
 
 ### bag-preview resource
 
