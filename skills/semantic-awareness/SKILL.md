@@ -4,6 +4,8 @@ description: "ALWAYS use before creating new tables, vocabularies, features, dat
 user-invocable: false
 ---
 
+> **Note (2026-03-16):** The Deriva MCP server now performs automatic duplicate detection (Layer 3) on all creation tools (`create_table`, `create_asset_table`, `create_vocabulary`, `create_feature`). When a near-duplicate entity is detected, the tool response includes a `similar_existing` field with suggestions and a warning message. This skill remains available as a behavioral guardrail for users on older MCP server versions that lack built-in duplicate detection.
+
 # Catalog Semantic Awareness — Find Before You Create
 
 Before creating ANY new catalog entity (table, vocabulary term, feature, dataset, workflow), search for existing entities that serve the same or similar purpose. Duplicate entities fragment data, confuse users, and undermine the catalog as a single source of truth.
