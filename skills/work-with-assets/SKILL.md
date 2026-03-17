@@ -55,6 +55,7 @@ For the full step-by-step guide with MCP tool parameters and Python API examples
 
 - `references/concepts.md` — What assets are, asset tables, RIDs, types, Hatrac, caching, provenance
 - `references/workflow.md` — Step-by-step MCP and Python API workflows
+- `references/restructure-guide.md` — Restructuring assets for ML: group_by options, value selectors, file transformers, ML framework patterns, upload tuning
 - `deriva://docs/file-assets` — Full user guide to file assets in DerivaML
 - `deriva://catalog/asset-tables` — List all asset tables
 - `deriva://catalog/assets` — Asset tables with record counts

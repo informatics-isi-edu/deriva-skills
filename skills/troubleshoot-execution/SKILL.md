@@ -175,6 +175,7 @@ This guide covers common problems encountered when running DerivaML executions a
 
 ## Reference Resources
 
+- `references/execution-lifecycle.md` — Full execution lifecycle reference: workflow creation, execution configuration, upload tuning (timeouts, chunk sizes, retries), source code detection, nested executions, restoring executions, and dry run debugging. Read this for the complete execution workflow and parameter details.
 - `deriva://execution/{rid}` — Inspect execution state, status, and metadata
 - `deriva://storage/execution-dirs` — Check execution working directories
 - `deriva://catalog/vocabularies` — Verify vocabulary terms exist (e.g., status types, workflow types)

@@ -201,7 +201,7 @@ apply_annotations()
 
 This writes all pending annotation changes to the catalog server. If you skip this step, your changes will be lost.
 
-For common annotation recipes and patterns, see `references/common-recipes.md`.
+For the full annotation reference — all contexts, pseudo-columns, faceted search, Handlebars patterns, and Python annotation builders — see `references/annotation-reference.md`. For quick recipes, see `references/common-recipes.md`.
 
 ## Reference Resources
 

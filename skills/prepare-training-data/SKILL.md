@@ -237,7 +237,8 @@ increment_dataset_version(dataset_rid="2-XXXX")
 
 ## Reference Resources
 
-- `deriva://docs/datasets` — Full guide to dataset downloading, restructuring, BDBag format, and versioning. Read this for detailed examples and edge cases beyond what this skill covers.
+- `references/restructure-guide.md` — Full guide to `restructure_assets` parameters, value selectors, file transformers, ML framework integration patterns, and DatasetBag API for accessing training data. Read this for the complete restructuring workflow.
+- `deriva://docs/datasets` — Full guide to dataset downloading, BDBag format, and versioning
 - `deriva://table/{table_name}/schema` — Understand table structure before extraction
 - `deriva://dataset/{rid}` — Dataset details including version and element types
 - `deriva://catalog/features` — Available features for building training labels
