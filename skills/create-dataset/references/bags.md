@@ -10,8 +10,10 @@
 - [Caching](#caching)
 - [Downloading a Bag](#downloading-a-bag)
 - [Previewing Before Download](#previewing-before-download)
+- [Validating Bag Contents](#validating-bag-contents)
 - [When Downloads Are Slow or Timing Out](#when-downloads-are-slow-or-timing-out)
 - [Working with Bag Contents](#working-with-bag-contents)
+- [Restructuring Assets for ML](#restructuring-assets-for-ml)
 - [Hydra-Zen Configuration](#hydra-zen-configuration)
 
 ---
@@ -22,17 +24,20 @@ A **BDBag** (Big Data Bag) is a self-describing, portable archive of a specific 
 
 Bags are the standard way to get data out of a DerivaML catalog for ML training, analysis, or sharing. When you call `download_dataset`, the result is a bag.
 
+The downloaded bag is backed by a **SQLite database** — all queries against a `DatasetBag` use SQL under the hood. The `DatasetBag` class mirrors the live `Dataset` API, so code can work uniformly with both live catalog data and downloaded snapshots.
+
 ## What a Bag Contains
 
 A bag for a specific dataset version includes:
 
-1. **Member records** — All records from registered element types that belong to the dataset (e.g., Image, Subject rows), exported as CSV files per table.
+1. **Member records** — All records from registered element types that belong to the dataset (e.g., Image, Subject rows), stored as CSV files per table and loaded into SQLite.
 2. **Related records** — Data from tables reachable via foreign key paths from member records (see [How Bag Contents Are Determined](#how-bag-contents-are-determined)).
-3. **Nested datasets** — Child datasets are included recursively with all their members.
-4. **Feature values** — All feature annotations for dataset members (e.g., Image_Classification labels).
+3. **Nested datasets** — Child datasets are included recursively with all their members. Navigate with `bag.list_dataset_children()`.
+4. **Feature values** — All feature annotations for dataset members (e.g., Image_Classification labels). Access with `bag.fetch_table_features()`.
 5. **Vocabulary terms** — Controlled vocabulary terms referenced by included records, exported separately.
 6. **Asset files** — Binary files (images, model weights, etc.) referenced by member records, fetched when `materialize=True`.
 7. **Checksums** — Every file has a cryptographic checksum for integrity verification.
+8. **Schema snapshot** — `schema.json` describing the catalog structure at export time.
 
 ## How Bag Contents Are Determined
 
@@ -50,6 +55,10 @@ From each starting-point record, the export follows foreign key relationships:
 - **Vocabulary tables are natural terminators.** Controlled vocabulary terms are collected and exported separately — they don't generate further FK traversal.
 - **Feature tables are automatically included.** Feature annotation tables (e.g., `Image_Classification`) for reachable element types are added to the export.
 - **Element type boundaries.** A registered element type that has *no members* in this dataset acts as a traversal boundary — the export won't follow FK paths through it. This prevents expensive joins that would return empty results.
+
+### Union semantics for multi-path tables
+
+When the same table is reachable via multiple FK paths (e.g., Image reachable through both Subject→Image and Encounter→Image), all paths are queried. The actual bag contains the **union** of all rows reached by any path. The `estimate_bag_size` tool approximates this by taking the maximum count across paths — the true count may be larger when paths produce non-overlapping rows.
 
 ### Example
 
@@ -74,7 +83,7 @@ Each bag is tied to a **catalog snapshot** — the exact catalog state at the ti
 - **`materialize=True`** (default): The bag fetches all referenced asset files from Hatrac storage. Creates a fully self-contained archive.
 - **`materialize=False`**: The bag contains only metadata and remote file references. Smaller download, but requires network access to use the assets later.
 
-Use `materialize=False` when you only need the tabular data (record metadata, feature values) and not the actual files.
+Use `materialize=False` when you only need the tabular data (record metadata, feature values) and not the actual files. Also useful for validation (`validate_dataset_bag` uses `materialize=False` to check contents quickly).
 
 ## Caching
 
@@ -86,24 +95,59 @@ The cache location can be configured via the `cache_dir` argument when creating 
 
 ### MCP tool
 
-Call `download_dataset` with `dataset_rid` and `version`.
+Call `download_dataset` with `dataset_rid` and `version`. Returns JSON with `bag_path`, `bag_tables` inventory, `dataset_types`, and `execution_rid`.
 
 ### Python API
 
 ```python
 bag = dataset.download_dataset_bag(version="1.0.0")
-# or within an execution:
+
+# Within an execution:
 bag = exe.download_dataset_bag(DatasetSpec(rid="2-XXXX", version="1.0.0"))
+
+# With options:
+bag = dataset.download_dataset_bag(
+    version="1.0.0",
+    materialize=False,             # metadata only, no asset files
+    exclude_tables={"Institution"},  # prune FK branches
+    timeout=(10, 1800),            # 30 min read timeout
+)
+```
+
+### MINID support
+
+For sharing bags via persistent identifiers, pass `use_minid=True` to upload the bag to S3 and create a MINID. Requires `s3_bucket` configured on the catalog:
+
+```python
+bag = dataset.download_dataset_bag(version="1.0.0", use_minid=True)
 ```
 
 ## Previewing Before Download
 
-Call `estimate_bag_size` with `dataset_rid` and `version` to see what a bag will contain before downloading.
+Two ways to preview bag contents without downloading:
 
-Returns row counts and asset file sizes per table. Use this to:
+### estimate_bag_size (tool)
+
+Call `estimate_bag_size` with `dataset_rid` and `version`. Returns row counts and asset file sizes per table. Use this to:
 - Verify the bag includes the expected tables
 - Decide whether to increase the timeout or use `exclude_tables`
 - Estimate disk space needed
+
+### bag-preview resource
+
+Read `deriva://dataset/{rid}/bag-preview` to see projected FK paths and tables without running any size queries.
+
+## Validating Bag Contents
+
+Call `validate_dataset_bag` with `dataset_rid` (and optionally `version`) to cross-validate a downloaded bag against the live catalog. Returns a per-table comparison:
+
+- **Expected RIDs** — records the catalog says should be in the bag (based on members + FK traversal)
+- **Bag RIDs** — records actually present in the downloaded bag
+- **Missing RIDs** — in catalog but not in bag (indicates traversal or export issue)
+- **Extra RIDs** — in bag but not expected (usually harmless — e.g., from broader FK paths)
+- **PASS/FAIL status** per table
+
+Use this to verify bag integrity before using it for ML workflows, or to diagnose missing data. See the `debug-bag-contents` skill for a complete diagnostic workflow.
 
 ## When Downloads Are Slow or Timing Out
 
@@ -123,22 +167,151 @@ Register intermediate tables as element types and add their records as dataset m
 
 ## Working with Bag Contents
 
-Once downloaded, the bag is a `DatasetBag` object:
+Once downloaded, the bag is a `DatasetBag` object with a rich API that mirrors the live `Dataset` class.
+
+### Browsing data
 
 ```python
-# Access tables as DataFrames
-images_df = bag.get_table_as_dataframe("Image")
-subjects_df = bag.get_table_as_dataframe("Subject")
+# List all tables in the bag
+bag.list_tables()  # ["Image", "Subject", "Species", ...]
 
-# Restructure assets for ML frameworks (e.g., PyTorch ImageFolder)
+# Access tables as DataFrames or dicts
+images_df = bag.get_table_as_dataframe("Image")
+subjects = list(bag.get_table_as_dict("Subject"))
+
+# List members grouped by table
+members = bag.list_dataset_members()  # {"Image": [...], "Subject": [...]}
+members = bag.list_dataset_members(recurse=True)  # includes nested datasets
+
+# Check version
+bag.current_version  # DatasetVersion("1.0.0")
+bag.dataset_types    # ["Training"]
+bag.description      # "500 CIFAR-10 images..."
+bag.execution_rid    # "3-XYZ" or None
+```
+
+### Features and annotations
+
+```python
+# Discover features on a table
+features = bag.find_features("Image")  # [Feature(name="Diagnosis", ...)]
+
+# Fetch feature values (same selector API as live Dataset)
+feature_df = bag.fetch_table_features(
+    table="Image",
+    feature_name="Diagnosis",
+    selector="newest",           # or: workflow="classify", execution="3-XYZ"
+)
+
+# List all feature values for a specific record
+values = bag.list_feature_values(target="2-ABCD", feature="Diagnosis")
+```
+
+### Denormalization
+
+```python
+# Flatten to a wide table (DataFrame) — joins across FK paths
+df = bag.denormalize_as_dataframe(include_tables=["Image", "Subject"])
+
+# Same as dict
+rows = bag.denormalize_as_dict(include_tables=["Image", "Subject"])
+```
+
+### Navigating dataset hierarchy
+
+```python
+# Nested child datasets (e.g., Training/Testing splits)
+children = bag.list_dataset_children()        # direct children
+children = bag.list_dataset_children(recurse=True)  # all descendants
+
+# Parent datasets
+parents = bag.list_dataset_parents()
+
+# Element types registered for this dataset
+element_types = bag.list_dataset_element_types()
+
+# Executions associated with this dataset
+execution_rids = bag.list_executions()
+
+# Version history
+history = bag.dataset_history()
+```
+
+## Restructuring Assets for ML
+
+The `restructure_assets` method organizes downloaded asset files into directory hierarchies for ML frameworks (e.g., PyTorch ImageFolder).
+
+### Basic usage
+
+```python
 bag.restructure_assets(
-    asset_table="Image",
-    output_dir=Path("./ml_data"),
+    output_dir="./ml_data",
+    asset_table="Image",        # auto-detected if only one asset table
+    group_by=["Diagnosis"],     # create subdirs by label
+)
+# Result: ./ml_data/training/normal/img001.png
+#         ./ml_data/training/pneumonia/img002.png
+```
+
+### group_by options
+
+The `group_by` list can contain:
+- **Column names** — direct columns on the asset table (e.g., `"Species"`)
+- **Feature names** — features defined on the asset table or FK-reachable tables (e.g., `"Diagnosis"`)
+- **Feature.column** — specific column from a multi-column feature (e.g., `"Classification.Label"`)
+
+### Handling multi-valued features
+
+When an asset has multiple feature values (e.g., annotations from different executions), use `value_selector` to choose one:
+
+```python
+from deriva_ml.dataset.dataset_bag import select_majority_vote, select_latest, select_first
+
+# Built-in selectors:
+bag.restructure_assets(
+    output_dir="./ml_data",
     group_by=["Diagnosis"],
+    value_selector=select_majority_vote,  # most common label, ties broken by newest
+)
+
+# Or: select_latest (most recent RCT), select_first (earliest RCT)
+
+# Custom selector:
+def select_highest_confidence(records):
+    return max(records, key=lambda r: r.raw_record.get("Confidence", 0))
+
+bag.restructure_assets(
+    output_dir="./ml_data",
+    group_by=["Diagnosis"],
+    value_selector=select_highest_confidence,
 )
 ```
 
-For full details on restructuring assets, see the `prepare-training-data` skill.
+### File transformation on placement
+
+Use `file_transformer` to convert file formats during restructuring:
+
+```python
+def oct_to_png(src, dest):
+    img = load_oct_dcm(str(src))
+    out = dest.with_suffix(".png")
+    PILImage.fromarray((img * 255).astype(np.uint8)).save(out)
+    return out
+
+bag.restructure_assets(
+    output_dir="./ml_data",
+    group_by=["Diagnosis"],
+    file_transformer=oct_to_png,
+)
+```
+
+### Additional options
+
+- **`use_symlinks=True`** (default) — symlink to original files to save disk space. Set `False` to copy.
+- **`type_to_dir_map`** — customize directory names: `{"Training": "train", "Testing": "test"}`
+- **`enforce_vocabulary=True`** (default) — require features used in `group_by` to have vocabulary terms. Set `False` to allow any feature type.
+- **Datasets without types** are treated as Testing (common for prediction/inference).
+- **Assets without labels** are placed in an `"Unknown"` subdirectory.
 
 ## Hydra-Zen Configuration
 
@@ -150,3 +323,15 @@ from deriva_ml.dataset.aux_classes import DatasetSpecConfig
 DatasetSpecConfig(rid="28EA", version="0.4.0", timeout=[10, 1800])
 DatasetSpecConfig(rid="28EA", version="0.4.0", exclude_tables=["Study", "Institution"])
 ```
+
+## Reference Resources
+
+| Resource / Tool | Purpose |
+|-----------------|---------|
+| `download_dataset` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
+| `estimate_bag_size` | Preview row counts and asset sizes per table |
+| `validate_dataset_bag` | Cross-validate bag contents against live catalog |
+| `denormalize_dataset` | Flatten dataset tables for ML (without full bag download) |
+| `deriva://dataset/{rid}/bag-preview` | Preview FK paths and tables before downloading |
+| `deriva://catalog/dataset-element-types` | Check registered element types |
+| `deriva://storage/cache` | View cached bags |
