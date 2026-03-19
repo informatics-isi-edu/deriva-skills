@@ -7,12 +7,52 @@
   "plugins": [
     {
       "name": "deriva",
-      "source": ".",
+      "source": "./",
       "description": "Skills for working with Deriva catalogs and DerivaML workflows",
       "version": "0.12.1",
       "author": {
         "name": "ISI Informatics"
-      }
+      },
+      "skills": [
+        "./skills/api-naming-conventions",
+        "./skills/browse-erd",
+        "./skills/catalog-operations-workflow",
+        "./skills/check-versions",
+        "./skills/coding-guidelines",
+        "./skills/configure-experiment",
+        "./skills/configure-experiment-workspace",
+        "./skills/create-feature",
+        "./skills/create-feature-workspace",
+        "./skills/create-table",
+        "./skills/customize-display",
+        "./skills/dataset-lifecycle",
+        "./skills/dataset-lifecycle-workspace",
+        "./skills/debug-bag-contents",
+        "./skills/execution-lifecycle",
+        "./skills/execution-lifecycle-workspace",
+        "./skills/generate-descriptions",
+        "./skills/help",
+        "./skills/maintain-experiment-notes",
+        "./skills/manage-vocabulary",
+        "./skills/manage-vocabulary-workspace",
+        "./skills/ml-data-engineering",
+        "./skills/ml-data-engineering-workspace",
+        "./skills/new-model",
+        "./skills/optimization",
+        "./skills/query-catalog-data",
+        "./skills/route-catalog-schema",
+        "./skills/route-project-setup",
+        "./skills/route-run-workflows",
+        "./skills/run-notebook",
+        "./skills/run-notebook-workspace",
+        "./skills/semantic-awareness",
+        "./skills/setup-notebook-environment",
+        "./skills/troubleshoot-execution",
+        "./skills/use-annotation-builders",
+        "./skills/work-with-assets",
+        "./skills/work-with-assets-workspace",
+        "./skills/write-hydra-config"
+      ]
     }
   ]
 }
