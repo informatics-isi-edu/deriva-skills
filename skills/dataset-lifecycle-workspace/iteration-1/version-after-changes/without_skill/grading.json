@@ -1,0 +1,40 @@
+{
+  "run_id": "version-after-changes-without_skill",
+  "expectations": [
+    {
+      "text": "explains_snapshot_semantics",
+      "passed": true,
+      "evidence": "The output states 'your training run should always reference a specific, immutable version of the dataset' and 'version 0.3.0 still points to the original data and 0.4.0 points to the updated set', explaining that existing versions are frozen snapshots and the new changes are not included in v0.3.0."
+    },
+    {
+      "text": "calls_increment_version",
+      "passed": true,
+      "evidence": "Step 4 explicitly calls `mcp__deriva__increment_dataset_version(dataset_rid=\"28EA\")`."
+    },
+    {
+      "text": "provides_version_description",
+      "passed": false,
+      "evidence": "The increment_dataset_version call in Step 4 includes no description parameter. The output does not pass a description mentioning the 200 new images and 30 label corrections to the tool call."
+    },
+    {
+      "text": "updates_config",
+      "passed": true,
+      "evidence": "Step 6 instructs updating the training configuration from dataset_version: '0.3.0' to dataset_version: '0.4.0' (or the actual new version returned in Step 5)."
+    },
+    {
+      "text": "commits_before_running",
+      "passed": false,
+      "evidence": "The output never mentions committing or running a git commit after updating the config. Step 6 only says '(manual edit)' with no instruction to commit the change before running the experiment."
+    },
+    {
+      "text": "never_suggests_current",
+      "passed": true,
+      "evidence": "The output consistently uses explicit version numbers (0.3.0, 0.4.0) throughout and never suggests using version='current' or omitting the version."
+    },
+    {
+      "text": "considers_semver_component",
+      "passed": true,
+      "evidence": "Step 4 explicitly discusses semantic versioning: 'Since this is a meaningful data update — new samples added and labels corrected — a minor version bump from 0.3.0 → 0.4.0 is appropriate.'"
+    }
+  ]
+}

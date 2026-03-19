@@ -1,0 +1,40 @@
+{
+  "run_id": "full-lifecycle-labels-without_skill",
+  "expectations": [
+    {
+      "text": "checks_existing_features",
+      "passed": false,
+      "evidence": "The response never checks for existing features before creating. It connects to the catalog and immediately proceeds to create a vocabulary and then the feature. The only call to fetch_table_features appears after creation as a verification step (Step 4), not as a pre-creation check."
+    },
+    {
+      "text": "creates_vocabulary_first",
+      "passed": true,
+      "evidence": "The response calls create_vocabulary (Step 2/3 in summary table) followed by add_term for all 5 categories (Normal, Pneumonia, COVID-19, Tuberculosis, Lung_Cancer) before calling create_feature in Step 3."
+    },
+    {
+      "text": "creates_feature_with_terms",
+      "passed": true,
+      "evidence": "The response calls create_feature with table_name='CXR_Image' and includes a vocab_table reference pointing to the vocab.Diagnosis vocabulary in the feature_columns. The vocabulary linkage is present, though via feature_columns rather than a terms parameter."
+    },
+    {
+      "text": "handles_multi_annotator",
+      "passed": false,
+      "evidence": "The response explains multi-annotator support via an Annotator column and allowing multiple records per image, but does not mention 'separate executions' for multiple radiologists or explain that features track provenance through executions. The check requires mentioning separate executions for annotators and provenance tracking."
+    },
+    {
+      "text": "wraps_in_execution",
+      "passed": false,
+      "evidence": "The response never calls create_execution. Feature values are added directly via add_feature_value_record and insert_records without any execution wrapper. No provenance via execution is established."
+    },
+    {
+      "text": "addresses_confidence_score",
+      "passed": true,
+      "evidence": "The response includes Confidence_Score as a nullable float4 column in the feature with the description 'Model confidence score (0.0-1.0); null if label is human-only', and shows examples of both null (human) and populated (model) confidence scores."
+    },
+    {
+      "text": "distinguishes_human_vs_model",
+      "passed": false,
+      "evidence": "The response distinguishes human vs. model labels using the Annotator field and Confidence_Score nullability, but does not discuss separate executions or separate workflows for radiologist labels versus model predictions. The check specifically requires discussion of 'separate executions or workflows for human annotators vs model predictions'."
+    }
+  ]
+}

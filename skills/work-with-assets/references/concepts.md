@@ -8,7 +8,8 @@ Background on assets in DerivaML. For the step-by-step guide, see `workflow.md`.
 - [Asset Tables](#asset-tables)
 - [Asset RIDs](#asset-rids)
 - [Asset Types](#asset-types)
-- [Hatrac Storage](#hatrac-storage)
+- [Object Storage](#object-storage)
+- [How Assets Are Uploaded](#how-assets-are-uploaded)
 - [Asset Caching](#asset-caching)
 - [Asset Provenance](#asset-provenance)
 - [Built-in Asset Tables](#built-in-asset-tables)
@@ -17,17 +18,51 @@ Background on assets in DerivaML. For the step-by-step guide, see `workflow.md`.
 
 ## What is an Asset?
 
-An asset is a file-based record in a Deriva catalog. Each asset combines a file (stored in Hatrac, Deriva's file storage service) with catalog metadata — filename, size, checksum, description, and any custom columns defined on the asset table.
+An asset is a file-based record in a Deriva catalog. Each asset combines a file (stored in Deriva's object store) with catalog metadata — filename, size, checksum, description, and any custom columns defined on the asset table.
 
-Common examples include:
-- **Images** — microscopy images, X-rays, photographs
-- **Model weights** — trained PyTorch/TensorFlow checkpoints
-- **Prediction files** — CSVs of model outputs (class probabilities, scores)
+An asset can be **any file** that needs to be tracked in the catalog — input files, output files, or reference files. Common examples include:
+
+**Input data:**
+- **Images** — microscopy slides, X-rays, CT scans, photographs, satellite imagery
+- **Documents** — PDFs, clinical reports, text corpora
+- **Raw data files** — DICOM files, FASTA sequences, sensor readings
+
+**Model artifacts:**
+- **Model weights** — trained PyTorch `.pt`, TensorFlow `.h5`, ONNX checkpoints
+- **Embeddings** — precomputed feature vectors, word embeddings
+- **Tokenizer files** — vocabulary files, sentencepiece models
+
+**Experiment outputs:**
+- **Prediction files** — CSVs of model outputs (class probabilities, confidence scores)
 - **Segmentation masks** — pixel-level annotation overlays
-- **Configuration files** — YAML/JSON experiment configs
 - **Plots and figures** — ROC curves, confusion matrices, training loss charts
+- **Evaluation metrics** — JSON/CSV files with accuracy, F1, AUC results
+
+**Reference files:**
+- **Configuration files** — YAML/JSON experiment configs, hyperparameter snapshots
+- **Checksums and manifests** — integrity verification files
+- **Documentation** — analysis notebooks (executed `.ipynb` and `.md` conversions)
 
 Assets are the bridge between files on disk and structured catalog data. Unlike raw files, assets have identity (RIDs), provenance (which execution created them), types (vocabulary-based categorization), and relationships (foreign keys to other tables).
+
+### Assets vs Datasets
+
+Assets and datasets serve different purposes:
+
+| | **Asset** | **Dataset** |
+|---|---|---|
+| **What it is** | A single file with metadata | A versioned collection of catalog records |
+| **Contains** | One file (image, model weight, CSV, etc.) | References to many records across tables |
+| **Storage** | File in object store + metadata row in an asset table | Membership associations in the catalog |
+| **Versioning** | Immutable once uploaded (new version = new asset) | Semantic versioning with snapshot semantics |
+| **Primary use** | Track individual files with provenance | Organize data for reproducible experiments |
+| **Download** | `download_asset` → one file | `download_dataset` → BDBag with all members + assets |
+
+**Key distinction:** A dataset *contains* assets (among other records). When you download a dataset as a BDBag, the bag includes all asset files reachable from the dataset's members. But an asset exists independently — you can download, reference, and track a single asset without it being part of any dataset.
+
+**When to use which:**
+- Use **assets** when you need to track individual files (model weights, prediction CSVs, uploaded images)
+- Use **datasets** when you need a versioned, reproducible collection (training data, test sets, labeled image batches)
 
 ## Asset Tables
 
@@ -36,7 +71,7 @@ An asset table is a catalog table with special columns for file management. When
 | Column | Type | Description |
 |--------|------|-------------|
 | `Filename` | text | Original filename (e.g., `model_weights.pt`) |
-| `URL` | text | Hatrac storage URL (set automatically on upload) |
+| `URL` | text | Object store URL (set automatically on upload) |
 | `Length` | int | File size in bytes |
 | `MD5` | text | MD5 checksum for integrity verification |
 | `Description` | text | Optional human-readable description |
@@ -69,11 +104,44 @@ Asset types serve two purposes:
 
 Custom asset types can be created for domain-specific categorization. When you create a new asset table, DerivaML automatically adds the table name as a term in the Asset_Type vocabulary.
 
-## Hatrac Storage
+## Object Storage
 
-Files are stored in **Hatrac** (HTTP Asset Repository And Catalog), Deriva's file storage service. When you upload an asset, the file goes to Hatrac and the catalog record gets a URL pointing to it. When you download an asset, DerivaML fetches the file from Hatrac using that URL.
+Files are stored in Deriva's object store. When you upload an asset, the file goes to the object store and the catalog record gets a URL pointing to it. When you download an asset, DerivaML fetches the file from the object store using that URL.
 
-You never interact with Hatrac directly — DerivaML handles all file transfers. The `URL` column in asset tables contains the Hatrac path, but you use RIDs and MCP tools for all operations.
+You never interact with the object store directly — DerivaML handles all file transfers. The `URL` column in asset tables contains the storage path, but you use RIDs and MCP tools for all operations.
+
+## How Assets Are Uploaded
+
+Assets are created as part of the execution lifecycle — you register files during an execution, and they're uploaded in batch when the execution completes. This ensures every asset has provenance (which execution created it).
+
+### The upload flow
+
+1. **Register the file** — call `asset_file_path(asset_name, file_name)` during an execution. This:
+   - Stages the file in the execution's working directory
+   - Records the target asset table and file metadata
+   - Returns a file path — write your output to this path
+
+2. **Write to the path** — save your model weights, predictions, plots, etc. to the returned path
+
+3. **Upload all at once** — call `upload_execution_outputs()` after the execution completes. This:
+   - Uploads each staged file to the object store
+   - Computes the MD5 checksum automatically
+   - Records the file size (Length) automatically
+   - Creates asset records in the catalog with Filename, URL, Length, MD5
+   - Links each asset to the execution with role "Output"
+   - Applies any asset types specified during registration
+
+### What metadata is captured automatically
+
+| Field | How it's set |
+|-------|-------------|
+| `Filename` | From the file name provided to `asset_file_path` |
+| `URL` | Set by the upload process (object store path) |
+| `Length` | Computed from the file size during upload |
+| `MD5` | Computed from the file content during upload |
+| `Execution` | Linked to the active execution automatically |
+
+Custom metadata columns (e.g., `Width`, `Height`, `Architecture`) must be set separately after upload, or can be set programmatically in the Python API.
 
 ## Asset Caching
 

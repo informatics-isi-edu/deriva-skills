@@ -1,0 +1,32 @@
+{
+  "eval_id": 2,
+  "eval_name": "feature-vs-column",
+  "prompt": "I want to track image quality for our fundus images. Should I add a 'quality' column to the Image table, or create a feature? Different technicians rate quality differently and I want to know who scored what.",
+  "assertions": [
+    {
+      "name": "recommends_feature",
+      "description": "Should recommend a feature over a column",
+      "check": "clearly recommends creating a feature, not adding a column"
+    },
+    {
+      "name": "explains_decision_criteria",
+      "description": "Should explain WHY a feature is better — provenance, multi-scorer, controlled vocabulary",
+      "check": "mentions at least 2 of: provenance tracking, multiple values from different scorers, controlled vocabulary"
+    },
+    {
+      "name": "suggests_vocabulary",
+      "description": "Should suggest creating a Quality vocabulary with appropriate terms",
+      "check": "suggests creating a vocabulary with quality-related terms (e.g., Acceptable, Borderline, Rejected or similar)"
+    },
+    {
+      "name": "mentions_execution_provenance",
+      "description": "Should explain that feature values automatically track who scored what via executions",
+      "check": "mentions that each scoring session is a separate execution providing provenance"
+    },
+    {
+      "name": "does_not_just_add_column",
+      "description": "Should NOT suggest just adding a column as the primary approach",
+      "check": "does not recommend add_column as the solution to the user's stated requirements"
+    }
+  ]
+}

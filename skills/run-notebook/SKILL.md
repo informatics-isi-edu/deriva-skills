@@ -8,6 +8,16 @@ disable-model-invocation: true
 
 DerivaML notebooks use hydra-zen configuration (not papermill parameters) and a single `run_notebook()` call that handles connection, execution context, config resolution, and dataset/asset downloading automatically. When run via the CLI runner, the executed notebook with all outputs is stored in the catalog as an execution asset.
 
+## Prerequisite: Connect to a Catalog
+
+Notebooks interact with a Deriva catalog for data and provenance. Ensure a connection exists:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step. Note that `run_notebook()` can also accept `host`/`catalog_id` parameters to establish the connection.
+
 ## The Development Cycle
 
 Notebook development follows three stages, each building confidence that the notebook works correctly before committing to a tracked production run.

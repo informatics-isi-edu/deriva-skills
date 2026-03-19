@@ -10,6 +10,18 @@ Deriva catalogs are browsed through the Chaise web application. The display is c
 
 **This skill covers the interactive MCP tool approach.** For production Python code using type-safe builder classes (better for scripts, notebooks, and version-controlled configurations), see the `use-annotation-builders` skill instead.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Quick Start
 
 Apply sensible default annotations to the entire catalog:

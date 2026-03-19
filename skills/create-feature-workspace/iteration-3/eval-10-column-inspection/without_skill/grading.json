@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "reads_feature_resource",
+      "passed": false,
+      "evidence": "Uses fetch_table_features and rag_search instead of reading deriva://feature/Image/Diagnosis. The specific resource URI is never mentioned."
+    },
+    {
+      "text": "identifies_required_vs_optional",
+      "passed": false,
+      "evidence": "Step 3 mentions using rag_search to find 'whether they allow nulls' but never actually states which columns are required vs optional. No concrete required/optional breakdown is provided."
+    },
+    {
+      "text": "reads_vocabulary_for_valid_values",
+      "passed": true,
+      "evidence": "Step 2 shows query_table on 'Diagnosis_Type' with columns ['Name', 'Description', 'Synonyms'] to 'list every allowed term you can use as a value.'"
+    },
+    {
+      "text": "shows_add_feature_value_call",
+      "passed": true,
+      "evidence": "Shows both add_feature_value (simple) and add_feature_value_record (complex) with correct parameters including table_name, feature_name, and entries with target_rid and values."
+    },
+    {
+      "text": "wraps_in_execution",
+      "passed": false,
+      "evidence": "No mention of execution, create_execution, provenance, or wrapping feature value additions in an execution context anywhere in the response."
+    }
+  ]
+}

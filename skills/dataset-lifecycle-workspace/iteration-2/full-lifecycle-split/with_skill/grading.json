@@ -1,0 +1,50 @@
+{
+  "run_id": "full-lifecycle-split-with_skill",
+  "expectations": [
+    {
+      "text": "ensures_catalog_connection",
+      "passed": true,
+      "evidence": "Phase 0 explicitly shows 'connect_catalog(hostname=\"<your-hostname>\", catalog_id=\"<your-catalog-id>\")' as the first step, and it appears as entry #1 in the summary table."
+    },
+    {
+      "text": "checks_existing_datasets_first",
+      "passed": true,
+      "evidence": "Step 1.1 calls 'query_table(table_name=\"Dataset\")' with the note 'If a complete chest X-ray dataset already exists, reuse it and skip to Phase 3 (Split).' It is entry #2 in the summary table."
+    },
+    {
+      "text": "registers_element_type",
+      "passed": true,
+      "evidence": "Step 3.2 calls 'add_dataset_element_type(table_name=\"Image\")' and it appears as entry #9 in the summary table."
+    },
+    {
+      "text": "wraps_in_execution",
+      "passed": true,
+      "evidence": "Step 3.1 calls create_execution(...) followed immediately by start_execution(), before any dataset creation or split operations. These are entries #7 and #8 in the summary table."
+    },
+    {
+      "text": "creates_complete_labeled_dataset",
+      "passed": true,
+      "evidence": "Step 3.3 calls 'create_dataset(..., dataset_types=[\"Complete\", \"Labeled\"])' — both types are included. Also reflected in entry #10 of the summary table."
+    },
+    {
+      "text": "uses_dry_run_first",
+      "passed": true,
+      "evidence": "Step 4.1 calls split_dataset with 'dry_run=true' before the real split in Step 4.2, and entry #12 in the summary table is explicitly labeled '**dry_run=true**'."
+    },
+    {
+      "text": "correct_split_ratios",
+      "passed": true,
+      "evidence": "Both the dry-run call (Step 4.1) and the real call (Step 4.2) specify 'test_size=0.15, val_size=0.15', producing the 70/15/15 split."
+    },
+    {
+      "text": "correct_stratify_column",
+      "passed": true,
+      "evidence": "The stratify_by_column is set to 'Image_Diagnosis_Diagnosis_Image' in both split_dataset calls and is explained in the Assumptions and Key Decisions sections."
+    },
+    {
+      "text": "marks_splits_labeled",
+      "passed": true,
+      "evidence": "Step 4.2 includes 'training_types=[\"Labeled\"], testing_types=[\"Labeled\"], validation_types=[\"Labeled\"]' — all three partition type lists include 'Labeled'."
+    }
+  ]
+}

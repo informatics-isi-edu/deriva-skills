@@ -10,6 +10,18 @@ Datasets are the primary unit for organizing data in DerivaML. A dataset is a ve
 
 For background on what datasets are, how versioning and element types work, nested datasets, and FK traversal in bag exports, see `references/concepts.md`.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Description Guidance
 
 Every dataset should have a description that explains its composition, purpose, and key characteristics. The description is visible in the Chaise UI and in execution records.

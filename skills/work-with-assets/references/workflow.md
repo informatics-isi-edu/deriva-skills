@@ -119,7 +119,7 @@ Returns a `file_path` — if creating a new file, write your output to this path
 
 Call `upload_execution_outputs` with `clean_folder` (optional, default `true`) to remove the local staging directory after upload.
 
-This uploads all files registered via `asset_file_path` to Hatrac, creates catalog records, assigns asset types, and links each asset to the execution with role "Output".
+This uploads all files registered via `asset_file_path` to the object store, creates catalog records, assigns asset types, and links each asset to the execution with role "Output".
 
 ### Step 4: Stop the execution
 

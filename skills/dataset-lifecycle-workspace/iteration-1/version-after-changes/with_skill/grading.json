@@ -1,0 +1,40 @@
+{
+  "run_id": "version-after-changes-with_skill",
+  "expectations": [
+    {
+      "text": "explains_snapshot_semantics",
+      "passed": true,
+      "evidence": "Neither of these changes is visible in version 0.3.0, because existing versions are frozen snapshots."
+    },
+    {
+      "text": "calls_increment_version",
+      "passed": true,
+      "evidence": "increment_dataset_version(dataset_rid=\"28EA\", description=\"...\")"
+    },
+    {
+      "text": "provides_version_description",
+      "passed": true,
+      "evidence": "description=\"Added 200 new fundus images from yesterday's collection (minor). Fixed mislabeled ground-truth annotations on ~30 images identified in audit (patch)...\""
+    },
+    {
+      "text": "updates_config",
+      "passed": true,
+      "evidence": "DatasetSpecConfig(rid=\"28EA\", version=\"0.4.1\") with explicit instruction to update training config from version=\"0.3.0\" to the new version."
+    },
+    {
+      "text": "commits_before_running",
+      "passed": true,
+      "evidence": "git commit -m \"Update dataset 28EA version to 0.4.1 (new images + label fixes)\" — with the note: \"Never run an experiment before committing the config.\""
+    },
+    {
+      "text": "never_suggests_current",
+      "passed": true,
+      "evidence": "The response always references explicit version numbers (0.3.0, 0.4.0, 0.4.1) and never suggests using version='current' or omitting the version."
+    },
+    {
+      "text": "considers_semver_component",
+      "passed": true,
+      "evidence": "Versioning Rationale table explicitly labels: 200 new images as Minor (0.X.0) and ~30 mislabeled fixes as Patch (0.0.X), with explanation of which component to bump in each scenario."
+    }
+  ]
+}

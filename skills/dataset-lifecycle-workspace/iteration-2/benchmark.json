@@ -1,0 +1,317 @@
+{
+  "metadata": {
+    "skill_name": "dataset-lifecycle",
+    "timestamp": "2026-03-19T01:00:00Z",
+    "iteration": 2,
+    "evals_run": [
+      "full-lifecycle-split",
+      "explore-unknown-dataset",
+      "browse-dataset-contents"
+    ],
+    "configurations": [
+      "with_skill",
+      "without_skill"
+    ]
+  },
+  "runs": [
+    {
+      "eval_name": "full-lifecycle-split",
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "passed": 9,
+      "total": 9,
+      "assertions": [
+        {
+          "text": "ensures_catalog_connection",
+          "passed": true,
+          "evidence": "Phase 0 explicitly shows 'connect_catalog(hostname=\"<your-hostname>\", catalog_id=\"<your-catalog-id>\")' as the first step, and it appears as entry #1 in the summary table."
+        },
+        {
+          "text": "checks_existing_datasets_first",
+          "passed": true,
+          "evidence": "Step 1.1 calls 'query_table(table_name=\"Dataset\")' with the note 'If a complete chest X-ray dataset already exists, reuse it and skip to Phase 3 (Split).' It is entry #2 in the summary table."
+        },
+        {
+          "text": "registers_element_type",
+          "passed": true,
+          "evidence": "Step 3.2 calls 'add_dataset_element_type(table_name=\"Image\")' and it appears as entry #9 in the summary table."
+        },
+        {
+          "text": "wraps_in_execution",
+          "passed": true,
+          "evidence": "Step 3.1 calls create_execution(...) followed immediately by start_execution(), before any dataset creation or split operations. These are entries #7 and #8 in the summary table."
+        },
+        {
+          "text": "creates_complete_labeled_dataset",
+          "passed": true,
+          "evidence": "Step 3.3 calls 'create_dataset(..., dataset_types=[\"Complete\", \"Labeled\"])' \u2014 both types are included. Also reflected in entry #10 of the summary table."
+        },
+        {
+          "text": "uses_dry_run_first",
+          "passed": true,
+          "evidence": "Step 4.1 calls split_dataset with 'dry_run=true' before the real split in Step 4.2, and entry #12 in the summary table is explicitly labeled '**dry_run=true**'."
+        },
+        {
+          "text": "correct_split_ratios",
+          "passed": true,
+          "evidence": "Both the dry-run call (Step 4.1) and the real call (Step 4.2) specify 'test_size=0.15, val_size=0.15', producing the 70/15/15 split."
+        },
+        {
+          "text": "correct_stratify_column",
+          "passed": true,
+          "evidence": "The stratify_by_column is set to 'Image_Diagnosis_Diagnosis_Image' in both split_dataset calls and is explained in the Assumptions and Key Decisions sections."
+        },
+        {
+          "text": "marks_splits_labeled",
+          "passed": true,
+          "evidence": "Step 4.2 includes 'training_types=[\"Labeled\"], testing_types=[\"Labeled\"], validation_types=[\"Labeled\"]' \u2014 all three partition type lists include 'Labeled'."
+        }
+      ]
+    },
+    {
+      "eval_name": "full-lifecycle-split",
+      "configuration": "without_skill",
+      "pass_rate": 0.0,
+      "passed": 0,
+      "total": 9,
+      "assertions": [
+        {
+          "text": "ensures_catalog_connection",
+          "passed": false,
+          "evidence": "The output mentions 'An active catalog connection (catalog already connected)' as a prerequisite but does not call connect_catalog or check deriva://catalog/connections. It simply assumes the connection exists and skips directly to Step 1: Create the Complete Dataset."
+        },
+        {
+          "text": "checks_existing_datasets_first",
+          "passed": false,
+          "evidence": "The output never reads deriva://catalog/datasets or otherwise checks for existing datasets before creating a new one. Step 1 immediately calls create_dataset without any prior search."
+        },
+        {
+          "text": "registers_element_type",
+          "passed": false,
+          "evidence": "The output never calls add_dataset_element_type with Image or any other element type. There is no mention of registering element types."
+        },
+        {
+          "text": "wraps_in_execution",
+          "passed": false,
+          "evidence": "The output never calls create_execution or start_execution. There is no mention of wrapping dataset operations in an execution for provenance tracking."
+        },
+        {
+          "text": "creates_complete_labeled_dataset",
+          "passed": false,
+          "evidence": "The create_dataset call in Step 1 only specifies name and description parameters. No dataset_types including 'Complete' or 'Labeled' are specified. The output does reference 'training', 'validation', and 'test' types for the splits (Step 5), but not 'Complete' and 'Labeled' for the full dataset."
+        },
+        {
+          "text": "uses_dry_run_first",
+          "passed": false,
+          "evidence": "The split_dataset call in Step 4 does not include a dry_run=true parameter. There is no mention of a dry run preview before executing the actual split."
+        },
+        {
+          "text": "correct_split_ratios",
+          "passed": false,
+          "evidence": "The split_dataset call uses a 'splits' parameter with ratio fields (0.70, 0.15, 0.15) rather than test_size=0.15 and val_size=0.15 parameters. The assertion requires 'test_size=0.15 and val_size=0.15' as named parameters, which are not used."
+        },
+        {
+          "text": "correct_stratify_column",
+          "passed": false,
+          "evidence": "The stratify parameter uses 'feature_table: Image_Diagnosis' and 'label_column: Diagnosis_Image' rather than a single stratify_by_column parameter set to 'Image_Diagnosis_Diagnosis_Image' (the denormalized column name). The assertion requires stratify_by_column='Image_Diagnosis_Diagnosis_Image'."
+        },
+        {
+          "text": "marks_splits_labeled",
+          "passed": false,
+          "evidence": "The output assigns types 'training', 'validation', and 'test' to the splits (Step 5), but never adds 'Labeled' as a type to any of the split datasets. The assertion requires training_types, testing_types, and validation_types all include 'Labeled'."
+        }
+      ]
+    },
+    {
+      "eval_name": "explore-unknown-dataset",
+      "configuration": "with_skill",
+      "pass_rate": 0.857,
+      "passed": 6,
+      "total": 7,
+      "assertions": [
+        {
+          "text": "reads_dataset_resource",
+          "passed": true,
+          "evidence": "Step 1 explicitly reads 'deriva://dataset/2-B4C8' and the summary table confirms: '| 1 | deriva://dataset/2-B4C8 | Overview: types, version, description |'"
+        },
+        {
+          "text": "lists_members",
+          "passed": true,
+          "evidence": "Step 2 calls 'list_dataset_members(dataset_rid=\"2-B4C8\")' explicitly and the summary table confirms this at position 2."
+        },
+        {
+          "text": "uses_denormalize",
+          "passed": true,
+          "evidence": "Step 3 calls 'denormalize_dataset(dataset_rid=\"2-B4C8\", include_tables=[...], limit=10)' with two example invocations shown."
+        },
+        {
+          "text": "checks_children",
+          "passed": true,
+          "evidence": "Step 5 calls 'list_dataset_children(dataset_rid=\"2-B4C8\")' explicitly, and the summary table confirms it at step 5."
+        },
+        {
+          "text": "shows_how_to_reference",
+          "passed": false,
+          "evidence": "The output never mentions DatasetSpecConfig or get_dataset_spec. The response covers exploration steps but does not explain how to reference the dataset in an experiment config."
+        },
+        {
+          "text": "mentions_cite",
+          "passed": true,
+          "evidence": "Step 9 explicitly shows 'cite(rid=\"2-B4C8\")' and describes it as generating 'a permanent snapshot URL for the current version' and 'Chaise URL for browser / sharing'."
+        },
+        {
+          "text": "systematic_flow",
+          "passed": true,
+          "evidence": "The response follows a clear logical sequence: Step 1 overview (deriva://dataset/2-B4C8) \u2192 Step 2 members (list_dataset_members) \u2192 Step 3 actual data (denormalize_dataset) \u2192 Step 5 hierarchy (list_dataset_parents/children), exactly matching the required overview\u2192members\u2192data\u2192hierarchy order."
+        }
+      ]
+    },
+    {
+      "eval_name": "explore-unknown-dataset",
+      "configuration": "without_skill",
+      "pass_rate": 0.714,
+      "passed": 5,
+      "total": 7,
+      "assertions": [
+        {
+          "text": "reads_dataset_resource",
+          "passed": true,
+          "evidence": "Step 2 calls `mcp__deriva__get_dataset_spec(dataset_rid=\"2-B4C8\")` to retrieve the dataset record with metadata including Name, Description, Version, Status, and timestamps."
+        },
+        {
+          "text": "lists_members",
+          "passed": true,
+          "evidence": "Step 3 explicitly calls `mcp__deriva__list_dataset_members(dataset_rid=\"2-B4C8\")` to enumerate data records inside the dataset."
+        },
+        {
+          "text": "uses_denormalize",
+          "passed": true,
+          "evidence": "Step 11 calls `mcp__deriva__denormalize_dataset(dataset_rid=\"2-B4C8\")` to get a flat denormalized view of all member metadata. It is marked as optional, but the call is present."
+        },
+        {
+          "text": "checks_children",
+          "passed": true,
+          "evidence": "Step 4 explicitly calls `mcp__deriva__list_dataset_children(dataset_rid=\"2-B4C8\")` to check for nested child datasets."
+        },
+        {
+          "text": "shows_how_to_reference",
+          "passed": true,
+          "evidence": "Step 2 calls `mcp__deriva__get_dataset_spec(dataset_rid=\"2-B4C8\")`, which directly references the `get_dataset_spec` tool mentioned in the assertion check."
+        },
+        {
+          "text": "mentions_cite",
+          "passed": false,
+          "evidence": "The response never mentions cite(), a shareable URL, or a permanent URL. None of the 11 steps reference the cite tool or concept."
+        },
+        {
+          "text": "systematic_flow",
+          "passed": false,
+          "evidence": "The flow starts with overview (Step 2: get_dataset_spec) and members (Step 3: list_dataset_members), but then checks children and parents (Steps 4-5) before examining actual data (Steps 8-11). denormalize_dataset is placed last as Step 11 (optional), rather than near the data exploration steps. The overview\u2192members\u2192data\u2192hierarchy order is not followed; hierarchy (children/parents) comes before data inspection."
+        }
+      ]
+    },
+    {
+      "eval_name": "browse-dataset-contents",
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "passed": 7,
+      "total": 7,
+      "assertions": [
+        {
+          "text": "reads_dataset_overview",
+          "passed": true,
+          "evidence": "Step 2 explicitly calls 'Read resource: deriva://dataset/3-XYZ9' to get the dataset overview including types, version, description, and member counts."
+        },
+        {
+          "text": "lists_members_by_element_type",
+          "passed": true,
+          "evidence": "Step 3 explicitly calls 'list_dataset_members(dataset_rid=\"3-XYZ9\")' to confirm which element types are present and total member count."
+        },
+        {
+          "text": "uses_denormalize_for_actual_data",
+          "passed": true,
+          "evidence": "Step 5 calls 'denormalize_dataset(dataset_rid=\"3-XYZ9\", include_tables=[\"Image\", \"Image_Classification\"], limit=20)' to view actual data values."
+        },
+        {
+          "text": "includes_feature_table_in_denormalize",
+          "passed": true,
+          "evidence": "Step 5 includes 'Image_Classification' alongside 'Image' in include_tables, which is described as a classification/diagnosis-related table."
+        },
+        {
+          "text": "checks_features_or_annotations",
+          "passed": true,
+          "evidence": "Step 4 explicitly calls 'fetch_table_features(table_name=\"Image\")' to discover what annotation features and label columns are available on Image records."
+        },
+        {
+          "text": "addresses_unlabeled_detection",
+          "passed": true,
+          "evidence": "Step 7 is dedicated to finding unlabeled images by inspecting null values in the Diagnosis column: 'filter client-side (or by inspection) for rows where Diagnosis is null or empty.' Also mentions comparing with Unlabeled type tag from Step 2."
+        },
+        {
+          "text": "follows_browse_pattern",
+          "passed": true,
+          "evidence": "The response follows a clear overview\u2192members\u2192features\u2192denormalize progression: Step 2 (metadata overview) \u2192 Step 3 (member listing) \u2192 Step 4 (feature discovery) \u2192 Step 5 (actual data denormalization), moving logically from metadata to actual data viewing."
+        }
+      ]
+    },
+    {
+      "eval_name": "browse-dataset-contents",
+      "configuration": "without_skill",
+      "pass_rate": 0.429,
+      "passed": 3,
+      "total": 7,
+      "assertions": [
+        {
+          "text": "reads_dataset_overview",
+          "passed": true,
+          "evidence": "Step 1 calls `mcp__deriva__get_dataset_spec(dataset_rid=\"3-XYZ9\")` to retrieve the dataset's top-level metadata and structure, which satisfies reading a dataset resource for metadata overview."
+        },
+        {
+          "text": "lists_members_by_element_type",
+          "passed": true,
+          "evidence": "Step 2 explicitly calls `mcp__deriva__list_dataset_members(dataset_rid=\"3-XYZ9\")` to list the members of the dataset."
+        },
+        {
+          "text": "uses_denormalize_for_actual_data",
+          "passed": false,
+          "evidence": "The response never calls `denormalize_dataset`. Instead it uses `get_table_sample_data` and `query_table` to view actual data values, bypassing the denormalize tool entirely."
+        },
+        {
+          "text": "includes_feature_table_in_denormalize",
+          "passed": false,
+          "evidence": "Since `denormalize_dataset` is never called, there is no `include_tables` argument and no feature/diagnosis table is included in any denormalization call."
+        },
+        {
+          "text": "checks_features_or_annotations",
+          "passed": false,
+          "evidence": "The response does not call `fetch_table_features` for Image nor reads feature resources. It queries the image table directly and checks vocabulary tables, but does not use the features API."
+        },
+        {
+          "text": "addresses_unlabeled_detection",
+          "passed": true,
+          "evidence": "Step 7 explicitly queries for records where the diagnosis column is NULL (`{\"column\": \"Diagnosis\", \"operator\": \"::null::\", \"value\": null}`), and the summary table states: 'Are there unlabeled images? \u2014 query_table with NULL filter on Diagnosis/Label column'."
+        },
+        {
+          "text": "follows_browse_pattern",
+          "passed": false,
+          "evidence": "The response follows connect\u2192spec\u2192members\u2192sample but then deviates by using direct table queries and table schema inspection rather than the expected overview\u2192members\u2192denormalize flow. `denormalize_dataset` is never called, so the pattern of metadata\u2192member listing\u2192actual data viewing via denormalize is not followed."
+        }
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": 0.957,
+      "passed": 22,
+      "total": 23
+    },
+    "without_skill": {
+      "pass_rate": 0.348,
+      "passed": 8,
+      "total": 23
+    },
+    "delta": {
+      "pass_rate": "+0.609"
+    }
+  }
+}

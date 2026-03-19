@@ -8,6 +8,18 @@ disable-model-invocation: true
 
 Tables are the foundation of a Deriva catalog schema. Choose the right table type, follow naming conventions, and document everything.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Table Types
 
 | Type | Tool | When to Use |

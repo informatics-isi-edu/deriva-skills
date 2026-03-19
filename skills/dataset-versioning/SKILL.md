@@ -9,6 +9,18 @@ disable-model-invocation: true
 
 Dataset versioning is essential for reproducible ML experiments. Follow these rules strictly.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Rule 1: Always Use Explicit Versions for Real Experiments
 
 NEVER use "current" or "latest" for production or real experiment runs.

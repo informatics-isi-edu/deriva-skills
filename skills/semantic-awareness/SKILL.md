@@ -12,6 +12,18 @@ Before creating ANY new catalog entity (table, vocabulary term, feature, dataset
 
 This skill also applies when looking up any entity by name — catalog entities are created by different people at different times, so the same concept often appears under different names, spellings, or structures.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Why This Matters
 
 Deriva catalogs are shared, long-lived systems. When someone creates a "Diagnosis" feature without noticing that "Disease_Classification" already exists on the same table, data gets split, queries become ambiguous, and downstream consumers don't know which to use. A two-minute search before creation prevents hours of cleanup later.

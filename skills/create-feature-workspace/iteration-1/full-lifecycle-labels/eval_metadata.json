@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "eval_name": "full-lifecycle-labels",
+  "prompt": "I need to set up diagnostic labels for about 10,000 chest X-ray images. There are 5 diagnosis categories: Normal, Pneumonia, COVID-19, Tuberculosis, and Lung_Cancer. Multiple radiologists will be labeling the same images independently, and I need to track who labeled what. Some images will also have a confidence score from a model.",
+  "assertions": [
+    {
+      "name": "checks_existing_features",
+      "description": "Should check existing features before creating",
+      "check": "reads deriva://catalog/features or uses find_features or otherwise checks for existing features"
+    },
+    {
+      "name": "creates_vocabulary_first",
+      "description": "Should create a Diagnosis vocabulary with the 5 terms before creating the feature",
+      "check": "calls create_vocabulary and add_term for all 5 categories before create_feature"
+    },
+    {
+      "name": "creates_feature_with_terms",
+      "description": "Should create a term-based feature on the Image table",
+      "check": "calls create_feature with table_name=Image and terms parameter referencing the vocabulary"
+    },
+    {
+      "name": "handles_multi_annotator",
+      "description": "Should explain that features are multivalued and support multiple radiologists via separate executions",
+      "check": "mentions that multiple annotators use separate executions and features track provenance"
+    },
+    {
+      "name": "wraps_in_execution",
+      "description": "Should add values within an execution for provenance",
+      "check": "calls create_execution before add_feature_value"
+    },
+    {
+      "name": "addresses_confidence_score",
+      "description": "Should handle the model confidence score as metadata or a separate feature",
+      "check": "discusses confidence as a metadata column on the feature or a separate feature for model predictions"
+    },
+    {
+      "name": "distinguishes_human_vs_model",
+      "description": "Should recognize that radiologist labels and model predictions are different annotation sources",
+      "check": "discusses separate executions or workflows for human annotators vs model predictions"
+    }
+  ]
+}
