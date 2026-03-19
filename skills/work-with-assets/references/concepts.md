@@ -19,15 +19,49 @@ Background on assets in DerivaML. For the step-by-step guide, see `workflow.md`.
 
 An asset is a file-based record in a Deriva catalog. Each asset combines a file (stored in Hatrac, Deriva's file storage service) with catalog metadata — filename, size, checksum, description, and any custom columns defined on the asset table.
 
-Common examples include:
-- **Images** — microscopy images, X-rays, photographs
-- **Model weights** — trained PyTorch/TensorFlow checkpoints
-- **Prediction files** — CSVs of model outputs (class probabilities, scores)
+An asset can be **any file** that needs to be tracked in the catalog — input files, output files, or reference files. Common examples include:
+
+**Input data:**
+- **Images** — microscopy slides, X-rays, CT scans, photographs, satellite imagery
+- **Documents** — PDFs, clinical reports, text corpora
+- **Raw data files** — DICOM files, FASTA sequences, sensor readings
+
+**Model artifacts:**
+- **Model weights** — trained PyTorch `.pt`, TensorFlow `.h5`, ONNX checkpoints
+- **Embeddings** — precomputed feature vectors, word embeddings
+- **Tokenizer files** — vocabulary files, sentencepiece models
+
+**Experiment outputs:**
+- **Prediction files** — CSVs of model outputs (class probabilities, confidence scores)
 - **Segmentation masks** — pixel-level annotation overlays
-- **Configuration files** — YAML/JSON experiment configs
 - **Plots and figures** — ROC curves, confusion matrices, training loss charts
+- **Evaluation metrics** — JSON/CSV files with accuracy, F1, AUC results
+
+**Reference files:**
+- **Configuration files** — YAML/JSON experiment configs, hyperparameter snapshots
+- **Checksums and manifests** — integrity verification files
+- **Documentation** — analysis notebooks (executed `.ipynb` and `.md` conversions)
 
 Assets are the bridge between files on disk and structured catalog data. Unlike raw files, assets have identity (RIDs), provenance (which execution created them), types (vocabulary-based categorization), and relationships (foreign keys to other tables).
+
+### Assets vs Datasets
+
+Assets and datasets serve different purposes:
+
+| | **Asset** | **Dataset** |
+|---|---|---|
+| **What it is** | A single file with metadata | A versioned collection of catalog records |
+| **Contains** | One file (image, model weight, CSV, etc.) | References to many records across tables |
+| **Storage** | File in Hatrac + metadata row in an asset table | Membership associations in the catalog |
+| **Versioning** | Immutable once uploaded (new version = new asset) | Semantic versioning with snapshot semantics |
+| **Primary use** | Track individual files with provenance | Organize data for reproducible experiments |
+| **Download** | `download_asset` → one file | `download_dataset` → BDBag with all members + assets |
+
+**Key distinction:** A dataset *contains* assets (among other records). When you download a dataset as a BDBag, the bag includes all asset files reachable from the dataset's members. But an asset exists independently — you can download, reference, and track a single asset without it being part of any dataset.
+
+**When to use which:**
+- Use **assets** when you need to track individual files (model weights, prediction CSVs, uploaded images)
+- Use **datasets** when you need a versioned, reproducible collection (training data, test sets, labeled image batches)
 
 ## Asset Tables
 

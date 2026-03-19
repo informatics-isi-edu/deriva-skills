@@ -10,6 +10,18 @@ An asset is a file-based record in a Deriva catalog — it combines a file (stor
 
 For background on asset tables, types, RIDs, Hatrac storage, caching, and provenance, see `references/concepts.md`.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Critical Rules
 
 1. **Use RIDs to reference assets** — not filenames or URLs. RIDs are immutable and unique.
@@ -64,6 +76,6 @@ For the full step-by-step guide with MCP tool parameters and Python API examples
 
 ## Related Skills
 
-- **`run-ml-execution`** — Full execution lifecycle including asset upload patterns
+- **`execution-lifecycle`** — Full execution lifecycle including asset upload patterns
 - **`prepare-training-data`** — Downloading and restructuring assets for ML training
-- **`create-dataset`** — Datasets organize assets into versioned collections for reproducibility
+- **`dataset-lifecycle`** — Datasets organize assets into versioned collections for reproducibility

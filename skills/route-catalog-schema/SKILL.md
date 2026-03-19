@@ -1,6 +1,6 @@
 ---
 name: route-catalog-schema
-description: "Use this skill for Deriva catalog structure, data exploration, assets, and scripted operations. Covers creating or modifying tables and columns, querying or browsing catalog data, looking up records by RID, customizing how tables appear in the Chaise web UI, working with assets and provenance, and writing Python scripts for catalog operations. Also covers annotation builder scripts. For vocabularies, use the manage-vocabulary skill directly."
+description: "Use this skill for Deriva catalog structure, data exploration, and scripted operations. Covers creating or modifying tables and columns, querying or browsing catalog data, looking up records by RID, customizing how tables appear in the Chaise web UI, and writing Python scripts for catalog operations. Also covers annotation builder scripts. For vocabularies use manage-vocabulary directly. For assets use work-with-assets directly."
 ---
 
 # Catalog Schema, Data, and Display
@@ -25,9 +25,6 @@ Analyze the user's intent and read the matching skill:
 
 ### Creating or modifying catalog structure
 - **Creating tables, asset tables, adding columns, foreign keys, column types, constraints** → Read and follow `../create-table/SKILL.md`
-
-### Assets
-- **Finding asset tables, downloading assets, checking asset provenance, tracing which executions created an asset** → Read and follow `../work-with-assets/SKILL.md`
 
 ### Scripted catalog operations
 - **Writing Python scripts for batch data loading, ETL, dataset creation pipelines, or any catalog operation needing code provenance** → Read and follow `../catalog-operations-workflow/SKILL.md`
