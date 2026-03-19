@@ -95,7 +95,7 @@ def bag_info(
 
 ---
 
-## Part 2: Prefetch Tool
+## Part 2: Cache Dataset Tool (formerly "Prefetch")
 
 ### Problem
 
@@ -217,7 +217,7 @@ Before running an experiment:
    **Before running an experiment:**
    1. `validate_rids` - Verify all dataset and asset RIDs exist
    2. `bag_info` - Check dataset sizes and cache status
-   3. `prefetch` - Download large datasets/assets ahead of time
+   3. `cache_dataset` - Download datasets/assets into cache ahead of time
    ```
 
 ---
