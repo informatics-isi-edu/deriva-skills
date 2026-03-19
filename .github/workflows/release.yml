@@ -51,6 +51,8 @@ jobs:
           tar -czf deriva-skills-${VERSION}.tar.gz \
             --exclude='.git' \
             --exclude='.github' \
+            --exclude='*-workspace' \
+            --exclude='docs/superpowers' \
             .claude-plugin/ \
             skills/
 

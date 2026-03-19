@@ -102,7 +102,7 @@ These download into the local cache without creating execution records. Subseque
 For `deriva-ml-run` CLI experiments:
 
 1. **Git clean** — `git status` must show no uncommitted changes
-2. **Version current** — bump with `uv run bump-version patch|minor` if needed
+2. **Version current** — bump with `bump_version("patch")` MCP tool or `uv run bump-version patch|minor` CLI if needed
 3. **Lock file valid** — `uv lock --check` must pass
 
 ### Step 6: User confirmation

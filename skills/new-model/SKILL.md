@@ -197,6 +197,7 @@ After the PR is merged (or after you merge it yourself with `gh pr merge`):
 git checkout main
 git pull
 uv run bump-version minor   # New model = new feature = minor bump
+# Or use the MCP tool: bump_version("minor")
 ```
 
 The version bump creates a git tag, giving production runs a clean version reference. Use `minor` for a new model; use `patch` if you're fixing an existing model.
