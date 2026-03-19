@@ -15,10 +15,11 @@ claude --plugin-dir /path/to/deriva-skills
 # Install from marketplace
 /plugin install deriva
 
-# Release process
-git tag v0.10.7
-git push origin v0.10.7
-# GitHub Actions: bumps version in plugin.json + marketplace.json, creates archive + release
+# Release process — always use bump-version from deriva-ml
+bump-version patch    # v0.12.1 -> v0.12.2
+bump-version minor    # v0.12.2 -> v0.13.0
+bump-version major    # v0.13.0 -> v1.0.0
+# GitHub Actions: bumps version in plugin.json + marketplace.json, commits back to main, creates archive + release
 
 # Run version checker
 python skills/check-versions/scripts/check_versions.py
@@ -78,13 +79,15 @@ Markdown instructions that Claude follows when the skill is active.
 ## Release Process
 
 1. Commit changes
-2. Create git tag: `git tag v{MAJOR}.{MINOR}.{PATCH}`
-3. Push tag: `git push origin v{version}`
-4. GitHub Actions automatically:
+2. Run `bump-version patch|minor|major` (creates tag and pushes automatically)
+3. GitHub Actions automatically:
    - Bumps version in `plugin.json` and `marketplace.json`
+   - Commits version bump back to main
    - Creates `deriva-skills-{VERSION}.tar.gz` (excludes `.git`, `.github`)
    - Publishes GitHub Release with auto-generated notes
-5. Users update via `/plugin install deriva`
+4. Users update via `/plugin install deriva`
+
+**Never create git tags manually** — always use `bump-version` from deriva-ml.
 
 ## Gotchas
 
