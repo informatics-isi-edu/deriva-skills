@@ -142,13 +142,89 @@ Common use cases:
 - **Parameter sweeps** — parent represents the sweep, children are individual runs
 - **Pipelines** — parent represents the pipeline, children are stages (preprocessing, training, evaluation)
 - **Cross-validation** — parent represents the CV experiment, children are individual folds
+- **Multi-experiment comparisons** — parent groups related experiments (e.g., "compare architectures")
 
 Each child is a full execution with its own RID, inputs, outputs, and provenance. The parent-child link is tracked via an association table with an optional `sequence` number for ordering.
 
-Navigation:
-- From parent → children: `list_nested_executions`
-- From child → parent: `list_parent_executions`
-- Both support `recurse` for deep hierarchies
+### How multiruns create nested executions
+
+The `deriva-ml-run` CLI automatically creates nested executions when using `multirun_config` or `--multirun`:
+
+```bash
+uv run deriva-ml-run +multirun=lr_sweep
+```
+
+This creates:
+1. A **parent execution** for the sweep — its description comes from `multirun_config`'s `description` field
+2. One **child execution** per parameter combination — each with its own config, inputs, outputs, and status
+
+The parent's RID is the single reference point for the entire sweep. All children are accessible via `list_nested_executions`.
+
+### Manual nesting with MCP tools
+
+For custom multi-step workflows, create nested executions manually:
+
+```
+# Create the parent
+create_execution(workflow_name="Architecture Comparison", workflow_type="Analysis")
+start_execution()
+# ... parent-level work (e.g., shared preprocessing) ...
+stop_execution()
+
+# Record the parent RID, then create children
+# Each child is its own execution with its own inputs/outputs
+create_execution(workflow_name="ResNet Training", workflow_type="Training", ...)
+start_execution()
+# ... child work ...
+stop_execution()
+upload_execution_outputs()
+
+# Link child to parent
+add_nested_execution(parent_execution_rid="1-PARENT", child_execution_rid="1-CHILD1", sequence=0)
+```
+
+### Navigating nested execution hierarchies
+
+**MCP tools:**
+
+| Tool | Direction | Parameters |
+|------|-----------|-----------|
+| `list_nested_executions` | Parent → Children | `execution_rid`, `recurse=True` for all descendants |
+| `list_parent_executions` | Child → Parent | `execution_rid`, `recurse=True` for all ancestors |
+
+**MCP resources:**
+
+| Resource | What it returns |
+|----------|----------------|
+| `deriva://execution/{rid}` | Execution details including status, workflow, timing |
+| `deriva://experiment/{rid}` | Rich view with Hydra config, model params, inputs/outputs |
+| `deriva://execution/{rid}/inputs` | Input datasets and assets |
+
+**Python API:**
+
+```python
+# From parent to children
+children = parent_execution.list_nested_executions(recurse=False)
+all_descendants = parent_execution.list_nested_executions(recurse=True)
+
+# From child to parent
+parents = child_execution.list_parent_executions(recurse=False)
+
+# Each child is an ExecutionRecord with .execution_rid, .status, .description
+for child in children:
+    print(f"{child.execution_rid}: {child.status} — {child.description}")
+```
+
+### Analyzing sweep results
+
+After a multirun completes, the typical analysis flow is:
+
+1. `list_nested_executions(execution_rid="PARENT_RID")` — get all children
+2. For each child, read `deriva://experiment/{child_rid}` — get config parameters and results
+3. Compare results across children (metrics, output assets)
+4. Optionally, create a summary notebook that reads all children's outputs
+
+The `run-notebook` skill covers how to build analysis notebooks that consume execution results.
 
 ## Execution Data Flow
 

@@ -24,7 +24,21 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 Before running an experiment, validate that everything is in place. **Stop and fix any issues.**
 
-### Step 1: Validate configuration inputs
+### Step 1: Resolve the configuration
+
+Before validating anything, you need to know what the configuration specifies. Identify all dataset RIDs, asset RIDs, and versions that will be used:
+
+**For CLI runs** — inspect the resolved config:
+```bash
+uv run deriva-ml-run +experiment=baseline --info
+```
+Extract the dataset RIDs and versions from the resolved `datasets` group, and asset RIDs from the `assets` group.
+
+**For MCP tool runs** — the user provides the RIDs directly in the `create_execution` call. Collect them before proceeding.
+
+**For Python API runs** — read the `ExecutionConfiguration` or the hydra-zen config module to extract dataset and asset references.
+
+### Step 2: Validate all RIDs and versions
 
 ```
 validate_rids(
@@ -34,53 +48,61 @@ validate_rids(
 )
 ```
 
-This checks that all RIDs exist, versions are valid, and warns about missing descriptions. Catch configuration errors before they cause runtime failures.
+This checks that all RIDs exist in the catalog, versions are valid, and warns about missing descriptions. Catches typos, deleted datasets, and wrong version numbers before runtime.
 
-### Step 2: Check data readiness
+**Stop if any errors.** Fix the configuration before proceeding.
 
-For each dataset in the config:
+### Step 3: Check data readiness and decide whether to stage
+
+For each dataset in the config, check cache status and size:
 
 ```
 bag_info(dataset_rid="28CT", version="0.9.0")
 ```
 
 Returns size info AND cache status:
-- `not_cached` → will need to download (check total_asset_size to estimate time)
+- `not_cached` → will need to download (check `total_asset_size` to estimate time)
 - `cached_metadata_only` → table data present, assets need materialization
 - `cached_materialized` → ready to go, no download needed
 - `cached_incomplete` → needs re-materialization
 
-### Step 3: Cache large datasets ahead of time
+**Decision: should you stage data before running?**
 
-For datasets that aren't cached and are large:
+| Situation | Action |
+|-----------|--------|
+| Small dataset (<100 MB), not cached | Let execution download it — fast enough |
+| Large dataset (>1 GB), not cached | **Stage first** with `cache_dataset` |
+| Any dataset, `cached_materialized` | No action needed — will use cache |
+| Asset (model weights), not cached | **Stage first** with `cache_dataset(asset_rid=...)` |
 
+### Step 4: Stage data if needed
+
+For datasets:
 ```
 cache_dataset(dataset_rid="28CT", version="0.9.0")
 ```
 
-This downloads the bag into the local cache without creating an execution record. Subsequent `download_execution_dataset` calls will use the cached copy.
-
 For individual assets (model weights, etc.):
-
 ```
 cache_dataset(asset_rid="3WSE")
 ```
 
-### Step 4: Code and environment checks (CLI runs)
+These download into the local cache without creating execution records. Subsequent `download_execution_dataset` / `download_asset` calls will use the cached copy.
+
+### Step 5: Code and environment checks (CLI runs)
 
 For `deriva-ml-run` CLI experiments:
 
 1. **Git clean** — `git status` must show no uncommitted changes
 2. **Version current** — bump with `uv run bump-version patch|minor` if needed
 3. **Lock file valid** — `uv lock --check` must pass
-4. **Inspect config** — `uv run deriva-ml-run +experiment=X --info` to verify resolved parameters
 
-### Step 5: User confirmation
+### Step 6: User confirmation
 
 Present a summary before production runs:
 - Commit hash, version, branch
 - Experiment name and key parameters
-- Dataset versions and cache status
+- Dataset versions and cache status (all should be `cached_materialized` after staging)
 - Get explicit approval
 
 ## Phase 2: Create and Run
