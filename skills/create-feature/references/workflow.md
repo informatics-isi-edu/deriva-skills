@@ -19,9 +19,9 @@ Step-by-step MCP tool and Python API examples for creating and populating featur
 
 Before creating a new feature, review what already exists.
 
-- Read the `deriva://catalog/features` resource to list all features.
-- Read the `deriva://feature/{table_name}/{feature_name}` resource for details on a specific feature.
-- Call `query_table` with `table_name`: `"Feature"` to list feature records directly.
+- Read `deriva://catalog/features` to list all features with their target tables and column schemas.
+- Read `deriva://feature/{table_name}/{feature_name}` for details on a specific feature.
+- Check existing feature values with `deriva://table/{table_name}/feature-values/newest` to see what annotations already exist.
 
 ## Create a Vocabulary (if needed)
 
@@ -116,13 +116,16 @@ with ml.create_execution(config) as exe:
 
 ## Query Feature Values
 
-### Simple queries
+### Preferred: Use dedicated feature tools and resources
 
-Call `query_table` with `table_name` set to the feature value table (e.g., `"Tumor_Classification_Feature_Value"`). Use `filters` to narrow results (e.g., `{"Image": "2-IMG1"}` for a specific image, or `{"Tumor_Grade": "Grade III"}` for all images with a specific grade).
+Always prefer the feature-specific tools and resources over generic `query_table`:
 
-### Fetching with deduplication
+**Browse values via resources:**
+- Read `deriva://feature/{table}/{name}/values` — all values for a specific feature, with full provenance
+- Read `deriva://table/{table}/feature-values` — all feature values for a table, grouped by feature name
+- Read `deriva://table/{table}/feature-values/newest` — deduplicated to one value per record per feature
 
-When a record has multiple values for the same feature (from different annotators or executions), use `fetch_table_features` to resolve to a single value per record.
+**Fetch with selection via tool:**
 
 Call `fetch_table_features` with:
 - `table_name`: the target table (e.g., `"Image"`)
@@ -133,17 +136,19 @@ Call `fetch_table_features` with:
 
 Only one of `selector`, `workflow`, or `execution` may be specified. See `concepts.md` for the full Python API including custom selectors.
 
-### Feature value resources
+### Fallback: Filtered queries on the feature value table
 
-- `deriva://feature/{table}/{name}/values` — all values with provenance
-- `deriva://table/{table}/feature-values` — all feature values for a table, grouped by feature
-- `deriva://table/{table}/feature-values/newest` — deduplicated to newest per record
+When you need to filter by specific column values (e.g., "all images with Grade III"), use `query_table` on the feature value table directly:
+
+Call `query_table` with `table_name` set to the feature value table (e.g., `"Tumor_Classification_Feature_Value"`). Use `filters` to narrow results (e.g., `{"Image": "2-IMG1"}` for a specific image, or `{"Tumor_Grade": "Grade III"}` for all images with a specific grade).
+
+This is the only case where `query_table` is appropriate for feature values — the dedicated tools above don't support arbitrary column filters.
 
 ## Managing Features
 
 To **delete a feature**, call `delete_feature` with `table_name` and `feature_name`. This removes the feature and its value table — existing data will be lost.
 
-To **list all features**, call `query_table` with `table_name`: `"Feature"`, or read the `deriva://catalog/features` resource.
+To **list all features**, read the `deriva://catalog/features` resource.
 
 ## Complete Example
 

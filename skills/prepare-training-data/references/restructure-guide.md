@@ -102,39 +102,55 @@ When an asset has multiple feature values (e.g., annotations from different exec
 
 ### Built-in selectors
 
-```python
-from deriva_ml.dataset.dataset_bag import select_majority_vote, select_latest, select_first
+All selectors use `FeatureRecord` — the same type used everywhere in the API:
 
-# Most common label; ties broken by newest annotation
-bag.restructure_assets(
-    output_dir="./ml_data",
-    group_by=["Diagnosis"],
-    value_selector=select_majority_vote,
-)
+```python
+from deriva_ml.feature import FeatureRecord
 
 # Most recent annotation (by RCT timestamp)
 bag.restructure_assets(
     output_dir="./ml_data",
     group_by=["Diagnosis"],
-    value_selector=select_latest,
+    value_selector=FeatureRecord.select_newest,
 )
 
 # Earliest annotation (by RCT timestamp)
 bag.restructure_assets(
     output_dir="./ml_data",
     group_by=["Diagnosis"],
-    value_selector=select_first,
+    value_selector=FeatureRecord.select_first,
+)
+
+# Most common label; ties broken by newest annotation
+# For single-term features, column is auto-detected:
+feat = ml.lookup_feature("Image", "Diagnosis")
+RecordClass = feat.feature_record_class()
+bag.restructure_assets(
+    output_dir="./ml_data",
+    group_by=["Diagnosis"],
+    value_selector=RecordClass.select_majority_vote(),
+)
+
+# Or specify the column explicitly:
+bag.restructure_assets(
+    output_dir="./ml_data",
+    group_by=["Diagnosis"],
+    value_selector=FeatureRecord.select_majority_vote("Diagnosis_Type"),
 )
 ```
 
+**MCP tool:** The `restructure_assets` MCP tool also accepts `value_selector` as a string: `"newest"`, `"first"`, `"latest"`, or `"majority_vote"`.
+
 ### Custom selector
 
-A selector receives a list of `FeatureValueRecord` objects and returns one:
+A selector receives a list of `FeatureRecord` objects and returns one. `FeatureRecord` is a Pydantic model with named attributes for each column:
 
 ```python
-def select_highest_confidence(records):
+from deriva_ml.feature import FeatureRecord
+
+def select_highest_confidence(records: list[FeatureRecord]) -> FeatureRecord:
     """Pick the annotation with the highest confidence score."""
-    return max(records, key=lambda r: r.raw_record.get("Confidence", 0))
+    return max(records, key=lambda r: getattr(r, "Confidence", 0))
 
 bag.restructure_assets(
     output_dir="./ml_data",
@@ -143,11 +159,11 @@ bag.restructure_assets(
 )
 ```
 
-Each `FeatureValueRecord` has:
-- `.value` — the feature value (e.g., the vocabulary term name)
-- `.raw_record` — the full row as a dict (all columns from the feature table)
-- `.execution_rid` — which execution produced this annotation
-- `.rct` — record creation timestamp
+Key `FeatureRecord` attributes:
+- Named attributes for each feature column (e.g., `.Diagnosis_Type`, `.Confidence`)
+- `.Execution` — RID of the execution that produced this value
+- `.RCT` — ISO 8601 creation timestamp
+- `.Feature_Name` — name of the feature
 
 ## File Transformation
 
@@ -365,7 +381,7 @@ bag = dataset.download_dataset_bag(version="1.0.0")
 bag.restructure_assets(
     output_dir="./data",
     group_by=["Diagnosis"],
-    value_selector=select_majority_vote,
+    value_selector=FeatureRecord.select_newest,
     type_to_dir_map={"Training": "train", "Testing": "test"},
 )
 
@@ -394,7 +410,7 @@ y = df["Subject_Diagnosis"]
 bag.restructure_assets(
     output_dir="./data",
     group_by=["Primary_Diagnosis", "Severity"],  # nested dirs
-    value_selector=select_latest,
+    value_selector=FeatureRecord.select_latest,
     file_transformer=dicom_to_png,
     use_symlinks=False,  # copy for portability
 )

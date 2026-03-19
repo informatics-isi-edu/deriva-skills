@@ -1,0 +1,41 @@
+{
+  "skill_name": "create-feature",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to set up diagnostic labels for about 10,000 chest X-ray images. There are 5 diagnosis categories: Normal, Pneumonia, COVID-19, Tuberculosis, and Lung_Cancer. Multiple radiologists will be labeling the same images independently, and I need to track who labeled what. Some images will also have a confidence score from a model.",
+      "expected_output": "Should check existing features first via deriva://catalog/features. Should create a vocabulary (Diagnosis_Type) with the 5 terms. Should recognize that radiologist labels and model predictions are separate features or at least separate executions. Should create the feature with provenance tracking. Should mention that multivalued features enable inter-annotator comparison. Should wrap value addition in an execution. Should consider whether confidence is a metadata column on the feature or a separate feature.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I want to track image quality for our fundus images. Should I add a 'quality' column to the Image table, or create a feature? Different technicians rate quality differently and I want to know who scored what.",
+      "expected_output": "Should clearly recommend a feature over a column because: multiple scorers (multivalued), need provenance (who scored it), and controlled vocabulary (consistent ratings). Should explain the feature vs column decision criteria. Should suggest creating a Quality vocabulary with terms like Acceptable/Borderline/Rejected. Should mention that features track execution provenance automatically.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I already have a Diagnosis feature on my Image table but now I also need to track severity (Mild/Moderate/Severe). Should I add severity as another column on the existing Diagnosis feature, or create a separate Severity feature?",
+      "expected_output": "Should apply the 'always set together?' test. If diagnosis and severity are always assigned in the same annotation act, add Severity_Level as a second term column on the Diagnosis feature (multi-column). If they're assigned by different processes, create a separate feature. Should explain the tradeoffs. Should NOT suggest modifying the existing feature table directly — should explain that adding a column to an existing feature requires recreating it.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "I just added diagnosis labels to 5,000 images in my dataset (RID 28EA, version 0.4.0). But when I download the dataset bag, the labels aren't there. What's going on?",
+      "expected_output": "Should explain that dataset versions are frozen snapshots. Adding feature values doesn't update existing versions. Must call increment_dataset_version to create a new version that captures the feature values. Should mention updating the DatasetSpecConfig to the new version. Should reference the dataset-lifecycle skill for versioning details.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I have a dataset with images that have been labeled by three different pathologists. I need to get the consensus label for each image — the most common label among the three. How do I do that?",
+      "expected_output": "Should explain that features are multivalued by design, so all three labels coexist. Should show how to use fetch_table_features to get all values, then use a custom selector or post-processing to compute majority vote. Should show the selector pattern (either custom selector function or post-processing with Counter). Should mention that the MCP tool supports selector='newest' but consensus requires custom logic in Python.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "What features exist on the Image table in my catalog? I want to see what annotations are available before I start my analysis.",
+      "expected_output": "Should use the discovery flow: read deriva://catalog/features to see all features, or read feature-specific resources. Should show how to browse values with deriva://table/Image/feature-values/newest for a quick summary. Should mention find_features() and lookup_feature() Python API. Should follow a systematic exploration: discover features → inspect structure → browse values.",
+      "files": []
+    }
+  ]
+}
