@@ -4,18 +4,42 @@ Step-by-step MCP tool and Python API examples for running executions. For backgr
 
 ## Table of Contents
 
-1. [Setting Up a Workflow](#setting-up-a-workflow)
-2. [MCP Tools: Full Execution Lifecycle](#mcp-tools-full-execution-lifecycle)
-3. [Python API: Context Manager Pattern](#python-api-context-manager-pattern)
-4. [Downloading Input Data](#downloading-input-data)
-5. [Registering and Uploading Outputs](#registering-and-uploading-outputs)
-6. [Inspecting Executions](#inspecting-executions)
-7. [Updating Execution State](#updating-execution-state)
-8. [Nested Executions](#nested-executions)
-9. [Restoring a Previous Execution](#restoring-a-previous-execution)
-10. [Creating an Output Dataset](#creating-an-output-dataset)
-11. [Complete Example: MCP Workflow](#complete-example-mcp-workflow)
-12. [Complete Example: Python API](#complete-example-python-api)
+1. [Tool Quick Reference](#tool-quick-reference)
+2. [Setting Up a Workflow](#setting-up-a-workflow)
+3. [MCP Tools: Full Execution Lifecycle](#mcp-tools-full-execution-lifecycle)
+4. [Python API: Context Manager Pattern](#python-api-context-manager-pattern)
+5. [CLI: deriva-ml-run](#cli-deriva-ml-run)
+6. [Downloading Input Data](#downloading-input-data)
+7. [Registering and Uploading Outputs](#registering-and-uploading-outputs)
+8. [Inspecting Executions](#inspecting-executions)
+9. [Updating Execution State](#updating-execution-state)
+10. [Nested Executions](#nested-executions)
+11. [Restoring a Previous Execution](#restoring-a-previous-execution)
+12. [Creating an Output Dataset](#creating-an-output-dataset)
+13. [Complete Example: MCP Workflow](#complete-example-mcp-workflow)
+14. [Complete Example: Python API](#complete-example-python-api)
+
+---
+
+## Tool Quick Reference
+
+| Tool | Purpose |
+|------|---------|
+| `validate_rids` | Pre-flight: verify RIDs and versions exist |
+| `bag_info` | Pre-flight: check dataset size and cache status |
+| `cache_dataset` | Pre-flight: download data into cache without execution |
+| `create_execution` | Create execution (finds/creates workflow automatically) |
+| `start_execution` / `stop_execution` | Manage lifecycle timing |
+| `download_execution_dataset` | Download dataset as BDBag within execution |
+| `download_asset` | Download individual asset within execution |
+| `asset_file_path` | Register output file for upload |
+| `upload_execution_outputs` | Upload all registered files to catalog |
+| `get_execution_info` | Active execution details |
+| `update_execution_status` | Progress tracking |
+| `restore_execution` | Re-download previous execution's inputs |
+| `add_nested_execution` | Link parent-child executions |
+| `list_nested_executions` | Navigate parent → children (supports `recurse`) |
+| `list_parent_executions` | Navigate child → parent (supports `recurse`) |
 
 ---
 
@@ -141,6 +165,36 @@ with ml.create_execution(config) as exe:
 - If an exception occurs inside the block, status is set to "Failed" automatically.
 - Call `upload_execution_outputs()` **after** exiting the `with` block, not inside it.
 - When using `deriva-ml-run`, upload is handled automatically by the runner.
+
+## CLI: deriva-ml-run
+
+The CLI runner handles the full lifecycle automatically — creates execution, downloads data, runs the model function, uploads outputs, sets status.
+
+```bash
+# Inspect resolved config without running
+uv run deriva-ml-run +experiment=baseline --info
+uv run deriva-ml-run +experiment=baseline --cfg job
+
+# Dry run (downloads data, runs model, does NOT upload to catalog)
+uv run deriva-ml-run +experiment=baseline dry_run=True
+
+# Production run
+uv run deriva-ml-run +experiment=baseline
+
+# Override parameters
+uv run deriva-ml-run +experiment=baseline model_config.learning_rate=0.001
+
+# Override host/catalog
+uv run deriva-ml-run --host ml-dev.derivacloud.org --catalog 99 +experiment=baseline
+
+# Named multirun (parameter sweep — creates nested executions automatically)
+uv run deriva-ml-run +multirun=lr_sweep
+
+# Ad-hoc multirun
+uv run deriva-ml-run +experiment=baseline model_config.learning_rate=1e-2,1e-3,1e-4 --multirun
+```
+
+For the full CLI reference including pre-flight checks, Hydra override syntax, and troubleshooting, see `cli-reference.md`.
 
 ## Downloading Input Data
 

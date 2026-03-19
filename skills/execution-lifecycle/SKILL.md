@@ -115,120 +115,43 @@ Present a summary before production runs:
 
 ## Phase 2: Create and Run
 
-There are three ways to run an execution, depending on context:
+There are three ways to run an execution. Choose based on context:
 
-### Path A: MCP Tools (interactive, Claude-driven)
+| Path | When to use | Lifecycle managed by |
+|------|-------------|---------------------|
+| **MCP Tools** | Claude-driven interactive work | Explicit tool calls (create → start → work → stop → upload) |
+| **Python API** | Scripts and custom workflows | Context manager (`with ml.create_execution(config) as exe:`) |
+| **CLI** | Reproducible experiment runs | `deriva-ml-run` handles everything automatically |
 
-```
-create_execution(workflow_name="Training", workflow_type="Training",
-                 description="Train CNN on labeled images",
-                 dataset_rids=["28CT"], asset_rids=["3WSE"])
-start_execution()
+**Key rule:** Always dry run first — `dry_run=True` (MCP/Python) or `dry_run=True` (CLI override).
 
-# Download inputs
-download_execution_dataset(dataset_rid="28CT", version="0.9.0")
-download_asset(asset_rid="3WSE")
+The execution lifecycle is always the same regardless of path:
+1. Create execution (with workflow, inputs, description)
+2. Start → download inputs → do work → register outputs → stop
+3. Upload outputs to catalog
 
-# ... do work ...
-
-# Register outputs
-asset_file_path(asset_name="Execution_Asset", file_name="model.pt")
-
-# Add feature values if applicable
-add_feature_value(table_name="Image", feature_name="Prediction",
-                  entries=[...])
-
-stop_execution()
-upload_execution_outputs()
-```
-
-Steps 2-7 operate on the **active execution** — no `execution_rid` parameter needed.
-
-### Path B: Python API (in scripts)
-
-```python
-config = ExecutionConfiguration(
-    workflow=workflow,
-    datasets=["28CT"],
-    assets=["3WSE"],
-    description="Train CNN on labeled images"
-)
-with ml.create_execution(config) as exe:
-    for dataset in exe.datasets:
-        dataset.restructure_assets(...)
-    # ... do work ...
-    path = exe.asset_file_path("Execution_Asset", "model.pt")
-    # ... write to path ...
-
-# Upload AFTER the with block
-exe.upload_execution_outputs()
-```
-
-### Path C: CLI (deriva-ml-run)
-
-```bash
-# Dry run first
-uv run deriva-ml-run +experiment=baseline dry_run=True
-
-# Production run
-uv run deriva-ml-run +experiment=baseline
-
-# With overrides
-uv run deriva-ml-run +experiment=baseline model_config.learning_rate=0.001
-
-# Named multirun (parameter sweep)
-uv run deriva-ml-run +multirun=lr_sweep
-```
-
-The CLI runner handles the full lifecycle automatically: creates execution, downloads data, runs the model function, uploads outputs, sets status.
+For the complete tool call sequences, code examples, and CLI commands for each path, see `references/workflow.md`.
 
 ## Phase 3: Verify Results
 
-After a run, verify the execution was recorded correctly:
+After a run, check the execution:
 
 ```
-# Check execution details
 Read resource: deriva://execution/{execution_rid}
-
-# Rich view with config and parameters
 Read resource: deriva://experiment/{execution_rid}
-
-# Get Chaise web UI link
 cite(rid="{execution_rid}", current=True)
 ```
 
-Verify:
-- Status is "Completed" (not "Running" or "Failed")
-- Correct input datasets and assets are linked
-- Output assets are attached
-- Git commit hash matches your code
+Verify: status is "Completed", correct inputs linked, output assets attached, git hash matches.
 
 ## Critical Rules
 
-1. **Every execution needs a workflow** — find with `lookup_workflow_by_url` or let `create_execution` create one
-2. **Upload AFTER the with block** — `exe.upload_execution_outputs()` goes after `with`, not inside
-3. **Use `asset_file_path` for all outputs** — never manually place files in the working directory
-4. **Commit code before running** — git hash is recorded for provenance
-5. **Dry run first** — test with `dry_run=True` before production runs
-6. **Validate before running** — `validate_rids` + `bag_info` catches config errors early
-
-## Key Tools
-
-| Tool | Purpose |
-|------|---------|
-| `validate_rids` | Pre-flight: verify RIDs and versions exist |
-| `bag_info` | Pre-flight: check dataset size and cache status |
-| `cache_dataset` | Pre-flight: download data into cache without execution |
-| `create_execution` | Create execution (finds/creates workflow automatically) |
-| `start_execution` / `stop_execution` | Manage lifecycle timing |
-| `download_execution_dataset` | Download dataset as BDBag within execution |
-| `download_asset` | Download individual asset within execution |
-| `asset_file_path` | Register output file for upload |
-| `upload_execution_outputs` | Upload all registered files to catalog |
-| `get_execution_info` | Active execution details |
-| `update_execution_status` | Progress tracking |
-| `restore_execution` | Re-download previous execution's inputs |
-| `add_nested_execution` | Link parent-child executions |
+1. **Validate before running** — `validate_rids` + `bag_info` catches config errors early
+2. **Dry run first** — test with `dry_run=True` before production runs
+3. **Every execution needs a workflow** — find with `lookup_workflow_by_url` or let `create_execution` create one
+4. **Upload AFTER the with block** — `exe.upload_execution_outputs()` goes after `with`, not inside
+5. **Use `asset_file_path` for all outputs** — never manually place files in the working directory
+6. **Commit code before running** — git hash is recorded for provenance
 
 ## Reference Resources
 
