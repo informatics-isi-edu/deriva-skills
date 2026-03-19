@@ -13,6 +13,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Virtual environment
+.venv/
+
 # Build artifacts
 dist/
 build/

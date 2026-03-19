@@ -1,0 +1,10 @@
+[project]
+name = "deriva-skills"
+version = "0.12.2"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = ["deriva-ml"]
+
+[tool.uv.sources]
+deriva-ml = { git = "https://github.com/informatics-isi-edu/deriva-ml.git" }
