@@ -16,9 +16,9 @@ claude --plugin-dir /path/to/deriva-skills
 /plugin install deriva
 
 # Release process — always use bump-version from deriva-ml (never bump-my-version directly)
-bump-version patch    # v0.12.1 -> v0.12.2
-bump-version minor    # v0.12.2 -> v0.13.0
-bump-version major    # v0.13.0 -> v1.0.0
+uv run bump-version patch    # v0.12.1 -> v0.12.2
+uv run bump-version minor    # v0.12.2 -> v0.13.0
+uv run bump-version major    # v0.13.0 -> v1.0.0
 # Or via MCP tool: bump_version("patch")
 # GitHub Actions: bumps version in plugin.json + marketplace.json, commits back to main, creates archive + release
 
@@ -119,7 +119,7 @@ Eval workspaces (`*-workspace/`) contain test outputs and are gitignored from re
    - Commits version bump back to main
    - Creates `deriva-skills-{VERSION}.tar.gz` (excludes `.git`, `.github`, `*-workspace`, `docs/superpowers`)
    - Publishes GitHub Release with auto-generated notes
-4. Users update via `/plugin install deriva`
+4. Users update via `/plugin update deriva` (first-time install uses `/plugin install deriva`)
 
 **Never create git tags manually** — always use `bump-version` from deriva-ml or the `bump_version` MCP tool.
 
@@ -133,3 +133,4 @@ Eval workspaces (`*-workspace/`) contain test outputs and are gitignored from re
 - **Scripts must be portable** — Python scripts in `scripts/` must work in both Claude Code (full shell) and Claude Desktop (restricted environment).
 - **Skill names must be unique** — the directory name under `skills/` is the skill identifier. Renaming a directory changes the `/deriva:` command.
 - **Cross-references matter** — when renaming or removing a skill, grep for its name across all other skills' `SKILL.md` and `references/*.md` files.
+- **`[tool.bumpversion]` config required** — `bump-version` wraps `bump-my-version` which needs `[tool.bumpversion]` in `pyproject.toml` with `tag = true` and `commit = true`. Without it, no tag or commit is created. See `deriva-mcp/pyproject.toml` for the reference config.
