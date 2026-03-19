@@ -13,7 +13,7 @@ When the user asks what's possible or needs orientation, present the following g
 - Set up a new DerivaML project from a template
 - Install Jupyter kernels and configure notebook dependencies
 - Authenticate with Deriva/Globus
-- **Check if your DerivaML ecosystem is up to date** — checks all three components (deriva-ml Python package, deriva-mcp skills plugin, and deriva-mcp MCP server) against upstream releases and offers to update outdated ones. Run `/deriva:check-versions` or just ask *"check versions"*
+- **Check if your DerivaML ecosystem is up to date** — checks all three components (deriva-ml Python package, deriva-mcp skills plugin, and deriva-mcp MCP server) against upstream releases and offers to update outdated ones. Run `/deriva:check-deriva-versions` or just ask *"check versions"*
 - Configure linting, docstrings, and coding standards
 
 **Just ask:** *"help me set up my environment"*, *"am I up to date?"*, or *"check deriva versions"*

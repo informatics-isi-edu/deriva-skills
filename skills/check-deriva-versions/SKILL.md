@@ -1,5 +1,5 @@
 ---
-name: check-versions
+name: check-deriva-versions
 description: "Check if the DerivaML ecosystem (deriva-ml, skills plugin, MCP server) is up to date and offer to update outdated components. Use when the user asks about versions, updates, or whether their environment is current. Triggers on: 'check versions', 'am I up to date', 'update deriva', 'what version', 'upgrade packages'."
 disable-model-invocation: true
 ---

@@ -27,7 +27,7 @@ Analyze the user's intent and read the matching skill:
 - **Setting up Jupyter environment, installing kernels, uv sync --group=jupyter, configuring nbstripout, Deriva/Globus authentication, PyTorch dependencies** → Read and follow `../setup-notebook-environment/SKILL.md`
 
 ### Version checking and updates
-- **Checking if DerivaML packages are up to date, updating packages, version queries, deriva-ml version, deriva-mcp MCP server version, deriva-mcp skills plugin version** → Read and follow `../check-versions/SKILL.md`
+- **Checking if DerivaML packages are up to date, updating packages, version queries, deriva-ml version, deriva-mcp MCP server version, deriva-mcp skills plugin version** → Read and follow `../check-deriva-versions/SKILL.md`
 
 ### Coding standards and project setup
 - **Project setup from scratch, pyproject.toml structure, uv configuration, Git workflow, Google docstrings, ruff linting, type hints, version bumping** → Read and follow `../coding-guidelines/SKILL.md`

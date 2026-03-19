@@ -23,9 +23,9 @@ uv run bump-version major    # v0.13.0 -> v1.0.0
 # GitHub Actions: bumps version in plugin.json + marketplace.json, commits back to main, creates archive + release
 
 # Run version checker
-python skills/check-versions/scripts/check_versions.py
-python skills/check-versions/scripts/check_versions.py --update
-python skills/check-versions/scripts/check_versions.py --component deriva-ml --update
+python skills/check-deriva-versions/scripts/check_versions.py
+python skills/check-deriva-versions/scripts/check_versions.py --update
+python skills/check-deriva-versions/scripts/check_versions.py --component deriva-ml --update
 ```
 
 ## Architecture
@@ -65,7 +65,7 @@ python skills/check-versions/scripts/check_versions.py --component deriva-ml --u
 |--------|-----------|
 | `route-run-workflows` | ml-data-engineering, run-notebook, write-hydra-config, configure-experiment, new-model, troubleshoot-execution |
 | `route-catalog-schema` | create-table, query-catalog-data, customize-display, use-annotation-builders, api-naming-conventions, catalog-operations-workflow |
-| `route-project-setup` | setup-notebook-environment, check-versions, coding-guidelines, debug-bag-contents |
+| `route-project-setup` | setup-notebook-environment, check-deriva-versions, coding-guidelines, debug-bag-contents |
 
 **3 Always-On Skills (auto-invoked, no user command):**
 

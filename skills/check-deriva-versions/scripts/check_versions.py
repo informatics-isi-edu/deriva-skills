@@ -485,37 +485,77 @@ def _check_local_dev_mcp_server(image: str) -> VersionStatus:
     except FileNotFoundError:
         container_created = None
 
+    # Get latest repo commit hash and time
+    latest_commit = None
+    latest_commit_time = None
     try:
         result = run_cmd(
-            ["git", "log", "-1", "--format=%aI"],
+            ["git", "log", "-1", "--format=%h %aI"],
             cwd=repo_dir,
         )
-        latest_commit_time = result.stdout.strip() if result.returncode == 0 else None
+        if result.returncode == 0 and result.stdout.strip():
+            parts = result.stdout.strip().split(" ", 1)
+            latest_commit = parts[0]
+            latest_commit_time = parts[1] if len(parts) > 1 else None
     except FileNotFoundError:
-        latest_commit_time = None
+        pass
 
-    # Find compose file for rebuild command
-    compose_file = None
-    for candidate in ["docker-compose.dev.yaml", "docker-compose.mcp.yaml"]:
-        if os.path.exists(os.path.join(repo_dir, candidate)):
-            compose_file = candidate
-            break
+    # Try to get the commit hash the container was built from via OCI label
+    container_commit = None
+    try:
+        result = run_cmd(
+            ["docker", "inspect", "--format",
+             '{{index .Config.Labels "org.opencontainers.image.revision"}}',
+             "deriva-mcp"],
+        )
+        if result.returncode == 0 and result.stdout.strip() and result.stdout.strip() != "<no value>":
+            container_commit = result.stdout.strip()[:7]
+    except FileNotFoundError:
+        pass
+
+    # Fall back: find the repo commit closest to container creation time
+    if not container_commit and container_created:
+        try:
+            result = run_cmd(
+                ["git", "log", "-1", "--format=%h", f"--before={container_created}"],
+                cwd=repo_dir,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                container_commit = result.stdout.strip()
+        except FileNotFoundError:
+            pass
+
+    # Build version strings showing commit hashes
+    installed_str = f"commit {container_commit}" if container_commit else image
+    latest_str = f"commit {latest_commit}" if latest_commit else "unknown"
+
+    # Find compose files for rebuild command
+    # docker-compose.dev.yaml is an override that requires the base docker-compose.mcp.yaml
+    compose_files = []
+    base_compose = os.path.join(repo_dir, "docker-compose.mcp.yaml")
+    dev_compose = os.path.join(repo_dir, "docker-compose.dev.yaml")
+    if os.path.exists(base_compose) and os.path.exists(dev_compose):
+        compose_files = [base_compose, dev_compose]
+    elif os.path.exists(base_compose):
+        compose_files = [base_compose]
+    elif os.path.exists(dev_compose):
+        compose_files = [dev_compose]
 
     if container_created and latest_commit_time:
         if latest_commit_time > container_created:
-            rebuild_cmd = (
-                f"docker compose -f {os.path.join(repo_dir, compose_file)} up -d --build"
-                if compose_file
-                else f"docker build -t {image} {repo_dir} && docker restart deriva-mcp"
-            )
+            if compose_files:
+                file_args = " ".join(f"-f {f}" for f in compose_files)
+                rebuild_cmd = f"docker compose {file_args} up -d --build"
+            else:
+                rebuild_cmd = f"docker build -t {image} {repo_dir} && docker restart deriva-mcp"
             return VersionStatus(
-                "mcp-server", image, "repo has newer commits",
+                "mcp-server", installed_str, latest_str,
                 False,
                 "Container is older than latest repo commit",
                 update_commands=[rebuild_cmd],
             )
 
-    return VersionStatus("mcp-server", image, "current", True,
+    return VersionStatus("mcp-server", installed_str, latest_str, True,
                          "Container appears up to date")
 
 

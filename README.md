@@ -23,7 +23,7 @@ This plugin provides 30+ skills that guide Claude through common Deriva and Deri
 Or check your entire DerivaML ecosystem:
 
 ```
-/deriva:check-versions
+/deriva:check-deriva-versions
 ```
 
 ## Available Skills
@@ -49,7 +49,7 @@ Or check your entire DerivaML ecosystem:
 | **Notebooks** | `/deriva:setup-notebook-environment` | Set up Jupyter environment for DerivaML |
 | | `/deriva:run-notebook` | Develop and run notebooks with execution tracking |
 | **Standards** | `/deriva:coding-guidelines` | DerivaML project coding standards |
-| **Maintenance** | `/deriva:check-versions` | Check ecosystem components against upstream and update |
+| **Maintenance** | `/deriva:check-deriva-versions` | Check ecosystem components against upstream and update |
 | **Visualization** | `/deriva:browse-erd` | Interactive ERD browser for catalog schemas |
 
 **Auto-invoked** — Claude loads these automatically when relevant:
