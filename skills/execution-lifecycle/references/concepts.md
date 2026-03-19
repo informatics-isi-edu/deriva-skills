@@ -447,9 +447,9 @@ For large datasets (>1 GB), cache ahead of time rather than downloading during t
 info = ml.bag_info(DatasetSpec(rid="28CT", version="0.9.0"))
 print(f"Size: {info['total_asset_size']}, Cache: {info['cache_status']}")
 
-# Prefetch if not cached
+# Cache if not already cached
 if info["cache_status"] == "not_cached":
-    ml.prefetch_dataset(DatasetSpec(rid="28CT", version="0.9.0"))
+    ml.cache_dataset(DatasetSpec(rid="28CT", version="0.9.0"))
 ```
 
 The MCP tool `cache_dataset` does the same thing without requiring Python.
