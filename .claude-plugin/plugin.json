@@ -1,6 +1,6 @@
 {
   "name": "deriva",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "Skills for working with Deriva catalogs and DerivaML workflows - dataset management, ML execution, experiment configuration, and catalog operations",
   "author": {
     "name": "ISI Informatics",
@@ -8,5 +8,12 @@
   },
   "repository": "https://github.com/informatics-isi-edu/deriva-skills",
   "license": "Apache-2.0",
-  "keywords": ["deriva", "derivaml", "ml", "catalog", "datasets", "experiments"]
+  "keywords": [
+    "deriva",
+    "derivaml",
+    "ml",
+    "catalog",
+    "datasets",
+    "experiments"
+  ]
 }

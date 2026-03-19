@@ -9,7 +9,7 @@
       "name": "deriva",
       "source": "./",
       "description": "Skills for working with Deriva catalogs and DerivaML workflows",
-      "version": "0.12.1",
+      "version": "0.12.2",
       "author": {
         "name": "ISI Informatics"
       },
