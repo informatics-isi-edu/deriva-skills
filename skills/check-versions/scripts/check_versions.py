@@ -307,19 +307,19 @@ def check_skills() -> VersionStatus:
         return VersionStatus(
             "skills", installed, latest_tag, False,
             f"Outdated: installed {installed}, latest is {latest_tag}",
-            update_commands=["Tell Claude: /plugin install deriva"],
+            update_commands=["Tell user: /plugin update deriva"],
         )
 
 
 def update_skills(status: VersionStatus) -> VersionStatus:
     """Update the skills plugin.
 
-    Plugin updates require running '/plugin install deriva' in Claude Code.
+    Plugin updates require running '/plugin update deriva' in Claude Code.
     This function cannot do it programmatically, so it provides instructions.
     """
     status.update_message = (
         "Skills plugin must be updated from within Claude Code.\n"
-        "    Run: /plugin install deriva"
+        "    Run: /plugin update deriva"
     )
     return status
 
