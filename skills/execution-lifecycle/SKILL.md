@@ -28,11 +28,19 @@ Before running an experiment, validate that everything is in place. **Stop and f
 
 Before validating anything, you need to know what the configuration specifies. Identify all dataset RIDs, asset RIDs, and versions that will be used:
 
-**For CLI runs** — inspect the resolved config:
+**For CLI runs** — use standard Hydra arguments to dump the resolved config:
 ```bash
+# deriva-ml-run's built-in config inspector
 uv run deriva-ml-run +experiment=baseline --info
+
+# Standard Hydra config dump (shows the full resolved YAML)
+uv run deriva-ml-run +experiment=baseline --cfg job
+
+# Show just a specific config group
+uv run deriva-ml-run +experiment=baseline --cfg job --package datasets
+uv run deriva-ml-run +experiment=baseline --cfg job --package assets
 ```
-Extract the dataset RIDs and versions from the resolved `datasets` group, and asset RIDs from the `assets` group.
+Extract the dataset RIDs and versions from the resolved `datasets` group, and asset RIDs from the `assets` group. The `--cfg job` output shows exactly what the execution will receive — including all defaults, overrides, and interpolations resolved.
 
 **For MCP tool runs** — the user provides the RIDs directly in the `create_execution` call. Collect them before proceeding.
 

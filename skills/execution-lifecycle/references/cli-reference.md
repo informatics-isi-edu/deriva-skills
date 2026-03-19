@@ -68,24 +68,42 @@ Do not run without confirmation for production (non-dry-run) experiments.
 
 ## Verify Configuration
 
-Before running, inspect the resolved configuration:
+Before running, inspect the resolved configuration. There are several ways to view the config without executing anything:
+
+### deriva-ml-run --info
 
 ```bash
 uv run deriva-ml-run --info
-```
-
-This prints the full resolved Hydra config without executing anything. Verify:
-
-- The correct host and catalog are selected.
-- The expected datasets and versions appear.
-- Model parameters are what you intend.
-- `dry_run` is set as expected.
-
-For a specific experiment:
-
-```bash
 uv run deriva-ml-run +experiment=baseline --info
 ```
+
+This prints a formatted summary of the resolved config.
+
+### Standard Hydra --cfg (full resolved YAML)
+
+```bash
+# Full resolved config as YAML
+uv run deriva-ml-run +experiment=baseline --cfg job
+
+# Just the datasets group
+uv run deriva-ml-run +experiment=baseline --cfg job --package datasets
+
+# Just the assets group
+uv run deriva-ml-run +experiment=baseline --cfg job --package assets
+
+# Just the model config
+uv run deriva-ml-run +experiment=baseline --cfg job --package model_config
+```
+
+The `--cfg job` output shows exactly what the execution will receive — all defaults, overrides, and interpolations fully resolved. Use `--package` to focus on a specific config group.
+
+### What to verify
+
+- The correct host and catalog are selected
+- The expected dataset RIDs and versions appear
+- Asset RIDs are correct
+- Model parameters are what you intend
+- `dry_run` is set as expected
 
 ## Running Experiments
 
