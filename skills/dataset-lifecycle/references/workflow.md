@@ -211,7 +211,7 @@ See the versioning section of `references/concepts.md` for full rules and the pr
 
 To **preview** what a bag will contain, call `estimate_bag_size` with `dataset_rid` and `version`.
 
-For downloading, preparing, and restructuring dataset data for ML training, see the `prepare-training-data` skill. For details on bag contents, FK traversal, and timeout handling, see `bags.md`. For diagnosing missing data, see the `debug-bag-contents` skill.
+For downloading, preparing, and restructuring dataset data for ML training, see the `ml-data-engineering` skill. For details on bag contents, FK traversal, and timeout handling, see `bags.md`. For diagnosing missing data, see the `debug-bag-contents` skill.
 
 ## Provenance
 

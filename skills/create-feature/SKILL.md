@@ -271,4 +271,4 @@ Features are tightly coupled with datasets:
 
 - **`manage-vocabulary`** — Create and manage the controlled vocabularies that features reference.
 - **`dataset-lifecycle`** — Features annotate records in datasets. Feature values are included in bag exports and affect dataset versioning.
-- **`prepare-training-data`** — Consuming feature values for ML training — restructuring, DataFrames, value selectors.
+- **`ml-data-engineering`** — Consuming feature values for ML training — restructuring, DataFrames, value selectors.

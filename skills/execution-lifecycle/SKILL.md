@@ -174,4 +174,4 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 - **`run-notebook`** — Notebook-specific creation and development cycle
 - **`dataset-lifecycle`** — Creating and versioning the datasets that executions consume
 - **`create-feature`** — Creating features whose values are produced by executions
-- **`prepare-training-data`** — Restructuring downloaded data for ML frameworks
+- **`ml-data-engineering`** — Restructuring downloaded data for ML frameworks

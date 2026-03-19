@@ -266,7 +266,7 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 
 ## Related Skills
 
-- **`prepare-training-data`** — Restructuring assets for PyTorch/TensorFlow, building training DataFrames, DatasetBag API, value selectors
+- **`ml-data-engineering`** — Restructuring assets for PyTorch/TensorFlow, building training DataFrames, DatasetBag API, value selectors
 - **`debug-bag-contents`** — Diagnosing missing data, FK traversal issues, and export problems in dataset bags
 - **`create-feature`** — Creating features and adding labels/annotations to records in datasets
 - **`configure-experiment`** — Setting up Hydra-zen configs that reference datasets

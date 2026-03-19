@@ -208,4 +208,4 @@ The version bump creates a git tag, giving production runs a clean version refer
 - **`write-hydra-config`** — Config file syntax for every config group
 - **`configure-experiment`** — Project structure, config groups, and experiment descriptions
 - **`execution-lifecycle`** — Pre-flight checks, execution lifecycle, provenance, and CLI commands
-- **`prepare-training-data`** — Dataset downloading, splitting, and restructuring
+- **`ml-data-engineering`** — Dataset downloading, splitting, and restructuring

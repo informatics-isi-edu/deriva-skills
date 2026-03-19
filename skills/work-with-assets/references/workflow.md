@@ -67,7 +67,7 @@ Parameters:
 
 ### Restructure downloaded assets for ML
 
-After downloading a dataset, call `restructure_assets` to organize asset files into a directory hierarchy suitable for ML frameworks like PyTorch ImageFolder. See the `prepare-training-data` skill for details.
+After downloading a dataset, call `restructure_assets` to organize asset files into a directory hierarchy suitable for ML frameworks like PyTorch ImageFolder. See the `ml-data-engineering` skill for details.
 
 ### Get the execution working directory
 

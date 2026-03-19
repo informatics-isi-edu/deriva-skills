@@ -1,6 +1,6 @@
 ---
-name: prepare-training-data
-description: "Prepare a DerivaML dataset for ML training — restructure assets for PyTorch/TensorFlow, build training DataFrames, work with the DatasetBag API, handle multi-annotator labels with value selectors, convert file formats during restructuring. Use when getting data OUT of a dataset and INTO an ML pipeline. Do NOT use for creating, splitting, versioning, or browsing datasets — use dataset-lifecycle for those."
+name: ml-data-engineering
+description: "ALWAYS use this skill when getting data OUT of a DerivaML dataset and INTO an ML pipeline — restructuring assets for PyTorch/TensorFlow/ImageFolder, building training DataFrames via denormalize, working with the DatasetBag API, handling multi-annotator labels with value selectors, converting file formats during restructuring, and previewing bag contents before downloading. Covers training, inference, and evaluation data preparation. Triggers on: 'restructure assets', 'prepare training data', 'build dataframe', 'denormalize', 'ImageFolder', 'PyTorch data', 'value selector for training', 'convert DICOM', 'bag contents', 'get data for model'. Do NOT use for creating, splitting, or versioning datasets — use dataset-lifecycle for those."
 disable-model-invocation: true
 ---
 

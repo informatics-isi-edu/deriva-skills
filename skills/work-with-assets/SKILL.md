@@ -77,5 +77,5 @@ For the full step-by-step guide with MCP tool parameters and Python API examples
 ## Related Skills
 
 - **`execution-lifecycle`** — Full execution lifecycle including asset upload patterns
-- **`prepare-training-data`** — Downloading and restructuring assets for ML training
+- **`ml-data-engineering`** — Downloading and restructuring assets for ML training
 - **`dataset-lifecycle`** — Datasets organize assets into versioned collections for reproducibility
