@@ -220,5 +220,5 @@ After any catalog-modifying action (create_dataset, split_dataset, increment_dat
 
 ## Related Skills
 
-- **`dataset-versioning`** — Rules for version pinning, when to increment, and semantic versioning conventions for datasets.
+- **`dataset-lifecycle`** — Dataset versioning rules, version pinning, increment conventions, and the full dataset lifecycle.
 - **`configure-experiment`** — Project structure, config group composition, and experiment setup.

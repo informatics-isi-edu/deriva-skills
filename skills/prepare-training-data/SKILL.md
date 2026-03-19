@@ -283,4 +283,4 @@ bag.restructure_assets(output_dir="./data", group_by=["Diagnosis"])
 - **`dataset-lifecycle`** — Creating, populating, splitting, versioning, and browsing datasets. Start there if you don't have a dataset yet.
 - **`debug-bag-contents`** — Diagnosing missing data in bag exports.
 - **`create-feature`** — Creating the features and labels that this skill consumes.
-- **`run-ml-execution`** — Running the experiment that uses the prepared data.
+- **`execution-lifecycle`** — Running the experiment that uses the prepared data.

@@ -207,6 +207,5 @@ The version bump creates a git tag, giving production runs a clean version refer
 
 - **`write-hydra-config`** — Config file syntax for every config group
 - **`configure-experiment`** — Project structure, config groups, and experiment descriptions
-- **`run-experiment`** — Pre-flight checklist and CLI commands for `deriva-ml-run`
-- **`run-ml-execution`** — Execution lifecycle, provenance, and output upload details
+- **`execution-lifecycle`** — Pre-flight checks, execution lifecycle, provenance, and CLI commands
 - **`prepare-training-data`** — Dataset downloading, splitting, and restructuring

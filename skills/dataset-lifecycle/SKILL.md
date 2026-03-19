@@ -270,5 +270,5 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 - **`debug-bag-contents`** — Diagnosing missing data, FK traversal issues, and export problems in dataset bags
 - **`create-feature`** — Creating features and adding labels/annotations to records in datasets
 - **`configure-experiment`** — Setting up Hydra-zen configs that reference datasets
-- **`run-ml-execution`** — Running experiments that consume datasets with provenance tracking
+- **`execution-lifecycle`** — Running experiments that consume datasets with provenance tracking
 - **`catalog-operations-workflow`** — Writing Python scripts for batch dataset operations with code provenance

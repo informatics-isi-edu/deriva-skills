@@ -72,7 +72,7 @@ Call `stop_execution`. (No need to call `upload_execution_outputs` — dataset o
 
 ### Python API
 
-For creating datasets in Python scripts with full provenance, see the `run-ml-execution` skill which covers `ExecutionConfiguration` and context manager patterns. A brief example:
+For creating datasets in Python scripts with full provenance, see the `execution-lifecycle` skill which covers `ExecutionConfiguration` and context manager patterns. A brief example:
 
 ```python
 from deriva_ml import DerivaML, ExecutionConfiguration
@@ -205,7 +205,7 @@ To create parent-child relationships manually (without `split_dataset`), call `a
 
 To **manually increment**, call `increment_dataset_version` with `dataset_rid`. Optionally specify `component` (`"major"`, `"minor"`, or `"patch"`) and `description` (e.g., `"Corrected mislabeled records"`).
 
-See the `dataset-versioning` skill for full rules and the pre-experiment checklist.
+See the versioning section of `references/concepts.md` for full rules and the pre-experiment checklist.
 
 ## Downloading
 

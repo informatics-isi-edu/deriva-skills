@@ -124,8 +124,8 @@ See `setup-notebook-environment` for full environment setup and `run-notebook` f
 
 - Define experiment configs in hydra-zen (see `configure-experiment`)
 - Always test with `dry_run=True` before production runs (see `run-experiment`)
-- Never commit data files to Git -- store in Deriva catalogs and pin dataset versions (see `dataset-versioning`)
-- Wrap all data operations in executions for provenance (see `run-ml-execution`)
+- Never commit data files to Git -- store in Deriva catalogs and pin dataset versions (see `dataset-lifecycle`)
+- Wrap all data operations in executions for provenance (see `execution-lifecycle`)
 
 ## Extensibility
 
