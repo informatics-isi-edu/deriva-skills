@@ -23,6 +23,9 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 Analyze the user's intent and read the matching skill:
 
+### Preparing data for ML training
+- **Restructuring assets for PyTorch/TensorFlow, building training DataFrames, DatasetBag API, value selectors for multi-annotator data, file format conversion during restructuring** → Read and follow `../prepare-training-data/SKILL.md`
+
 ### Running notebooks
 - **Creating, developing, or running DerivaML Jupyter notebooks, notebook structure, run_notebook(), deriva-ml-run-notebook, papermill parameters** → Read and follow `../run-notebook/SKILL.md`
 
