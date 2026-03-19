@@ -1,6 +1,6 @@
 ---
 name: manage-vocabulary
-description: "Create and manage controlled vocabularies in Deriva — create vocabulary tables, add terms with descriptions, add synonyms, and browse existing vocabularies. Use whenever working with categorical data, labels, or controlled term lists independent of features."
+description: "ALWAYS use this skill when creating or managing controlled vocabularies in Deriva — creating vocabulary tables, adding terms with descriptions and synonyms, browsing existing vocabularies, extending built-in vocabularies (Dataset_Type, Workflow_Type), and deciding whether to create a new vocabulary vs extend an existing one. Triggers on: 'create vocabulary', 'add term', 'add synonym', 'vocabulary', 'controlled terms', 'categorical labels', 'what vocabularies exist', 'browse terms', 'extend vocabulary', 'dataset type', 'workflow type'."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -11,9 +11,33 @@ Controlled vocabularies are the standard way to represent categorical data in De
 
 Vocabularies are used by features (see `create-feature`), dataset types, workflow types, asset types, and any categorical column in your domain schema.
 
-## Exploring Existing Vocabularies
 
-Before creating or modifying a vocabulary, check what already exists.
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
+## Phase 1: Assess
+
+Before creating or modifying a vocabulary, determine whether one is needed and whether it already exists.
+
+### Do I need a new vocabulary?
+
+| Situation | Action |
+|-----------|--------|
+| Need categorical labels for features | Create a vocabulary (features require vocab terms) |
+| Need consistent values for a table column | Create a vocabulary and FK-reference it |
+| Adding terms to an existing category | Extend the existing vocabulary with `add_term` |
+| Need a variant of an existing vocabulary | Usually extend, not duplicate. Add terms or synonyms |
+| Values are free-text, not categorical | Don't use a vocabulary — use a text column |
+
+### Search existing vocabularies
 
 To **list all vocabularies**, read the `deriva://catalog/vocabularies` resource.
 
@@ -50,7 +74,27 @@ Every term must have a description that defines its meaning in context — not j
 
 > The MCP server automatically checks for near-duplicate vocabularies when calling `create_vocabulary`. If a similar vocabulary already exists, the tool response includes a `similar_existing` field with suggestions. It also provides "did you mean?" suggestions when `add_term` or `delete_term` references a vocabulary or term that doesn't exist.
 
-## Creating a Vocabulary
+## Phase 2: Design
+
+### Vocabulary design decisions
+
+| Question | Guidance |
+|----------|---------|
+| Flat vs hierarchical? | Deriva vocabularies are flat (no parent-child terms). Use separate vocabularies for different levels of hierarchy (e.g., `Organ` and `Tissue_Type` rather than a single nested vocabulary) |
+| How many terms? | Start small, add terms as needed. A vocabulary with 3-10 terms is typical. Hundreds is fine for standardized ontologies |
+| Granularity? | Terms should be at the level where you'll filter/group data. Too fine = unused terms. Too coarse = lost information |
+| Naming? | PascalCase with underscores: `Tissue_Type`, `Image_Quality`. Singular form |
+| Who should add terms? | Anyone with write access can add terms. Vocabularies are shared across the catalog — coordinate with your team |
+
+### Orthogonal vocabularies
+
+Prefer separate, orthogonal vocabularies over one large vocabulary that combines concepts. For example:
+- **Good**: `Image_Modality` (MRI, CT, X-ray) + `Image_Quality` (Good, Acceptable, Poor)
+- **Bad**: `Image_Category` (MRI_Good, MRI_Poor, CT_Good, CT_Poor, ...)
+
+Orthogonal vocabularies compose — you can filter by modality AND quality independently. Combined vocabularies create a combinatorial explosion.
+
+## Phase 3: Create
 
 Call `create_vocabulary` with:
 - `vocabulary_name`: table name in PascalCase with underscores (e.g., `"Tissue_Type"`)

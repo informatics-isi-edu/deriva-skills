@@ -1,0 +1,41 @@
+{
+  "skill_name": "manage-vocabulary",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to create a vocabulary for classifying chest X-ray images into 5 diagnosis categories: Normal, Pneumonia, COVID-19, Tuberculosis, and Lung_Cancer. Show me the steps.",
+      "expected_output": "Should first check existing vocabularies via deriva://catalog/vocabularies. Should create vocabulary with create_vocabulary and a meaningful comment. Should add all 5 terms with add_term, each with a descriptive description (not just the name). Should use PascalCase naming. Should mention that this vocabulary can be used by features.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I already have a Species vocabulary with 'Homo sapiens' and 'Mus musculus'. I want to add 'Rattus norvegicus' with the synonym 'Rat'. How?",
+      "expected_output": "Should first check existing terms via deriva://vocabulary/Species to avoid duplicates. Should call add_term with term_name='Rattus norvegicus', description explaining what it is, and synonyms=['Rat']. Should verify the addition afterward.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm building a medical imaging catalog. I need to track both the imaging modality (MRI, CT, X-ray) and the body region (Head, Chest, Abdomen). Should I make one vocabulary or two?",
+      "expected_output": "Should recommend TWO separate vocabularies (Image_Modality and Body_Region) rather than one combined vocabulary. Should explain the orthogonal design principle — separate vocabularies compose and can be filtered independently. Should warn against combinatorial explosion from combining concepts.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "What vocabularies exist in my catalog and what terms does the Dataset_Type vocabulary have?",
+      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should then read deriva://vocabulary/Dataset_Type to browse its terms. Should explain what the terms mean (Training, Testing, etc.) and that these are built-in vocabularies that can be extended.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I want to add a new dataset type called 'Augmented' for datasets that contain augmented training data. How do I do that?",
+      "expected_output": "Should use create_dataset_type_term (the dedicated tool for Dataset_Type) rather than generic add_term. Should include a meaningful description. Should mention that dataset types support orthogonal tagging — a dataset can have both 'Training' and 'Augmented' types.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "I'm not sure if a vocabulary called 'Stain_Type' or 'Staining_Protocol' already exists. How do I check, and what if something similar exists under a different name?",
+      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should mention that the semantic-awareness skill and create_vocabulary both check for near-duplicates automatically. Should suggest using rag_search for semantic matching if the name isn't an exact match. Should advise extending the existing vocabulary rather than creating a duplicate.",
+      "files": []
+    }
+  ]
+}
