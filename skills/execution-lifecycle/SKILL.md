@@ -159,6 +159,9 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 - `references/workflow.md` — Step-by-step MCP and Python API workflows with complete examples
 - `references/cli-reference.md` — deriva-ml-run CLI commands, Hydra overrides, multirun syntax
 - `deriva://execution/{execution_rid}` — Execution details and status
+- `deriva://catalog/executions` — Browse recent executions
+- `deriva://catalog/experiments` — Browse experiments (executions with Hydra config)
+- `deriva://execution/{execution_rid}` — Execution details and status
 - `deriva://experiment/{execution_rid}` — Rich view with Hydra config and parameters
 - `deriva://execution/{execution_rid}/inputs` — Input datasets and assets
 - `deriva://catalog/workflows` — Available workflows
