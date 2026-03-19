@@ -36,6 +36,14 @@ jobs:
           echo "Updated plugin.json and marketplace.json to version $VERSION"
           cat .claude-plugin/plugin.json
 
+      - name: Commit version bump to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/plugin.json .claude-plugin/marketplace.json
+          git commit -m "chore: bump plugin version to ${{ steps.version.outputs.version }}"
+          git push origin HEAD:main
+
       - name: Create release archive
         run: |
           VERSION=${{ steps.version.outputs.version }}
