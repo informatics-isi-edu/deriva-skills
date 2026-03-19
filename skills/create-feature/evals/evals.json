@@ -28,13 +28,31 @@
     {
       "id": 5,
       "prompt": "I have a dataset with images that have been labeled by three different pathologists. I need to get the consensus label for each image — the most common label among the three. How do I do that?",
-      "expected_output": "Should explain that features are multivalued by design, so all three labels coexist. Should show how to use fetch_table_features to get all values, then use a custom selector or post-processing to compute majority vote. Should show the selector pattern (either custom selector function or post-processing with Counter). Should mention that the MCP tool supports selector='newest' but consensus requires custom logic in Python.",
+      "expected_output": "Should recommend selector='majority_vote' on the MCP tool (requires feature_name). Should show fetch_table_features with selector='majority_vote' and feature_name='Diagnosis'. Should mention the MCP resource deriva://table/Image/feature-values/majority_vote as an alternative. Should explain that majority_vote auto-detects the term column for single-term features. Should note that for Python, use RecordClass.select_majority_vote().",
       "files": []
     },
     {
       "id": 6,
       "prompt": "What features exist on the Image table in my catalog? I want to see what annotations are available before I start my analysis.",
-      "expected_output": "Should use the discovery flow: read deriva://catalog/features to see all features, or read feature-specific resources. Should show how to browse values with deriva://table/Image/feature-values/newest for a quick summary. Should mention find_features() and lookup_feature() Python API. Should follow a systematic exploration: discover features → inspect structure → browse values.",
+      "expected_output": "Should use the discovery flow: read deriva://catalog/features to see all features, or read feature-specific resources. Should show how to browse values with deriva://table/Image/feature-values/newest for a quick summary. Should use fetch_table_features MCP tool for filtered queries. Should follow a systematic exploration: discover features → inspect structure → browse values.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "I have images annotated by multiple model runs. I only want the labels from the training workflow, not from the inference workflow. How do I filter?",
+      "expected_output": "Should recommend using workflow parameter on fetch_table_features: fetch_table_features(table_name='Image', feature_name='Prediction', workflow='Training'). Should explain that workflow accepts either a workflow type name or a workflow RID. Should note mutual exclusivity — can't combine with selector or execution. Should mention that this approach requires a live catalog connection (doesn't work on bags).",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "I want to get the original labels for my images — the very first annotation that was done, not the latest corrections. How?",
+      "expected_output": "Should recommend selector='first' on the MCP tool: fetch_table_features(table_name='Image', feature_name='Diagnosis', selector='first'). Should mention the MCP resource deriva://table/Image/feature-values/first as an alternative for browsing. Should explain that select_first picks the earliest by RCT (creation timestamp). Should mention FeatureRecord.select_first for Python API usage.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "I need a custom selector that picks the annotation with the highest confidence score. The built-in selectors don't cover this. How do I do it?",
+      "expected_output": "Should explain that custom selectors use signature (list[FeatureRecord]) -> FeatureRecord. Should show a Python script example using getattr(r, 'Confidence', 0). Should explain that the same selector works for both catalog queries (selector= param) and bag restructuring (value_selector= param). Should mention that custom selectors can't be passed as MCP string names — must use Python API. Should reference feature-selectors.md for more examples.",
       "files": []
     }
   ]

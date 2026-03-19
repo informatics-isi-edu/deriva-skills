@@ -195,11 +195,15 @@ Features are tightly coupled with datasets:
 
 - `references/concepts.md` — Feature types, design guidance, naming, multivalued features, selection, Python API, integration
 - `references/workflow.md` — Step-by-step MCP and Python API examples
+- `references/feature-selectors.md` — Complete guide to writing and using feature selectors
 - `deriva://docs/features` — Full user guide to features in DerivaML
-- `deriva://catalog/features` — Browse existing features
+- `deriva://catalog/features` — Browse all existing features (target tables, types, columns)
 - `deriva://feature/{table_name}/{feature_name}` — Feature details and column schema
 - `deriva://feature/{table_name}/{feature_name}/values` — Feature values with provenance
+- `deriva://table/{table_name}/feature-values` — All feature values (raw, no dedup)
 - `deriva://table/{table_name}/feature-values/newest` — Deduplicated to newest per record
+- `deriva://table/{table_name}/feature-values/first` — Deduplicated to earliest per record
+- `deriva://table/{table_name}/feature-values/majority_vote` — Deduplicated to consensus per record
 
 ## Related Skills
 
