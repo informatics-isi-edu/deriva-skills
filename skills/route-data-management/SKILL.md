@@ -1,25 +1,32 @@
 ---
 name: route-data-management
-description: "Use this skill for DerivaML dataset and data preparation tasks. Covers creating datasets, adding members, splitting train/test/validation, dataset versioning, creating features and labels, adding annotations, preparing data for ML training (denormalize, download BDBag, restructure assets), working with assets and provenance, troubleshooting bag exports, and writing Python scripts for batch data operations."
+description: "Use this skill for DerivaML assets, data preparation, bag troubleshooting, and scripted catalog operations. For dataset operations use the dataset-lifecycle skill directly. For features, labels, and annotations use the create-feature skill directly."
 ---
 
-# Data Management — Datasets, Features, Assets, and Preparation
+# Data Management — Features, Assets, and Preparation
 
 You are a router skill. Based on the user's request, load the appropriate specialized skill.
+
+**Note:** Dataset operations are handled by the `dataset-lifecycle` skill and feature operations by the `create-feature` skill — both are top-level skills invoked directly, not through this router.
+
+
+## Prerequisite: Connect to a Catalog
+
+Most skills routed from here require an active catalog connection:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
 
 ## Routing Rules
 
 Analyze the user's intent and read the matching skill:
 
-### Datasets
-- **Creating datasets, adding members, registering element types, nesting datasets, dataset types, or splitting into train/test/validation** → Read and follow `../create-dataset/SKILL.md`
-- **Dataset version management — incrementing versions, pinning versions, version in DatasetSpecConfig, reproducibility** → Read and follow `../dataset-versioning/SKILL.md`
-
-### Features and labels
-- **Creating features, adding labels or annotations, classification categories, ground truth, confidence scores, feature values** → Read and follow `../create-feature/SKILL.md`
-
-### Preparing data for ML
-- **Denormalizing datasets into DataFrames, downloading BDBags, building training features/labels, restructuring assets for PyTorch/ImageFolder** → Read and follow `../prepare-training-data/SKILL.md`
+### Preparing data for ML training
+- **Restructuring assets for PyTorch/TensorFlow, building training DataFrames, DatasetBag API, value selectors for multi-annotator data, file format conversion during restructuring** → Read and follow `../prepare-training-data/SKILL.md`
 
 ### Assets
 - **Finding asset tables, downloading assets, checking asset provenance, tracing which executions created an asset** → Read and follow `../work-with-assets/SKILL.md`
