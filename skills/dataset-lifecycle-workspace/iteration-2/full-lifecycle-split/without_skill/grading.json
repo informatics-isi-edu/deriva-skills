@@ -1,0 +1,50 @@
+{
+  "run_id": "full-lifecycle-split-without_skill",
+  "expectations": [
+    {
+      "text": "ensures_catalog_connection",
+      "passed": false,
+      "evidence": "The output mentions 'An active catalog connection (catalog already connected)' as a prerequisite but does not call connect_catalog or check deriva://catalog/connections. It simply assumes the connection exists and skips directly to Step 1: Create the Complete Dataset."
+    },
+    {
+      "text": "checks_existing_datasets_first",
+      "passed": false,
+      "evidence": "The output never reads deriva://catalog/datasets or otherwise checks for existing datasets before creating a new one. Step 1 immediately calls create_dataset without any prior search."
+    },
+    {
+      "text": "registers_element_type",
+      "passed": false,
+      "evidence": "The output never calls add_dataset_element_type with Image or any other element type. There is no mention of registering element types."
+    },
+    {
+      "text": "wraps_in_execution",
+      "passed": false,
+      "evidence": "The output never calls create_execution or start_execution. There is no mention of wrapping dataset operations in an execution for provenance tracking."
+    },
+    {
+      "text": "creates_complete_labeled_dataset",
+      "passed": false,
+      "evidence": "The create_dataset call in Step 1 only specifies name and description parameters. No dataset_types including 'Complete' or 'Labeled' are specified. The output does reference 'training', 'validation', and 'test' types for the splits (Step 5), but not 'Complete' and 'Labeled' for the full dataset."
+    },
+    {
+      "text": "uses_dry_run_first",
+      "passed": false,
+      "evidence": "The split_dataset call in Step 4 does not include a dry_run=true parameter. There is no mention of a dry run preview before executing the actual split."
+    },
+    {
+      "text": "correct_split_ratios",
+      "passed": false,
+      "evidence": "The split_dataset call uses a 'splits' parameter with ratio fields (0.70, 0.15, 0.15) rather than test_size=0.15 and val_size=0.15 parameters. The assertion requires 'test_size=0.15 and val_size=0.15' as named parameters, which are not used."
+    },
+    {
+      "text": "correct_stratify_column",
+      "passed": false,
+      "evidence": "The stratify parameter uses 'feature_table: Image_Diagnosis' and 'label_column: Diagnosis_Image' rather than a single stratify_by_column parameter set to 'Image_Diagnosis_Diagnosis_Image' (the denormalized column name). The assertion requires stratify_by_column='Image_Diagnosis_Diagnosis_Image'."
+    },
+    {
+      "text": "marks_splits_labeled",
+      "passed": false,
+      "evidence": "The output assigns types 'training', 'validation', and 'test' to the splits (Step 5), but never adds 'Labeled' as a type to any of the split datasets. The assertion requires training_types, testing_types, and validation_types all include 'Labeled'."
+    }
+  ]
+}

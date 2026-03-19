@@ -216,7 +216,7 @@ exe.upload_execution_outputs()
 ### What upload does
 
 1. Finds all files registered via `asset_file_path()`
-2. Uploads each file to Hatrac (Deriva's object store)
+2. Uploads each file to the object store
 3. Creates catalog records in the target asset tables
 4. Assigns asset types
 5. Links each asset to the execution with role "Output"
@@ -231,7 +231,7 @@ When uploading large files (> 1 GB), default timeouts may be insufficient.
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `timeout` | `(600, 600)` | `(connect_timeout, read_timeout)` in seconds per chunk |
-| `chunk_size` | 50 MB | Chunk size in bytes for Hatrac uploads |
+| `chunk_size` | 50 MB | Chunk size in bytes for object store uploads |
 | `max_retries` | 3 | Maximum retry attempts for failed uploads |
 | `retry_delay` | 5.0 | Initial delay between retries (doubles each attempt) |
 

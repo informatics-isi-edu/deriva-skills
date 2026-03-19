@@ -1,0 +1,60 @@
+{
+  "run_id": "full-lifecycle-split-with_skill",
+  "expectations": [
+    {
+      "text": "checks_existing_datasets_first",
+      "passed": true,
+      "evidence": "Step 1.1 explicitly calls query_table(table_name=\"Dataset\") before creating anything, under 'Phase 1: Assess — Check What Already Exists'. Also checks Dataset_Type and dataset-element-types resource."
+    },
+    {
+      "text": "registers_element_type",
+      "passed": true,
+      "evidence": "Step 3.2 calls add_dataset_element_type(table_name=\"Image\") explicitly."
+    },
+    {
+      "text": "wraps_in_execution",
+      "passed": true,
+      "evidence": "Step 3.1 calls create_execution(...) followed by start_execution() before any dataset creation steps (Steps 3.2 onward). Summary table confirms order: create_execution is #4, start_execution is #5, before dataset operations at #6+."
+    },
+    {
+      "text": "creates_complete_labeled_dataset",
+      "passed": true,
+      "evidence": "Step 3.5 calls create_dataset(description=\"...\", dataset_types=[\"Complete\", \"Labeled\"]) with both types explicitly listed."
+    },
+    {
+      "text": "provides_good_description",
+      "passed": true,
+      "evidence": "The description in create_dataset is: \"All 12,000 labeled chest X-ray images with diagnosis annotations. Complete collection as of 2026-03-18, intended as the source for the 70/15/15 stratified training pipeline.\" — specific about contents, count, and purpose."
+    },
+    {
+      "text": "uses_dry_run_first",
+      "passed": true,
+      "evidence": "Step 3.7 calls split_dataset with dry_run=true before Step 3.8 executes the real split without dry_run (defaulting to false)."
+    },
+    {
+      "text": "correct_split_ratios",
+      "passed": true,
+      "evidence": "Both split_dataset calls (Steps 3.7 and 3.8) specify test_size=0.15 and val_size=0.15."
+    },
+    {
+      "text": "correct_stratify_column",
+      "passed": true,
+      "evidence": "Both split_dataset calls use stratify_by_column=\"Image_Diagnosis_Diagnosis_Image\", matching the required denormalized column name exactly."
+    },
+    {
+      "text": "includes_tables_for_stratification",
+      "passed": true,
+      "evidence": "Both split_dataset calls specify include_tables=[\"Image\", \"Image_Diagnosis\"]."
+    },
+    {
+      "text": "marks_splits_labeled",
+      "passed": true,
+      "evidence": "Step 3.8 includes training_types=[\"Labeled\"], testing_types=[\"Labeled\"], and validation_types=[\"Labeled\"] in the live split_dataset call."
+    },
+    {
+      "text": "sets_seed",
+      "passed": true,
+      "evidence": "Both split_dataset calls include seed=42."
+    }
+  ]
+}

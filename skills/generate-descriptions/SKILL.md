@@ -8,6 +8,18 @@ user-invocable: false
 
 Every catalog entity that accepts a description MUST have one. If the user doesn't provide a description, generate a meaningful one based on context from the repository, conversation, and catalog state. Descriptions support GitHub-flavored Markdown which renders in the Chaise web UI.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Entities Requiring Descriptions
 
 - **Datasets**: `create_dataset` -- description parameter

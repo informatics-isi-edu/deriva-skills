@@ -8,6 +8,18 @@ disable-model-invocation: true
 
 This covers the pre-flight checks and CLI commands for running experiments. Assumes configs are already set up (see `configure-experiment`).
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Pre-Flight Checklist
 
 Complete these before every production run. **Stop and fix any issues.**

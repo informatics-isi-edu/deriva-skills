@@ -1,0 +1,45 @@
+{
+  "run_id": "explore-unknown-dataset-without_skill",
+  "expectations": [
+    {
+      "text": "reads_dataset_resource",
+      "passed": true,
+      "evidence": "Step 1 calls `mcp__deriva__get_dataset_spec` with dataset_rid '2-B4C8', retrieving high-level metadata including name, description, version, and member types."
+    },
+    {
+      "text": "lists_members",
+      "passed": true,
+      "evidence": "Step 2 explicitly calls `mcp__deriva__list_dataset_members` with dataset_rid '2-B4C8' to see what records belong to the dataset."
+    },
+    {
+      "text": "checks_children",
+      "passed": true,
+      "evidence": "Step 3 calls `mcp__deriva__list_dataset_children` with dataset_rid '2-B4C8' to check for nested child datasets."
+    },
+    {
+      "text": "checks_types",
+      "passed": true,
+      "evidence": "Step 1 (get_dataset_spec) explicitly states 'What I'm looking for: The dataset name, description, version, any tags or status fields...and what member types are registered.' The summary table also lists 'version, status' as what Step 1 retrieves."
+    },
+    {
+      "text": "checks_version",
+      "passed": true,
+      "evidence": "Step 1 states 'What I'm looking for: The dataset name, description, version...' and the summary table lists 'High-level metadata: name, description, version, status' for get_dataset_spec."
+    },
+    {
+      "text": "shows_how_to_reference",
+      "passed": false,
+      "evidence": "The output never mentions DatasetSpecConfig or get_dataset_spec in the context of referencing the dataset in an experiment config. While get_dataset_spec is called in Step 1, it is used for exploration overview, not for explaining how to reference it in an experiment configuration with DatasetSpecConfig."
+    },
+    {
+      "text": "mentions_cite",
+      "passed": false,
+      "evidence": "The output does not mention cite(), shareable URLs, or permanent URLs anywhere in the response."
+    },
+    {
+      "text": "systematic_flow",
+      "passed": true,
+      "evidence": "The steps follow a logical order: Step 1 (overview/spec), Step 2 (members), Step 3 (children/hierarchy), Steps 4-6 (provenance), Steps 7-9 (size, validation, data inspection). Overview comes first, then members, then hierarchy, then usage context."
+    }
+  ]
+}

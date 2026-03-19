@@ -1,0 +1,52 @@
+{
+  "eval_id": 1,
+  "eval_name": "full-lifecycle-split-v2",
+  "prompt": "I have about 12,000 labeled chest X-ray images in my catalog and I need to set up a training pipeline. I need a complete dataset with all the images, then split it 70/15/15 for train/val/test with stratified sampling on the diagnosis label. The feature table is Image_Diagnosis and the label column is Diagnosis_Image. Make sure the splits have ground truth labels marked.",
+  "assertions": [
+    {
+      "name": "ensures_catalog_connection",
+      "description": "Should verify or establish catalog connection as first step",
+      "check": "mentions connect_catalog or checking deriva://catalog/connections before any dataset operations"
+    },
+    {
+      "name": "checks_existing_datasets_first",
+      "description": "Should search for existing datasets before creating a new one",
+      "check": "reads deriva://catalog/datasets or otherwise checks existing datasets"
+    },
+    {
+      "name": "registers_element_type",
+      "description": "Should register Image as a dataset element type",
+      "check": "calls add_dataset_element_type with Image"
+    },
+    {
+      "name": "wraps_in_execution",
+      "description": "Should create an execution for provenance",
+      "check": "calls create_execution and start_execution before dataset operations"
+    },
+    {
+      "name": "creates_complete_labeled_dataset",
+      "description": "Should create dataset with Complete and Labeled types",
+      "check": "calls create_dataset with dataset_types including both Complete and Labeled"
+    },
+    {
+      "name": "uses_dry_run_first",
+      "description": "Should preview the split with dry_run before executing",
+      "check": "calls split_dataset with dry_run=true before the real split"
+    },
+    {
+      "name": "correct_split_ratios",
+      "description": "Should use test_size=0.15 and val_size=0.15 for 70/15/15",
+      "check": "split_dataset has test_size=0.15 and val_size=0.15"
+    },
+    {
+      "name": "correct_stratify_column",
+      "description": "Should use denormalized column name Image_Diagnosis_Diagnosis_Image",
+      "check": "stratify_by_column is 'Image_Diagnosis_Diagnosis_Image'"
+    },
+    {
+      "name": "marks_splits_labeled",
+      "description": "Should add Labeled type to all partitions",
+      "check": "training_types, testing_types, and validation_types all include 'Labeled'"
+    }
+  ]
+}

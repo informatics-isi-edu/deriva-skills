@@ -6,9 +6,9 @@ disable-model-invocation: true
 
 # Working with Assets in DerivaML
 
-An asset is a file-based record in a Deriva catalog — it combines a file (stored in Hatrac) with catalog metadata like filename, size, MD5 checksum, and description. Assets live in asset tables, which have standard file-tracking columns plus optional custom metadata. Every asset has a unique RID for stable referencing across the system.
+An asset is a file-based record in a Deriva catalog — it combines a file (stored in Deriva's object store) with catalog metadata like filename, size, MD5 checksum, and description. Assets live in asset tables, which have standard file-tracking columns plus optional custom metadata. Every asset has a unique RID for stable referencing across the system.
 
-For background on asset tables, types, RIDs, Hatrac storage, caching, and provenance, see `references/concepts.md`.
+For background on asset tables, types, RIDs, object storage, caching, and provenance, see `references/concepts.md`.
 
 
 ## Prerequisite: Connect to a Catalog
@@ -53,7 +53,7 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 1. `create_execution` + `start_execution` — start provenance tracking
 2. `asset_file_path` — register each output file for upload (returns a path to write to)
-3. `upload_execution_outputs` — upload all registered files to Hatrac and catalog
+3. `upload_execution_outputs` — upload all registered files to the object store and catalog
 4. `stop_execution` — finalize
 
 ### Managing asset types
@@ -65,7 +65,7 @@ For the full step-by-step guide with MCP tool parameters and Python API examples
 
 ## Reference Resources
 
-- `references/concepts.md` — What assets are, asset tables, RIDs, types, Hatrac, caching, provenance
+- `references/concepts.md` — What assets are, asset tables, RIDs, types, object storage, caching, provenance
 - `references/workflow.md` — Step-by-step MCP and Python API workflows
 - `references/restructure-guide.md` — Restructuring assets for ML: group_by options, value selectors, file transformers, ML framework patterns, upload tuning
 - `deriva://docs/file-assets` — Full user guide to file assets in DerivaML

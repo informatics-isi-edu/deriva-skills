@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "eval_name": "version-after-changes",
+  "prompt": "I added 200 new fundus images to the catalog yesterday and also fixed labels on about 30 images that were mislabeled. My training config still references dataset 28EA version 0.3.0. What do I need to do before running my next experiment?",
+  "assertions": [
+    {
+      "name": "explains_snapshot_semantics",
+      "description": "Should explain that existing versions are frozen snapshots and changes aren't visible in v0.3.0",
+      "check": "mentions that versions are snapshots or that changes are not included in existing versions"
+    },
+    {
+      "name": "calls_increment_version",
+      "description": "Should call increment_dataset_version on dataset 28EA",
+      "check": "calls increment_dataset_version with dataset_rid 28EA"
+    },
+    {
+      "name": "provides_version_description",
+      "description": "Should provide a meaningful description covering both changes (new images + label fixes)",
+      "check": "description mentions both the 200 new images and the 30 label corrections"
+    },
+    {
+      "name": "updates_config",
+      "description": "Should instruct to update DatasetSpecConfig to the new version number",
+      "check": "mentions updating DatasetSpecConfig or config file with the new version"
+    },
+    {
+      "name": "commits_before_running",
+      "description": "Should instruct to commit config changes before running the experiment",
+      "check": "mentions committing or git commit before running"
+    },
+    {
+      "name": "never_suggests_current",
+      "description": "Should NOT suggest using 'current' version",
+      "check": "does not suggest version='current' or omitting the version"
+    },
+    {
+      "name": "considers_semver_component",
+      "description": "Should consider whether this is a minor or patch increment (new data = minor, label fixes = patch — combined is minor)",
+      "check": "mentions or considers the semantic versioning component (major/minor/patch)"
+    }
+  ]
+}

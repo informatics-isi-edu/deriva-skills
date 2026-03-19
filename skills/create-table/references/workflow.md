@@ -114,7 +114,7 @@ create_asset_table(
 ```
 
 Asset tables automatically include these columns:
-- `URL` -- Hatrac object store URL for the file
+- `URL` -- Object store URL for the file
 - `Filename` -- Original filename
 - `Length` -- File size in bytes
 - `MD5` -- MD5 checksum for integrity verification

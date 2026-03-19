@@ -10,6 +10,18 @@ DerivaML provides Python builder classes for constructing Deriva annotations wit
 
 **This skill covers the Python builder class approach.** For quick interactive setup using MCP tools (better for one-off tweaks and exploration), see the `customize-display` skill instead.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## When to Use Builders vs MCP Tools
 
 | Use Case | Approach |

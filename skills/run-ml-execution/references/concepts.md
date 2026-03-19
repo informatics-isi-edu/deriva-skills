@@ -182,7 +182,7 @@ Registered files are **not yet in the catalog** — they exist only in the local
 
 After the execution's work is complete, call `upload_execution_outputs` to upload all registered files to the catalog in one batch. This:
 
-1. Uploads each staged file to Hatrac (Deriva's file storage)
+1. Uploads each staged file to the object store
 2. Creates asset records in the appropriate asset tables
 3. Links each asset to the execution with role "Output"
 4. Optionally cleans up the local staging directory

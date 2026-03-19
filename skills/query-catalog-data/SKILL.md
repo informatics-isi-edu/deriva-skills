@@ -8,6 +8,18 @@ disable-model-invocation: true
 
 This skill covers how to find, filter, and explore data in a Deriva catalog using MCP tools and resources.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Discovery Resources
 
 | Resource | Purpose |

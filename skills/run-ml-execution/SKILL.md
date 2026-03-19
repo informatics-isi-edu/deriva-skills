@@ -10,6 +10,18 @@ An execution is the fundamental unit of provenance in DerivaML. It records what 
 
 For background on the execution hierarchy, statuses, nested executions, dry run mode, and the working directory layout, see `references/concepts.md`.
 
+
+## Prerequisite: Connect to a Catalog
+
+All operations in this skill require an active catalog connection. Before anything else:
+
+```
+connect_catalog(hostname="...", catalog_id="...")
+```
+
+If already connected (check `deriva://catalog/connections`), skip this step.
+
+
 ## Critical Rules
 
 1. **Every execution needs a workflow** — find one with `lookup_workflow_by_url` or create one with `create_workflow` before creating the execution. When using MCP tools, `create_execution` can find or create the workflow for you.

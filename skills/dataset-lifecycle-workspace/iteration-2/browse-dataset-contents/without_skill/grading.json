@@ -1,0 +1,40 @@
+{
+  "run_id": "browse-dataset-contents-without_skill",
+  "expectations": [
+    {
+      "text": "reads_dataset_overview",
+      "passed": true,
+      "evidence": "Step 1 calls `mcp__deriva__get_dataset_spec(dataset_rid=\"3-XYZ9\")` to retrieve the dataset's top-level metadata and structure, which satisfies reading a dataset resource for metadata overview."
+    },
+    {
+      "text": "lists_members_by_element_type",
+      "passed": true,
+      "evidence": "Step 2 explicitly calls `mcp__deriva__list_dataset_members(dataset_rid=\"3-XYZ9\")` to list the members of the dataset."
+    },
+    {
+      "text": "uses_denormalize_for_actual_data",
+      "passed": false,
+      "evidence": "The response never calls `denormalize_dataset`. Instead it uses `get_table_sample_data` and `query_table` to view actual data values, bypassing the denormalize tool entirely."
+    },
+    {
+      "text": "includes_feature_table_in_denormalize",
+      "passed": false,
+      "evidence": "Since `denormalize_dataset` is never called, there is no `include_tables` argument and no feature/diagnosis table is included in any denormalization call."
+    },
+    {
+      "text": "checks_features_or_annotations",
+      "passed": false,
+      "evidence": "The response does not call `fetch_table_features` for Image nor reads feature resources. It queries the image table directly and checks vocabulary tables, but does not use the features API."
+    },
+    {
+      "text": "addresses_unlabeled_detection",
+      "passed": true,
+      "evidence": "Step 7 explicitly queries for records where the diagnosis column is NULL (`{\"column\": \"Diagnosis\", \"operator\": \"::null::\", \"value\": null}`), and the summary table states: 'Are there unlabeled images? — query_table with NULL filter on Diagnosis/Label column'."
+    },
+    {
+      "text": "follows_browse_pattern",
+      "passed": false,
+      "evidence": "The response follows connect→spec→members→sample but then deviates by using direct table queries and table schema inspection rather than the expected overview→members→denormalize flow. `denormalize_dataset` is never called, so the pattern of metadata→member listing→actual data viewing via denormalize is not followed."
+    }
+  ]
+}

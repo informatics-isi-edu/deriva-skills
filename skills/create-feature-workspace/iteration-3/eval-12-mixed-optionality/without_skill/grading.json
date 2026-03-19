@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "uses_add_feature_value_record",
+      "passed": true,
+      "evidence": "Uses `add_feature_value_record` for multi-column features."
+    },
+    {
+      "text": "shows_mixed_entries",
+      "passed": true,
+      "evidence": "`add_feature_value_record` with entries that mix presence of confidence column"
+    },
+    {
+      "text": "explains_required_always_present",
+      "passed": false,
+      "evidence": "No explicit explanation that required columns (Diagnosis_Type) must appear in every entry. The response only mentions optional columns can vary."
+    },
+    {
+      "text": "explains_optional_can_be_omitted",
+      "passed": true,
+      "evidence": "The agent identified that optional columns can vary per entry."
+    },
+    {
+      "text": "suggests_inspecting_feature_first",
+      "passed": true,
+      "evidence": "`fetch_table_features` to inspect the feature structure (step 1)"
+    }
+  ]
+}

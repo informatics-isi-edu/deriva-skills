@@ -1,0 +1,40 @@
+{
+  "run_id": "multi-element-browse-without_skill",
+  "expectations": [
+    {
+      "text": "recognizes_multi_element",
+      "passed": true,
+      "evidence": "The response explicitly identifies the dataset as having multiple element types: 'a dataset (RID 4-MULTI) that contains multiple element types (Subject records and Image records)' and discusses Subject and Image throughout."
+    },
+    {
+      "text": "lists_members_first",
+      "passed": true,
+      "evidence": "Step 2 calls list_dataset_members with dataset_rid: '4-MULTI' and explains 'You can confirm the total count (~200 subjects + ~8,000 images = ~8,200 total) and see the mix of types.' However, it does not explicitly state results are grouped by table — just that types are visible in the results."
+    },
+    {
+      "text": "denormalizes_subjects_separately",
+      "passed": false,
+      "evidence": "The response never calls denormalize_dataset at all. Instead it uses list_dataset_members with element_type: 'Subject' to isolate Subject records, which is a different tool and approach."
+    },
+    {
+      "text": "denormalizes_images_separately",
+      "passed": false,
+      "evidence": "The response never calls denormalize_dataset. Instead it uses list_dataset_members with element_type: 'Image' to isolate Image records."
+    },
+    {
+      "text": "includes_related_tables_for_images",
+      "passed": false,
+      "evidence": "denormalize_dataset is never called in the response, so there is no include_tables parameter for the Image denormalization. The modality breakdown is addressed with get_table_sample_data and query_table instead."
+    },
+    {
+      "text": "explains_element_type_browsing",
+      "passed": false,
+      "evidence": "The response explains using list_dataset_members with element_type parameter as the browsing mechanism, but never mentions denormalize_dataset with include_tables. The check specifically requires explaining 'the pattern of using denormalize_dataset with different include_tables to browse different element types.'"
+    },
+    {
+      "text": "does_not_flatten_everything",
+      "passed": true,
+      "evidence": "The response never calls denormalize_dataset with both Subject and Image in include_tables. In fact, denormalize_dataset is never called at all, so there is no flattened join of both types."
+    }
+  ]
+}
