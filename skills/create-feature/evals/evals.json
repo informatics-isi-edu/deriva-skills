@@ -54,6 +54,24 @@
       "prompt": "I need a custom selector that picks the annotation with the highest confidence score. The built-in selectors don't cover this. How do I do it?",
       "expected_output": "Should explain that custom selectors use signature (list[FeatureRecord]) -> FeatureRecord. Should show a Python script example using getattr(r, 'Confidence', 0). Should explain that the same selector works for both catalog queries (selector= param) and bag restructuring (value_selector= param). Should mention that custom selectors can't be passed as MCP string names — must use Python API. Should reference feature-selectors.md for more examples.",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "I have a Diagnosis feature on my Image table and I need to add labels for 500 images. How do I figure out what values I can use and what columns are required?",
+      "expected_output": "Should read the feature resource: deriva://feature/Image/Diagnosis to see column schema including required_fields, term_columns with vocabulary reference, and value_columns with types. Should then read the vocabulary resource: deriva://vocabulary/{vocabulary_name} to see valid term values. Should explain the difference between required and optional columns. Should show how to use add_feature_value for simple features or add_feature_value_record for multi-column features. Should mention wrapping in an execution for provenance.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "I need to add diagnosis labels to 2000 images. Three pathologists are labeling independently. What's the best way to organize the executions and batch the values?",
+      "expected_output": "Should recommend one execution per pathologist per labeling session — not one per image. Should show creating an execution with a descriptive workflow name. Should batch all labels from one pathologist into a single add_feature_value call with a list of entries. Should explain that this creates proper provenance (can distinguish labels by annotator via execution). Should mention stop_execution after each batch.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "I have a feature with both a required Diagnosis_Type column (vocabulary) and an optional confidence column (float4). Some images have confidence scores and some don't. How do I add values for both?",
+      "expected_output": "Should use add_feature_value_record with mixed entries. Should show that required columns (Diagnosis_Type) must be in every entry, but optional columns (confidence) can be omitted from some entries. Should show example entries where some have confidence and some don't. Should mention reading deriva://feature/Image/Diagnosis to confirm which columns are required vs optional.",
+      "files": []
     }
   ]
 }

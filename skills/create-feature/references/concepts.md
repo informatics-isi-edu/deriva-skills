@@ -235,6 +235,66 @@ Features can include additional columns beyond the standard term/asset columns. 
 
 Example: `metadata=[{"name": "confidence", "type": {"typename": "float4"}}, "Reviewer"]` adds both a float confidence column and an FK to the Reviewer table.
 
+## Feature Column Optionality and Valid Values
+
+Every feature has a set of columns — some required, some optional. Understanding this is critical when adding feature values.
+
+### Required vs optional columns
+
+- **Term columns** are required by default (NOT NULL). Each entry must provide a valid vocabulary term name
+- **Asset columns** are required by default. Each entry must provide a valid asset RID
+- **Metadata columns** follow the `nullok` setting from their definition:
+  - `{"name": "confidence", "type": {"typename": "float4"}}` → optional (nullok=True by default)
+  - `{"name": "confidence", "type": {"typename": "float4"}, "nullok": false}` → required
+
+### How to check column requirements
+
+The MCP resource `deriva://feature/{table}/{feature}` returns the full column schema including:
+- `required_fields` — list of all column names that must be provided
+- Per-column `required` boolean for each term, asset, and value column
+- The vocabulary table name for term columns (tells you what values are valid)
+- The data type for value columns
+
+### Valid values by column type
+
+**Term columns** — values must exactly match a term name in the referenced vocabulary:
+```
+# See valid term names for a feature's term column
+Read resource: deriva://vocabulary/{vocabulary_table_name}
+```
+Term names are case-sensitive. "Normal" ≠ "normal". Using an invalid term name will produce an error.
+
+**Value columns** — values must match the column's data type:
+
+| Column type | Valid values | Example |
+|------------|-------------|---------|
+| `text` | Any string | `"high quality"` |
+| `float4` / `float8` | Decimal number | `0.95`, `3.14` |
+| `int4` / `int8` | Integer | `42`, `-1` |
+| `boolean` | `true` or `false` | `true` |
+| `date` | ISO date string | `"2026-03-18"` |
+| `timestamp` / `timestamptz` | ISO datetime | `"2026-03-18T14:30:00"` |
+| `json` / `jsonb` | Valid JSON | `{"key": "value"}` |
+
+**Asset columns** — values must be a valid RID of a record in the referenced asset table.
+
+### Adding values with optional columns
+
+When using `add_feature_value_record`, optional columns can be:
+- **Included** in some entries and **omitted** in others
+- **Set to null** explicitly
+- **Mixed** — some entries with the column, some without
+
+This is common for confidence scores: human annotations may not have confidence, while model predictions always include one.
+
+```
+# Some entries with confidence, some without — valid because confidence is optional
+add_feature_value_record("Image", "Diagnosis", [
+    {"target_rid": "2-IMG1", "Diagnosis_Type": "Normal"},
+    {"target_rid": "2-IMG2", "Diagnosis_Type": "Abnormal", "confidence": 0.87},
+])
+```
+
 ## Multivalued Features
 
 Because features track provenance through executions, a single record can accumulate multiple values for the same feature over time:

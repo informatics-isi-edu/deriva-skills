@@ -75,7 +75,7 @@ The test: if you always set them at the same time in the same execution, they be
 
 For the full design guide, see `references/concepts.md` under "Designing a Feature."
 
-## Phase 3: Create
+## Phase 3: Create the Feature Definition
 
 ### Standard workflow
 
@@ -91,28 +91,6 @@ For the full design guide, see `references/concepts.md` under "Designing a Featu
                    terms=["Diagnosis_Type"], comment="Clinical diagnosis for this image")
    ```
 
-3. **Add values within an execution** (provenance is required):
-   ```
-   create_execution(workflow_name="Expert Annotation", workflow_type="Annotation")
-   start_execution()
-
-   add_feature_value(table_name="Image", feature_name="Diagnosis",
-                     entries=[{"target_rid": "2-IMG1", "value": "Normal"},
-                              {"target_rid": "2-IMG2", "value": "Abnormal"}])
-
-   stop_execution()
-   ```
-
-For features with multiple columns, use `add_feature_value_record` instead:
-```
-add_feature_value_record(table_name="Image", feature_name="Diagnosis",
-                          entries=[{"target_rid": "2-IMG1",
-                                    "Diagnosis_Type": "Normal",
-                                    "confidence": 0.95}])
-```
-
-For the complete MCP tool parameters and Python API examples, see `references/workflow.md`.
-
 ### Description guidance
 
 Every feature needs a description explaining what it measures, what values it takes, and its role:
@@ -123,7 +101,91 @@ Every feature needs a description explaining what it measures, what values it ta
 
 Since features are multivalued, note whether it's intended for ground truth, model predictions, or computed metrics.
 
-## Phase 4: Query and Select
+## Phase 4: Add Feature Values
+
+Adding values requires knowing what columns a feature has, which are required, and what values are valid.
+
+### Step 1: Inspect the feature structure
+
+Before adding values, check what the feature expects:
+
+```
+# Read the feature definition — shows columns, types, required/optional, vocabularies
+Read resource: deriva://feature/{table_name}/{feature_name}
+```
+
+The resource returns:
+- **term_columns** — vocabulary-controlled fields with the vocabulary table name and whether required
+- **asset_columns** — file reference fields with the asset table name
+- **value_columns** — free-form fields with data type (float4, text, etc.)
+- **required_fields** — list of all fields that must be provided
+
+### Step 2: Determine valid values
+
+For **term columns**, valid values are the terms in the referenced vocabulary:
+```
+# See what values are valid for a term column
+Read resource: deriva://vocabulary/{vocabulary_table_name}
+```
+
+For **value columns**, check the type:
+- `float4`/`float8` — numeric values
+- `text` — any string
+- `boolean` — true/false
+- `int4`/`int8` — integer values
+
+### Step 3: Add values within an execution
+
+Feature values require provenance — every value is linked to the execution that created it:
+
+```
+create_execution(workflow_name="Expert Annotation", workflow_type="Annotation")
+start_execution()
+```
+
+**Simple features** (single term or asset column) — use `add_feature_value`:
+```
+add_feature_value(table_name="Image", feature_name="Diagnosis",
+                  entries=[{"target_rid": "2-IMG1", "value": "Normal"},
+                           {"target_rid": "2-IMG2", "value": "Abnormal"}])
+```
+
+**Multi-column features** — use `add_feature_value_record` with explicit column names:
+```
+add_feature_value_record(table_name="Image", feature_name="Diagnosis",
+                          entries=[{"target_rid": "2-IMG1",
+                                    "Diagnosis_Type": "Normal",
+                                    "confidence": 0.95},
+                                   {"target_rid": "2-IMG2",
+                                    "Diagnosis_Type": "Abnormal",
+                                    "confidence": 0.87}])
+```
+
+```
+stop_execution()
+```
+
+### Batch adding guidance
+
+- **Batch size**: Both tools accept lists of entries — batch them rather than calling one at a time
+- **One execution per logical task**: All labels from one annotator's session go in one execution. Don't create a new execution per label
+- **Multiple annotators**: Each annotator gets their own execution (creates provenance trail)
+- **Model predictions**: Each model run gets its own execution
+- **Optional columns can be omitted**: Only required fields must be present in every entry. Optional fields can vary per entry
+
+### Common mistakes
+
+| Mistake | What happens | Fix |
+|---------|-------------|-----|
+| Adding values without an execution | Error — provenance required | `create_execution` + `start_execution` first |
+| Using wrong term name | Error — must match vocabulary exactly | Read `deriva://vocabulary/{vocab}` to check valid terms |
+| Missing required column | Error — required fields must be present | Read `deriva://feature/{table}/{feature}` for required fields |
+| One execution per label | Works but clutters provenance | Batch labels from same source into one execution |
+| Forgetting `stop_execution()` | Execution stays "running" | Always stop after adding values |
+
+For the complete MCP tool parameters and Python API examples, see `references/workflow.md`.
+
+## Phase 5: Query and Select
 
 ### Browse feature values
 
