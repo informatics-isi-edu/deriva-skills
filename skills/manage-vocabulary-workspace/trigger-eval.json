@@ -1,0 +1,22 @@
+[
+  {"query": "I need to create a vocabulary for classifying chest X-ray images into 5 diagnosis categories: Normal, Pneumonia, COVID-19, Tuberculosis, and Lung_Cancer", "should_trigger": true},
+  {"query": "I already have a Species vocabulary and want to add Rattus norvegicus with the synonym Rat. How?", "should_trigger": true},
+  {"query": "should I make one vocabulary or two? I need to track both imaging modality (MRI, CT) and body region (Head, Chest)", "should_trigger": true},
+  {"query": "what vocabularies exist in my catalog? I want to browse the Dataset_Type terms", "should_trigger": true},
+  {"query": "I want to add Augmented as a new dataset type for augmented training data", "should_trigger": true},
+  {"query": "I'm not sure if a vocabulary called Stain_Type already exists. How do I check for near-duplicates?", "should_trigger": true},
+  {"query": "how do I update the description of an existing vocabulary term?", "should_trigger": true},
+  {"query": "I need to delete a term from my vocabulary but it's referenced by records. What do I do?", "should_trigger": true},
+  {"query": "I need to create a feature that links diagnostic labels to my Image table", "should_trigger": false},
+  {"query": "how do I create a dataset and split it for training?", "should_trigger": false},
+  {"query": "I want to run my experiment with the CLI and check pre-flight validation", "should_trigger": false},
+  {"query": "how do I upload trained model weights to the catalog?", "should_trigger": false},
+  {"query": "I need to restructure downloaded images for PyTorch ImageFolder", "should_trigger": false},
+  {"query": "what's in dataset 2-B4C8? Show me the contents", "should_trigger": false},
+  {"query": "how do I create a new table with columns and foreign keys?", "should_trigger": false},
+  {"query": "I want to set up hydra-zen experiment configs", "should_trigger": false},
+  {"query": "how do I get the consensus label when three annotators disagree?", "should_trigger": false},
+  {"query": "I need to create a Jupyter notebook with DerivaML provenance", "should_trigger": false},
+  {"query": "how do I customize how my table looks in the Chaise web UI?", "should_trigger": false},
+  {"query": "I need to check my package versions", "should_trigger": false}
+]
