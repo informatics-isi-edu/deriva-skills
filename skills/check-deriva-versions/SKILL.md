@@ -54,7 +54,7 @@ This runs `uv lock --upgrade-package deriva-ml && uv sync` (or pip equivalent) a
 
 #### skills (user action required)
 
-The skills plugin can only be updated through a Claude Code slash command — it cannot be run programmatically. Tell the user:
+The skills plugin can only be updated through a Claude Code slash command — it cannot be automated by a script. Claude Code manages its plugin cache and manifest with internal locking that external processes cannot safely bypass. Tell the user:
 
 > The skills plugin is outdated (installed X, latest Y). To update, run `/plugin update deriva` in Claude Code.
 
