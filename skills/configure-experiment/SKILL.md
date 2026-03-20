@@ -131,6 +131,110 @@ Generated from `src/configs/experiments.py` and `src/configs/multiruns.py`.
 - **Purpose**: Why this experiment exists
 ```
 
+## Storage: Cache vs Working Directory
+
+DerivaML uses two distinct storage locations. Understanding the difference prevents data loss and disk bloat.
+
+### Working Directory
+
+The **working directory** is where execution-specific data lives — each execution gets its own subdirectory with downloaded inputs, generated outputs, and logs. After upload, execution directories are cleaned up (controlled by `clean_execution_dir`).
+
+**Default:** `~/.deriva-ml/<hostname>/<catalog_id>/`
+
+**Contains:** `executions/<execution_rid>/` subdirectories — one per run.
+
+### Cache Directory
+
+The **cache directory** stores downloaded dataset bags and cached assets that persist across executions. When you download the same dataset version twice, the second download hits the cache instantly. Cache entries are keyed by checksum, so they're only invalidated when data actually changes.
+
+**Default:** `<working_dir>/cache/`
+
+**Contains:** Dataset bags (keyed by `{rid}_{checksum}`) and cached assets (keyed by `{rid}_{md5}`).
+
+### Why separate them?
+
+| | Working Dir | Cache Dir |
+|---|---|---|
+| **Lifecycle** | Ephemeral — cleaned after upload | Persistent — survives across runs |
+| **Content** | Execution inputs/outputs | Downloaded dataset bags, cached assets |
+| **Growth** | Bounded (auto-cleanup) | Unbounded (manual cleanup) |
+| **Sharing** | Not shared between executions | Shared across all executions |
+
+### Configuring custom locations
+
+Set these in your `configs/deriva.py`:
+
+```python
+from deriva_ml.execution import deriva_config
+
+deriva_config(
+    hostname="ml.example.org",
+    catalog_id="52",
+    working_dir="/scratch/ml-work",     # Fast local SSD for computation
+    cache_dir="/shared/ml-cache",       # Large shared NFS for cached data
+    name="production",
+)
+```
+
+**When to set a custom `working_dir`:**
+- Default `~/.deriva-ml` is on a small disk — redirect to a larger volume
+- Running on a compute cluster — use a local scratch disk for speed
+- Shared environment — use a per-user directory on shared storage
+
+**When to set a custom `cache_dir`:**
+- **Team sharing** — point to a shared NFS or network mount so downloaded bags and large assets are reused across team members. When one person downloads a 15 GB dataset, everyone else gets a cache hit instead of re-downloading. This is the most common reason to customize the cache directory.
+- **Disk management** — keep the cache on a large, cheap volume separate from fast compute storage
+- **Cluster environments** — use a shared filesystem visible to all compute nodes
+- If not set, defaults to `<working_dir>/cache/`
+
+**Shared cache example:**
+```python
+# All team members point to the same shared cache
+deriva_config(
+    hostname="ml.example.org",
+    catalog_id="52",
+    working_dir="/scratch/$USER/ml-work",    # Per-user fast local disk
+    cache_dir="/shared/team-ml-cache",       # Shared across team
+    name="production",
+)
+```
+When user A downloads dataset `28CT v0.9.0`, the bag lands in `/shared/team-ml-cache/`. When user B runs an experiment referencing the same dataset and version, it's already there — no download needed.
+
+### ⚠️ The working directory must NOT be inside the cache directory
+
+If the working directory is a subdirectory of the cache directory (or vice versa), execution cleanup can delete cached data, or cache cleanup can delete active execution files. Always keep them as independent directory trees.
+
+**Good:**
+```python
+working_dir="/scratch/ml-work"    # Fast local disk
+cache_dir="/data/ml-cache"        # Large shared disk
+```
+
+**Bad:**
+```python
+working_dir="/data/ml-cache/work"   # ❌ Working dir INSIDE cache dir
+cache_dir="/scratch/ml-work/cache"  # ❌ Cache dir INSIDE working dir
+```
+
+### Managing storage
+
+Use the `list_storage_contents` MCP tool to see what's consuming disk space:
+
+```
+list_storage_contents()                    # Everything
+list_storage_contents(filter="cache")      # Just cached bags
+list_storage_contents(filter="executions") # Just execution dirs
+```
+
+To free disk space, use `delete_storage` with specific RIDs:
+
+```
+delete_storage(rids=["28CT"], confirm=False)  # Preview what would be deleted
+delete_storage(rids=["28CT"], confirm=True)   # Actually delete
+```
+
+**Caution:** Cached bags can be re-downloaded, but execution outputs that haven't been uploaded to the catalog will be permanently lost.
+
 ## Reference Resources
 
 - `deriva://config/experiment-template` — Experiment config template
