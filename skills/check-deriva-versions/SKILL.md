@@ -52,13 +52,19 @@ python <skill-dir>/scripts/check_versions.py --component deriva-ml --update
 
 This runs `uv lock --upgrade-package deriva-ml && uv sync` (or pip equivalent) and verifies the new version.
 
-#### skills (user action required)
+#### skills (two-step: automated refresh + user command)
 
-The skills plugin can only be updated through a Claude Code slash command — it cannot be automated by a script. Claude Code manages its plugin cache and manifest with internal locking that external processes cannot safely bypass. Tell the user:
+The update script first refreshes the local marketplace cache (`git pull`), which fixes a common issue where `/plugin update` reports "already at latest" despite newer versions on GitHub. Then the user must run the final install step manually:
 
-> The skills plugin is outdated (installed X, latest Y). To update, run `/plugin update deriva` in Claude Code.
+```bash
+python <skill-dir>/scripts/check_versions.py --component skills --update
+```
 
-After they've run it, you can re-check with `--component skills` to confirm.
+This refreshes the cache. Then tell the user:
+
+> Marketplace cache refreshed. Now run `/plugin update deriva` in Claude Code to complete the update.
+
+The final `/plugin update` step cannot be automated because Claude Code manages its plugin manifest with internal locking. After they've run it, re-check with `--component skills` to confirm.
 
 #### mcp-server (automated, but confirm first)
 

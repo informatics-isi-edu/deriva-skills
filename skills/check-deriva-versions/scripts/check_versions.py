@@ -33,6 +33,29 @@ SKILLS_GITHUB_REPO = "informatics-isi-edu/deriva-skills"
 MCP_GITHUB_REPO = "informatics-isi-edu/deriva-mcp"
 
 
+def _find_marketplace_cache_dir() -> Path | None:
+    """Find the marketplace cache directory dynamically.
+
+    Reads ~/.claude/plugins/known_marketplaces.json to find the install
+    location for the deriva-plugins marketplace. Falls back to the
+    conventional path if the config file doesn't exist.
+    """
+    known_marketplaces = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+    if known_marketplaces.exists():
+        try:
+            data = json.loads(known_marketplaces.read_text())
+            entry = data.get("deriva-plugins", {})
+            install_loc = entry.get("installLocation")
+            if install_loc:
+                return Path(install_loc)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Fall back to conventional path
+    fallback = Path.home() / ".claude" / "plugins" / "marketplaces" / "deriva-plugins"
+    return fallback if fallback.is_dir() else None
+
+
 @dataclass
 class VersionStatus:
     component: str
@@ -311,15 +334,59 @@ def check_skills() -> VersionStatus:
         )
 
 
+def _refresh_marketplace_cache() -> bool:
+    """Pull latest commits into the local marketplace cache.
+
+    Claude Code's '/plugin update' reads from a local git clone at
+    ~/.claude/plugins/marketplaces/deriva-plugins/ (or wherever
+    known_marketplaces.json points). If this clone is stale,
+    '/plugin update' reports "already at latest" even when newer versions
+    exist on GitHub. Running 'git pull' fixes this.
+
+    Returns:
+        True if the cache was successfully refreshed, False otherwise.
+    """
+    cache_dir = _find_marketplace_cache_dir()
+    if cache_dir is None or not cache_dir.is_dir():
+        return False
+    git_dir = cache_dir / ".git"
+    if not git_dir.is_dir():
+        return False
+
+    try:
+        result = run_cmd(
+            ["git", "pull", "origin", "main"],
+            cwd=str(cache_dir),
+            timeout=30,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
 def update_skills(status: VersionStatus) -> VersionStatus:
     """Update the skills plugin.
 
-    Plugin updates require running '/plugin update deriva' in Claude Code.
-    This function cannot do it programmatically, so it provides instructions.
+    First refreshes the local marketplace cache (git pull) so that
+    '/plugin update' sees the latest version. Then instructs the user
+    to run the plugin update command.
+
+    The final '/plugin update deriva' step must be run by the user because
+    Claude Code manages its plugin cache with internal locking that external
+    processes cannot safely bypass.
     """
+    # Step 1: Refresh the marketplace cache
+    print("  Refreshing marketplace cache...")
+    refreshed = _refresh_marketplace_cache()
+    if refreshed:
+        print("    Marketplace cache updated successfully.")
+    else:
+        print("    Could not refresh marketplace cache (this is non-fatal).")
+
+    # Step 2: Instruct user to run the plugin update
     status.update_message = (
-        "Skills plugin must be updated from within Claude Code.\n"
-        "    Run: /plugin update deriva"
+        "Marketplace cache has been refreshed. "
+        "Now run '/plugin update deriva' in Claude Code to complete the update."
     )
     return status
 
