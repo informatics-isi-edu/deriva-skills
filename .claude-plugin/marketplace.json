@@ -31,6 +31,7 @@
         "./skills/maintain-experiment-notes",
         "./skills/manage-vocabulary",
         "./skills/ml-data-engineering",
+        "./skills/model-development-workflow",
         "./skills/new-model",
         "./skills/query-catalog-data",
         "./skills/route-catalog-schema",

@@ -1,6 +1,6 @@
 [project]
 name = "deriva-skills"
-version = "0.12.4"
+version = "0.13.2"
 requires-python = ">=3.12"
 
 [dependency-groups]
@@ -25,3 +25,19 @@ tag_message = "Bump version: {current_version} → {new_version}"
 allow_dirty = false
 message = "Bump version: {current_version} → {new_version}"
 post_commit_hooks = ["git push", "git push --tags"]
+current_version = "0.13.2"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = ".claude-plugin/plugin.json"
+search = '"version": "{current_version}"'
+replace = '"version": "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = ".claude-plugin/marketplace.json"
+search = '"version": "{current_version}"'
+replace = '"version": "{new_version}"'
