@@ -87,6 +87,16 @@ column to Subject instead.
 - **CLAUDE.md**: Project-level instructions for Claude. Reference experiment-decisions.md from CLAUDE.md so new sessions pick up context.
 - **Hydra configs**: Define the experiment parameters. The decisions file explains why those parameter values were chosen.
 
+## Keeping the File in Git
+
+`experiment-decisions.md` **must be tracked in the git repository** — it's part of the project's permanent record. Before writing the first entry, verify it's not gitignored:
+
+1. Check that `experiment-decisions.md` is not in `.gitignore`
+2. If the file doesn't exist yet, create it and `git add experiment-decisions.md` immediately
+3. Never place it in a directory that's gitignored (e.g., `outputs/`, `.cache/`, `dist/`)
+
+The file belongs in the **project root** alongside `CLAUDE.md`, `pyproject.toml`, and other project-level files.
+
 ## Commit Prompting
 
 The decisions file is only useful to the team if it gets committed. After writing 3 or more entries during a session, or when the conversation reaches a natural pause (the user has finished a workflow, is about to start something new, or the topic shifts), suggest committing:
