@@ -29,6 +29,7 @@
         "./skills/generate-descriptions",
         "./skills/help",
         "./skills/maintain-experiment-notes",
+        "./skills/manage-storage",
         "./skills/manage-vocabulary",
         "./skills/ml-data-engineering",
         "./skills/model-development-workflow",
