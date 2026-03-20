@@ -526,7 +526,7 @@ dependencies = [
 
 [[package]]
 name = "deriva-skills"
-version = "0.12.3"
+version = "0.13.2"
 source = { virtual = "." }
 
 [package.dev-dependencies]
