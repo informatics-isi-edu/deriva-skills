@@ -22,10 +22,10 @@ uv run bump-version major    # v0.13.0 -> v1.0.0
 # Or via MCP tool: bump_version("patch")
 # GitHub Actions: bumps version in plugin.json + marketplace.json, commits back to main, creates archive + release
 
-# Run version checker
-python skills/check-deriva-versions/scripts/check_versions.py
-python skills/check-deriva-versions/scripts/check_versions.py --update
-python skills/check-deriva-versions/scripts/check_versions.py --component deriva-ml --update
+# Run version checker (use python3, NOT uv run — the script finds uv itself)
+python3 skills/check-deriva-versions/scripts/check_versions.py
+python3 skills/check-deriva-versions/scripts/check_versions.py --update
+python3 skills/check-deriva-versions/scripts/check_versions.py --component deriva-ml --json
 ```
 
 ## Architecture
@@ -119,7 +119,7 @@ Eval workspaces (`*-workspace/`) contain test outputs and are gitignored from re
    - Commits version bump back to main
    - Creates `deriva-skills-{VERSION}.tar.gz` (excludes `.git`, `.github`, `*-workspace`, `docs/superpowers`)
    - Publishes GitHub Release with auto-generated notes
-4. Users update via `/plugin update deriva` (first-time install uses `/plugin install deriva`)
+4. Users with `autoUpdate: true` get the new version on next Claude Code restart. First-time install uses `/plugin install deriva`.
 
 **Never create git tags manually** — always use `bump-version` from deriva-ml or the `bump_version` MCP tool.
 
@@ -130,7 +130,11 @@ Eval workspaces (`*-workspace/`) contain test outputs and are gitignored from re
 - **Release requires tag** — the workflow only triggers on `v*.*.*` tags pushed to origin. Commits alone won't create a release.
 - **marketplace.json must list all skills** — if you add or remove a skill, update the skills array in `.claude-plugin/marketplace.json`.
 - **Workspace dirs are not skills** — `*-workspace/` directories contain eval outputs and must NOT be listed in marketplace.json.
-- **Scripts must be portable** — Python scripts in `scripts/` must work in both Claude Code (full shell) and Claude Desktop (restricted environment).
+- **Scripts must handle minimal PATH** — Claude Code (especially inside the Desktop app) may not source shell profiles, so `$PATH` can be incomplete. Use `_find_uv()` pattern: try `shutil.which()` first, then check well-known locations (`~/.local/bin/`, `~/.cargo/bin/`, `/opt/homebrew/bin/`). Never assume `uv` or other tools are on PATH.
+- **Marketplace cache can break** — The local git clone at `~/.claude/plugins/marketplaces/deriva-plugins/` can become corrupted (no commits, duplicate directories like `skills 2/`). The `_refresh_marketplace_cache()` function detects this and re-clones. If users report stale skills, check the marketplace cache health first.
+- **MCP server version comes from the MCP resource** — The `check_versions.py` script only fetches the latest GitHub release tag for the MCP server. The *running* server version is obtained by Claude via `deriva://server/version`. The script does NOT inspect Docker containers or installed packages for MCP.
+- **`/plugin update` is unreliable** — The interactive `/plugin update` command does not always work. The supported update path is `autoUpdate: true` in `~/.claude/settings.json` + restart Claude Code. The script's `--update` flag refreshes the marketplace cache (or re-clones if broken) so auto-update picks up the new version.
 - **Skill names must be unique** — the directory name under `skills/` is the skill identifier. Renaming a directory changes the `/deriva:` command.
 - **Cross-references matter** — when renaming or removing a skill, grep for its name across all other skills' `SKILL.md` and `references/*.md` files.
 - **`[tool.bumpversion]` config required** — `bump-version` wraps `bump-my-version` which needs `[tool.bumpversion]` in `pyproject.toml` with `tag = true` and `commit = true`. Without it, no tag or commit is created. See `deriva-mcp/pyproject.toml` for the reference config.
+- **Never use `bump-my-version` directly** — always use `uv run bump-version patch|minor|major` which is the DerivaML CLI wrapper. Using `bump-my-version bump` directly bypasses project-specific logic.
