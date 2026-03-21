@@ -10,19 +10,23 @@ Check whether the user's DerivaML components are up to date, then offer to updat
 
 ## Workflow
 
-### Step 1: Determine the correct Python
+### Step 1: Determine the correct Python and run the check
 
-The script must run in the **project's Python environment** to accurately check `deriva-ml` version. Choose the invocation based on the project setup:
+The script must run in the **project's Python environment** to accurately check the `deriva-ml` version. Detect the environment before invoking:
 
-```bash
-# If CWD has a pyproject.toml (uv project) — use the project's venv:
-uv run python3 <skill-dir>/scripts/check_versions.py --json
+1. **Check if CWD has a `pyproject.toml`** (indicates a uv project with a `.venv`):
+   ```bash
+   uv run python3 <skill-dir>/scripts/check_versions.py --json
+   ```
+   This runs the script inside the project's virtual environment, so `importlib.metadata` sees the project's installed `deriva-ml`.
 
-# Otherwise — use system Python:
-python3 <skill-dir>/scripts/check_versions.py --json
-```
+2. **If no `pyproject.toml`** (e.g., Claude Desktop, or a non-project directory):
+   ```bash
+   python3 <skill-dir>/scripts/check_versions.py --json
+   ```
+   The script will fall back internally to `uv run python -c "..."` and `pip show` to find `deriva-ml` wherever it's installed.
 
-**Always prefer `uv run python3`** when a `pyproject.toml` exists in the current directory. This ensures the script checks the version of `deriva-ml` installed in the project's `.venv`, not the system Python.
+**In Claude Desktop** there is typically no project CWD, so always use the `python3` fallback. The script handles this gracefully — it checks multiple locations for `deriva-ml` and reports "Not installed" if it can't find it anywhere.
 
 Use `--json` to get structured output you can parse. The script checks three components:
 
