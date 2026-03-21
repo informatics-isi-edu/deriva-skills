@@ -121,7 +121,7 @@ Denormalized columns follow the pattern `TableName_ColumnName`:
 | `Diagnosis_Label` | `Malignant` | Classification label from vocabulary |
 | `Measurement_Value` | `3.14` | Numeric measurement |
 
-Only include tables you actually need — this keeps the join efficient.
+Only include tables you actually need — this keeps the join efficient. If the schema has multiple FK paths between two tables (e.g., `Image → Subject` direct and `Image → Observation → Subject`), you'll get an error asking you to include intermediate tables to disambiguate. See `references/denormalize-guide.md` for multi-hop FK traversal, ambiguous path resolution, and troubleshooting.
 
 ### Option C: Access individual tables
 

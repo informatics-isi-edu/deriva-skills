@@ -113,7 +113,7 @@ Use the `denormalize_dataset` MCP tool to get ML-ready joined data from a datase
 denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
 ```
 
-This joins the dataset's member tables, resolving foreign keys into human-readable values. The result is a flat table suitable for loading into a DataFrame.
+This joins the dataset's member tables, resolving foreign keys into human-readable values. The result is a flat table suitable for loading into a DataFrame. Denormalize follows multi-hop FK chains automatically — tables don't need to be explicit dataset members. If ambiguous FK paths exist between tables, add intermediate tables to `include_tables` to disambiguate.
 
 ### Query a Single Table
 
