@@ -28,23 +28,32 @@ The script must run in the **project's Python environment** to accurately check 
 
 **In Claude Desktop** there is typically no project CWD, so always use the `python3` fallback. The script handles this gracefully — it checks multiple locations for `deriva-ml` and reports "Not installed" if it can't find it anywhere.
 
-Use `--json` to get structured output you can parse. The script checks three components:
+Use `--json` to get structured output you can parse. The script checks two components:
 
 | Component | What it checks | How it detects updates |
 |-----------|---------------|----------------------|
 | **deriva-ml** | Installed Python package vs latest GitHub release tag | Compares semver versions |
 | **skills** | Plugin cache version vs latest `deriva-skills` GitHub release tag | Compares semver versions |
-| **mcp-server** | Docker container or native install vs latest available | Compares image digests or semver versions |
+
+**Note:** The script only checks `deriva-ml` and `skills`. For the MCP server version, use the MCP resource directly (see Step 1b).
+
+### Step 1b: Check MCP server version via MCP resource
+
+Read the `deriva://server/version` resource to get the running MCP server's version. Then compare it against the latest GitHub release tag for `informatics-isi-edu/deriva-mcp`.
+
+This is more accurate than Docker inspection because it checks the **actually running server**, regardless of whether it's deployed via Docker, native install, or any other method.
+
+If the MCP server is not running (resource read fails), report as "UNKNOWN — MCP server not reachable".
 
 ### Step 2: Present results as a summary table
 
-Parse the JSON and show the user a table like:
+Combine the script output (deriva-ml, skills) with the MCP resource result into a single table:
 
 | Component | Status | Installed | Latest |
 |-----------|--------|-----------|--------|
 | deriva-ml | UP TO DATE | 1.25.1 | v1.25.1 |
 | skills | OUTDATED | 0.12.1 | v0.12.2 |
-| mcp-server | UP TO DATE | (image digest matches) | latest |
+| mcp-server | UP TO DATE | 0.13.1 | v0.13.1 |
 
 Map `up_to_date` values: `true` = "UP TO DATE", `false` = "OUTDATED", `null` = "UNKNOWN".
 
@@ -78,20 +87,15 @@ This refreshes the cache. Then tell the user:
 
 The final `/plugin update` step cannot be automated because Claude Code manages its plugin manifest with internal locking. After they've run it, re-check with `--component skills` to confirm.
 
-#### mcp-server (automated, but confirm first)
+#### mcp-server (manual — tell the user)
 
-The MCP server update briefly interrupts the connection to Deriva MCP tools. Ask the user before proceeding. If they agree:
+The MCP server cannot be updated by Claude because restarting it breaks the MCP connection mid-session. Tell the user how to update based on their deployment:
 
-```bash
-uv run python3 <skill-dir>/scripts/check_versions.py --component mcp-server --update
-```
+- **Registry Docker** (most common): `docker pull ghcr.io/informatics-isi-edu/deriva-mcp:latest && docker restart deriva-mcp`
+- **Local dev Docker**: `cd deriva-mcp && docker compose -f docker-compose.mcp.yaml -f docker-compose.dev.yaml up -d --build`
+- **Native install**: `cd deriva-mcp && uv lock --upgrade-package deriva-mcp && uv sync`
 
-The script handles the appropriate update command based on deployment mode:
-- **Registry Docker** (e.g., `ghcr.io/.../deriva-mcp:latest`): `docker pull` + `docker restart`
-- **Local dev Docker**: `docker compose up -d --build`
-- **Native install**: `uv lock --upgrade-package deriva-mcp && uv sync`
-
-Warn the user that MCP tools will be briefly unavailable during the restart.
+Warn that MCP tools will be briefly unavailable during the restart.
 
 ### Step 4: Confirm results
 
@@ -111,11 +115,13 @@ uv run python3 <skill-dir>/scripts/check_versions.py
 
 ## Checking a Single Component
 
-To check or update just one component:
+To check or update just one component via the script:
 
 ```bash
 uv run python3 <skill-dir>/scripts/check_versions.py --component deriva-ml --json
-uv run python3 <skill-dir>/scripts/check_versions.py --component mcp-server --update
+uv run python3 <skill-dir>/scripts/check_versions.py --component skills --json
 ```
 
-Valid component names: `deriva-ml`, `skills`, `mcp-server`.
+Valid script component names: `deriva-ml`, `skills`.
+
+For the MCP server, read the `deriva://server/version` resource directly — no script needed.
