@@ -33,6 +33,32 @@ SKILLS_GITHUB_REPO = "informatics-isi-edu/deriva-skills"
 MCP_GITHUB_REPO = "informatics-isi-edu/deriva-mcp"
 
 
+def _find_uv() -> str | None:
+    """Find the ``uv`` binary, checking well-known locations as fallback.
+
+    ``shutil.which`` only searches ``$PATH``, which may be incomplete when
+    running inside Claude Code (especially in the Desktop app where the
+    shell profile is not sourced).  This helper checks common install
+    locations so the script works even with a minimal ``$PATH``.
+    """
+    found = shutil.which("uv")
+    if found:
+        return found
+
+    home = Path.home()
+    candidates = [
+        home / ".local" / "bin" / "uv",
+        home / ".cargo" / "bin" / "uv",
+        Path("/opt/homebrew/bin/uv"),
+        Path("/usr/local/bin/uv"),
+    ]
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    return None
+
+
 def _find_marketplace_cache_dir() -> Path | None:
     """Find the marketplace cache directory dynamically.
 
@@ -94,10 +120,11 @@ def get_installed_version(package: str) -> str | None:
         pass
 
     # Fall back to uv if available and we're in a uv project
-    if shutil.which("uv"):
+    uv = _find_uv()
+    if uv:
         try:
             result = run_cmd(
-                ["uv", "run", "python", "-c",
+                [uv, "run", "python", "-c",
                  f"from importlib.metadata import version; print(version('{package}'))"],
                 timeout=30,
             )
@@ -213,8 +240,9 @@ def check_deriva_ml() -> VersionStatus:
     else:
         # Build update commands based on available tools
         update_cmds = []
-        if shutil.which("uv"):
-            update_cmds = ["uv lock --upgrade-package deriva-ml", "uv sync"]
+        uv = _find_uv()
+        if uv:
+            update_cmds = [f"{uv} lock --upgrade-package deriva-ml", f"{uv} sync"]
         elif shutil.which("pip"):
             update_cmds = ["pip install --upgrade deriva-ml"]
 
@@ -391,304 +419,29 @@ def update_skills(status: VersionStatus) -> VersionStatus:
     return status
 
 
-def _is_registry_image(image: str) -> bool:
-    """Check if the image name looks like a registry image (ghcr.io/...)."""
-    return "/" in image and ("ghcr.io" in image or "docker.io" in image
-                            or "." in image.split("/")[0])
-
-
 def check_mcp_server() -> VersionStatus:
-    """Check if the MCP Docker container is up to date.
+    """Return the latest release tag for the MCP server.
 
-    Handles two deployment modes:
-    - Local dev: image built from local repo (e.g., 'deriva-mcp:dev').
-      Compares container creation time against latest repo commit.
-    - Registry: image pulled from GHCR (e.g., 'ghcr.io/.../deriva-mcp:latest').
-      Compares local image digest against remote registry digest.
+    The *running* server version is obtained by Claude via the
+    ``deriva://server/version`` MCP resource — not by this script.
+    This function only fetches the latest GitHub release tag so the
+    caller (Claude) can compare the two.
     """
-    if not shutil.which("docker"):
-        # No Docker — check if MCP server runs natively
-        return _check_native_mcp_server()
-
-    try:
-        result = run_cmd(
-            ["docker", "ps", "--filter", "name=deriva-mcp", "--format", "{{.Image}}"],
-        )
-    except FileNotFoundError:
-        return _check_native_mcp_server()
-
-    if result.returncode != 0 or not result.stdout.strip():
-        # No Docker container — check if MCP server runs natively
-        return _check_native_mcp_server()
-
-    image = result.stdout.strip()
-
-    if _is_registry_image(image):
-        return _check_registry_mcp_server(image)
-    else:
-        return _check_local_dev_mcp_server(image)
-
-
-def _check_native_mcp_server() -> VersionStatus:
-    """Check for a natively-running MCP server (no Docker)."""
-    installed = get_installed_version("deriva_mcp")
-    if not installed:
-        installed = get_installed_version("deriva_ml_mcp")
-    if not installed:
-        return VersionStatus("mcp-server", None, None, None,
-                             "No running Docker container or installed package found")
-
     latest_tag = get_latest_git_tag(MCP_GITHUB_REPO)
     if not latest_tag:
-        return VersionStatus("mcp-server", installed, None, None,
+        return VersionStatus("mcp-server", None, None, None,
                              "Could not fetch latest version from GitHub")
 
-    outdated = version_is_outdated(installed, latest_tag)
-    if outdated is None:
-        return VersionStatus("mcp-server", installed, latest_tag, None,
-                             "Could not compare versions")
-
-    base = extract_base_version(installed)
-    if not outdated:
-        return VersionStatus("mcp-server", installed, latest_tag, True,
-                             "Up to date")
-    else:
-        update_cmds = []
-        if shutil.which("uv"):
-            update_cmds = ["uv lock --upgrade-package deriva-mcp", "uv sync"]
-        elif shutil.which("pip"):
-            update_cmds = ["pip install --upgrade deriva-mcp"]
-
-        return VersionStatus(
-            "mcp-server", installed, latest_tag, False,
-            f"Outdated: installed {base}, latest is {latest_tag}",
-            update_commands=update_cmds,
-        )
-
-
-def _check_registry_mcp_server(image: str) -> VersionStatus:
-    """Check a registry-pulled Docker image against the remote registry.
-
-    Compares local image digest against remote manifest digest to detect
-    whether a newer image is available.
-    """
-    # Get local image digest
-    try:
-        result = run_cmd(["docker", "inspect", "--format", "{{.Id}}", image])
-    except FileNotFoundError:
-        return VersionStatus("mcp-server", image, None, None,
-                             "Docker not available")
-    local_digest = result.stdout.strip() if result.returncode == 0 else None
-
-    # Get local image repo digest (the digest used to pull)
-    local_repo_digest = None
-    try:
-        result = run_cmd(
-            ["docker", "inspect", "--format",
-             "{{index .RepoDigests 0}}", image],
-        )
-        if result.returncode == 0 and "@sha256:" in result.stdout:
-            local_repo_digest = result.stdout.strip().split("@", 1)[1]
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-
-    # Check remote registry manifest digest
-    try:
-        result = run_cmd(
-            ["docker", "manifest", "inspect", "--verbose", image],
-            timeout=30,
-        )
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        result = None
-
-    if result and result.returncode == 0:
-        # Parse manifest to get remote digest
-        remote_digest = None
-        try:
-            manifest_data = json.loads(result.stdout)
-            if isinstance(manifest_data, list):
-                manifest_data = manifest_data[0]
-            descriptor = manifest_data.get("Descriptor", {})
-            remote_digest = descriptor.get("digest")
-        except (json.JSONDecodeError, KeyError, IndexError):
-            pass
-
-        if local_repo_digest and remote_digest:
-            if local_repo_digest == remote_digest:
-                return VersionStatus(
-                    "mcp-server", image, "latest", True,
-                    "Up to date (image digest matches remote)",
-                )
-            else:
-                return VersionStatus(
-                    "mcp-server", image, "newer image available", False,
-                    "Remote registry has a newer image",
-                    update_commands=[
-                        f"docker pull {image}",
-                        "docker restart deriva-mcp",
-                    ],
-                )
-
-    # Fall back to checking the latest git tag
-    latest_tag = get_latest_git_tag(MCP_GITHUB_REPO)
-    return VersionStatus("mcp-server", image, latest_tag or "unknown", None,
-                         "Could not compare image digests. "
-                         "Try: docker pull " + image)
-
-
-def _check_local_dev_mcp_server(image: str) -> VersionStatus:
-    """Check a locally-built Docker image against the repo commit history."""
-    repo_dir = _find_repo_dir()
-    if not repo_dir:
-        return VersionStatus("mcp-server", image, None, None,
-                             "Could not find deriva-mcp repo to check for updates")
-
-    # Compare container creation time vs latest commit time
-    try:
-        result = run_cmd(
-            ["docker", "inspect", "--format", "{{.Created}}", "deriva-mcp"],
-        )
-        container_created = result.stdout.strip() if result.returncode == 0 else None
-    except FileNotFoundError:
-        container_created = None
-
-    # Get latest repo commit hash and time
-    latest_commit = None
-    latest_commit_time = None
-    try:
-        result = run_cmd(
-            ["git", "log", "-1", "--format=%h %aI"],
-            cwd=repo_dir,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            parts = result.stdout.strip().split(" ", 1)
-            latest_commit = parts[0]
-            latest_commit_time = parts[1] if len(parts) > 1 else None
-    except FileNotFoundError:
-        pass
-
-    # Try to get the commit hash the container was built from via OCI label
-    container_commit = None
-    try:
-        result = run_cmd(
-            ["docker", "inspect", "--format",
-             '{{index .Config.Labels "org.opencontainers.image.revision"}}',
-             "deriva-mcp"],
-        )
-        if result.returncode == 0 and result.stdout.strip() and result.stdout.strip() != "<no value>":
-            container_commit = result.stdout.strip()[:7]
-    except FileNotFoundError:
-        pass
-
-    # Fall back: find the repo commit closest to container creation time
-    if not container_commit and container_created:
-        try:
-            result = run_cmd(
-                ["git", "log", "-1", "--format=%h", f"--before={container_created}"],
-                cwd=repo_dir,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                container_commit = result.stdout.strip()
-        except FileNotFoundError:
-            pass
-
-    # Build version strings showing commit hashes
-    installed_str = f"commit {container_commit}" if container_commit else image
-    latest_str = f"commit {latest_commit}" if latest_commit else "unknown"
-
-    # Find compose files for rebuild command
-    # docker-compose.dev.yaml is an override that requires the base docker-compose.mcp.yaml
-    compose_files = []
-    base_compose = os.path.join(repo_dir, "docker-compose.mcp.yaml")
-    dev_compose = os.path.join(repo_dir, "docker-compose.dev.yaml")
-    if os.path.exists(base_compose) and os.path.exists(dev_compose):
-        compose_files = [base_compose, dev_compose]
-    elif os.path.exists(base_compose):
-        compose_files = [base_compose]
-    elif os.path.exists(dev_compose):
-        compose_files = [dev_compose]
-
-    if container_created and latest_commit_time:
-        if latest_commit_time > container_created:
-            if compose_files:
-                file_args = " ".join(f"-f {f}" for f in compose_files)
-                rebuild_cmd = f"docker compose {file_args} up -d --build"
-            else:
-                rebuild_cmd = f"docker build -t {image} {repo_dir} && docker restart deriva-mcp"
-            return VersionStatus(
-                "mcp-server", installed_str, latest_str,
-                False,
-                "Container is older than latest repo commit",
-                update_commands=[rebuild_cmd],
-            )
-
-    return VersionStatus("mcp-server", installed_str, latest_str, True,
-                         "Container appears up to date")
-
-
-def _find_repo_dir() -> str | None:
-    """Find the deriva-mcp git repo dynamically.
-
-    Discovery strategy (no hardcoded paths):
-    1. Walk up from CWD looking for a deriva-mcp repo
-    2. Check sibling directories of CWD (common monorepo layout)
-    3. Use 'git' to find repos in common parent directories
-    """
-    target_marker = Path("src") / "deriva_mcp"
-
-    # 1. Walk up from CWD
-    cwd = Path.cwd()
-    for parent in [cwd, *cwd.parents]:
-        if parent.name == "deriva-mcp" and (parent / ".git").is_dir() and (parent / target_marker).is_dir():
-            return str(parent)
-
-    # 2. Check sibling directories of CWD and its parents
-    #    (handles being in e.g. ~/GitHub/deriva-ml-model-template while repo is ~/GitHub/deriva-mcp)
-    for parent in [cwd, *list(cwd.parents)[:3]]:
-        candidate = parent / "deriva-mcp"
-        if (candidate / ".git").is_dir() and (candidate / target_marker).is_dir():
-            return str(candidate)
-        # Also check parent's siblings
-        if parent.parent.exists():
-            candidate = parent.parent / "deriva-mcp"
-            if (candidate / ".git").is_dir() and (candidate / target_marker).is_dir():
-                return str(candidate)
-
-    # 3. Check common dev directory patterns relative to home
-    #    (only structure, not specific usernames or absolute paths)
-    home = Path.home()
-    for dev_dir_name in ["GitHub", "github", "src", "projects", "code", "dev", "repos"]:
-        candidate = home / dev_dir_name / "deriva-mcp"
-        if (candidate / ".git").is_dir() and (candidate / target_marker).is_dir():
-            return str(candidate)
-
-    return None
+    return VersionStatus("mcp-server", None, latest_tag, None,
+                         "Use deriva://server/version resource for installed version")
 
 
 def update_mcp_server(status: VersionStatus) -> VersionStatus:
-    """Rebuild and restart the MCP Docker container."""
-    if not shutil.which("docker"):
-        status.update_message = "Docker not found on PATH"
-        return status
-
-    print("  Rebuilding MCP server...")
-    for cmd_str in status.update_commands:
-        # Use shell=True for compose commands with pipes
-        print(f"    $ {cmd_str}")
-        try:
-            result = subprocess.run(
-                cmd_str, shell=True, capture_output=True, text=True, timeout=600,
-            )
-        except FileNotFoundError:
-            status.update_message = f"Command not found: {cmd_str}"
-            return status
-        if result.returncode != 0:
-            status.update_message = f"Failed: {cmd_str}\n{result.stderr or result.stdout}"
-            return status
-
-    status.updated = True
-    status.up_to_date = True
-    status.update_message = "Rebuilt and restarted MCP server"
+    """MCP server updates require user action (restart breaks connection)."""
+    status.update_message = (
+        "MCP server cannot be updated automatically (restart breaks connection). "
+        "Update manually and restart the server."
+    )
     return status
 
 
