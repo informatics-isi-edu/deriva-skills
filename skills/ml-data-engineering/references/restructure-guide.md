@@ -369,6 +369,8 @@ Denormalized columns follow the pattern `TableName_ColumnName`:
 
 Only include tables you actually need — this keeps the join efficient and avoids pulling in unrelated data through FK chains.
 
+Tables don't need to be explicit dataset members — denormalize follows FK chains to fetch related records automatically. If the schema has multiple FK paths between two tables, you'll get a `DerivaMLException` asking you to include intermediate tables to disambiguate. For multi-hop FK traversal details, ambiguous path resolution, and troubleshooting, see `denormalize-guide.md`.
+
 ## Common Patterns
 
 ### Image classification pipeline

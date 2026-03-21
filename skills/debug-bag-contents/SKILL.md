@@ -99,6 +99,37 @@ The bag export algorithm uses foreign key (FK) path traversal to determine which
 - Add Observation records as explicit dataset members and register `Observation` as an element type.
 - Or ensure there is a direct FK link between the tables.
 
+### Scenario: Denormalize raises "Ambiguous path" error
+
+**Problem**: Calling `denormalize_as_dataframe(include_tables=["Image", "Subject"])` raises a `DerivaMLException` with "Ambiguous path between Image and Subject".
+
+**Diagnosis**:
+- The schema has multiple FK paths between Image and Subject.
+- For example: `Image → Subject` (direct FK) AND `Image → Observation → Subject` (multi-hop).
+- Denormalize cannot determine which path to use for the join.
+
+**Fix**:
+- Read the error message — it lists all paths and suggests intermediate tables.
+- Add the intermediate table to `include_tables` to select the desired path:
+  ```python
+  # Use the multi-hop path through Observation
+  df = bag.denormalize_as_dataframe(include_tables=["Image", "Observation", "Subject"])
+  ```
+
+### Scenario: Denormalize returns null for joined columns
+
+**Problem**: Denormalize returns rows but all columns from a joined table (e.g., Observation) are null.
+
+**Diagnosis**:
+- The joined table may not be FK-reachable from the primary table members.
+- The FK column on the primary table may be null for all members.
+- The FK path may require intermediate tables not listed in `include_tables`.
+
+**Fix**:
+1. Check the FK column values: does the primary table actually have non-null FK values pointing to the joined table?
+2. If the path goes through intermediate tables, include them in `include_tables`.
+3. Verify the joined table has records matching the FK values.
+
 ### Scenario: Vocabulary terms missing
 
 **Problem**: Controlled vocabulary values referenced by data records are not in the bag.
