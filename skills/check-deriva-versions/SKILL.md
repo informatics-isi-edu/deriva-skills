@@ -10,11 +10,19 @@ Check whether the user's DerivaML components are up to date, then offer to updat
 
 ## Workflow
 
-### Step 1: Run the version check
+### Step 1: Determine the correct Python
+
+The script must run in the **project's Python environment** to accurately check `deriva-ml` version. Choose the invocation based on the project setup:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py --json
+# If CWD has a pyproject.toml (uv project) — use the project's venv:
+uv run python3 <skill-dir>/scripts/check_versions.py --json
+
+# Otherwise — use system Python:
+python3 <skill-dir>/scripts/check_versions.py --json
 ```
+
+**Always prefer `uv run python3`** when a `pyproject.toml` exists in the current directory. This ensures the script checks the version of `deriva-ml` installed in the project's `.venv`, not the system Python.
 
 Use `--json` to get structured output you can parse. The script checks three components:
 
@@ -47,7 +55,7 @@ For each component where `up_to_date` is `false`, offer to update it. Handle eac
 Offer to run the update. If the user agrees:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py --component deriva-ml --update
+uv run python3 <skill-dir>/scripts/check_versions.py --component deriva-ml --update
 ```
 
 This runs `uv lock --upgrade-package deriva-ml && uv sync` (or pip equivalent) and verifies the new version.
@@ -57,7 +65,7 @@ This runs `uv lock --upgrade-package deriva-ml && uv sync` (or pip equivalent) a
 The update script first refreshes the local marketplace cache (`git pull`), which fixes a common issue where `/plugin update` reports "already at latest" despite newer versions on GitHub. Then the user must run the final install step manually:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py --component skills --update
+uv run python3 <skill-dir>/scripts/check_versions.py --component skills --update
 ```
 
 This refreshes the cache. Then tell the user:
@@ -71,7 +79,7 @@ The final `/plugin update` step cannot be automated because Claude Code manages 
 The MCP server update briefly interrupts the connection to Deriva MCP tools. Ask the user before proceeding. If they agree:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py --component mcp-server --update
+uv run python3 <skill-dir>/scripts/check_versions.py --component mcp-server --update
 ```
 
 The script handles the appropriate update command based on deployment mode:
@@ -86,7 +94,7 @@ Warn the user that MCP tools will be briefly unavailable during the restart.
 After updates complete, re-run the check to confirm everything is current:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py
+uv run python3 <skill-dir>/scripts/check_versions.py
 ```
 
 ## Interpreting Status Values
@@ -102,8 +110,8 @@ python <skill-dir>/scripts/check_versions.py
 To check or update just one component:
 
 ```bash
-python <skill-dir>/scripts/check_versions.py --component deriva-ml --json
-python <skill-dir>/scripts/check_versions.py --component mcp-server --update
+uv run python3 <skill-dir>/scripts/check_versions.py --component deriva-ml --json
+uv run python3 <skill-dir>/scripts/check_versions.py --component mcp-server --update
 ```
 
 Valid component names: `deriva-ml`, `skills`, `mcp-server`.
