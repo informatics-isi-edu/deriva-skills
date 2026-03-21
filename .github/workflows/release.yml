@@ -25,24 +25,12 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
-
-      - name: Update plugin.json version
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          # Update version in plugin.json
-          jq --arg v "$VERSION" '.version = $v' .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
-          # Update version in marketplace.json
-          jq --arg v "$VERSION" '.plugins[0].version = $v' .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
-          echo "Updated plugin.json and marketplace.json to version $VERSION"
-          cat .claude-plugin/plugin.json
-
-      - name: Commit version bump to main
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/plugin.json .claude-plugin/marketplace.json
-          git commit -m "chore: bump plugin version to ${{ steps.version.outputs.version }}"
-          git push origin HEAD:main
+          # Verify plugin.json already has the correct version
+          # (bump-version updates it before tagging)
+          PLUGIN_VERSION=$(jq -r '.version' .claude-plugin/plugin.json)
+          if [ "$PLUGIN_VERSION" != "$VERSION" ]; then
+            echo "::warning::plugin.json version ($PLUGIN_VERSION) does not match tag ($VERSION)"
+          fi
 
       - name: Create release archive
         run: |
