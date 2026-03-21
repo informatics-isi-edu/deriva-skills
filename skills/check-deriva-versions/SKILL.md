@@ -10,23 +10,27 @@ Check whether the user's DerivaML components are up to date, then offer to updat
 
 ## Workflow
 
-### Step 1: Determine the correct Python and run the check
+### Step 1: Find the project environment and run the check
 
-The script must run in the **project's Python environment** to accurately check the `deriva-ml` version. Detect the environment before invoking:
+The script must run in the **project's Python environment** to accurately check the `deriva-ml` version. Follow this sequence:
 
-1. **Check if CWD has a `pyproject.toml`** (indicates a uv project with a `.venv`):
+1. **Check if CWD has a `pyproject.toml`** — if yes, run from here:
    ```bash
    uv run python3 <skill-dir>/scripts/check_versions.py --json
    ```
-   This runs the script inside the project's virtual environment, so `importlib.metadata` sees the project's installed `deriva-ml`.
 
-2. **If no `pyproject.toml`** (e.g., Claude Desktop, or a non-project directory):
+2. **If no `pyproject.toml` in CWD**, ask the user where their DerivaML project is:
+   > "I need to check the `deriva-ml` version in your project's virtual environment. What directory is your DerivaML project in?"
+
+   Then `cd` to that directory and run with `uv run python3`.
+
+3. **If the user doesn't have a project** (e.g., Claude Desktop, or they only use MCP tools), run with system Python:
    ```bash
    python3 <skill-dir>/scripts/check_versions.py --json
    ```
-   The script will fall back internally to `uv run python -c "..."` and `pip show` to find `deriva-ml` wherever it's installed.
+   The script will report "Not installed" for `deriva-ml`, which is expected — they interact with Deriva through the MCP server, not a local Python install.
 
-**In Claude Desktop** there is typically no project CWD, so always use the `python3` fallback. The script handles this gracefully — it checks multiple locations for `deriva-ml` and reports "Not installed" if it can't find it anywhere.
+**Why this matters:** Running the script with the wrong Python will either report "Not installed" (misleading) or report the wrong version. Always run in the project's `.venv` when one exists.
 
 Use `--json` to get structured output you can parse. The script checks two components:
 
