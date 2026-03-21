@@ -1,4 +1,4 @@
-m{
+{
   "name": "deriva-plugins",
   "owner": {
     "name": "ISI Informatics",
@@ -8,7 +8,7 @@ m{
     {
       "name": "deriva",
       "source": "./",
-      "description": "Skills for working with Deriva catalogs and DerivaML workflows",
+      "description": "Dataset lifecycle, ML execution, feature engineering, vocabulary management, and experiment configuration for Deriva catalogs and DerivaML workflows. Includes 30+ skills covering the full ML development cycle from data curation through model training.",
       "version": "0.15.2",
       "author": {
         "name": "ISI Informatics"
