@@ -76,7 +76,7 @@ uv run python3 <skill-dir>/scripts/check_versions.py --component deriva-ml --upd
 
 This runs `uv lock --upgrade-package deriva-ml && uv sync` and verifies the new version.
 
-#### skills (Claude Code only — two steps)
+#### skills (Claude Code only)
 
 First, check if auto-update is enabled. Read `~/.claude/settings.json` and look for:
 ```json
@@ -90,17 +90,12 @@ First, check if auto-update is enabled. Read `~/.claude/settings.json` and look 
 If `autoUpdate` is **not set or false**, suggest the user enable it:
 > "Auto-update is not enabled for the deriva skills plugin. To enable it, add `\"autoUpdate\": true` to your `~/.claude/settings.json` under `extraKnownMarketplaces.deriva-plugins`. This will keep skills up to date automatically."
 
-Regardless of auto-update setting, to update now:
+To update now, refresh the marketplace cache (also repairs broken clones):
+```bash
+python3 <skill-dir>/scripts/check_versions.py --component skills --update
+```
 
-1. Refresh the marketplace cache (fixes stale `/plugin update` results):
-   ```bash
-   python3 <skill-dir>/scripts/check_versions.py --component skills --update
-   ```
-
-2. Tell the user to run the final install:
-   > "Marketplace cache refreshed. Now run `/plugin update deriva` in Claude Code to complete the update."
-
-   The `/plugin update` step cannot be automated because Claude Code manages its plugin manifest with internal locking.
+Then tell the user to restart Claude Code to pick up the new version.
 
 #### mcp-server (user action — restart required)
 

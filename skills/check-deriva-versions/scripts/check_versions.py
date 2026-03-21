@@ -362,6 +362,58 @@ def check_skills() -> VersionStatus:
         )
 
 
+def _is_git_clone_healthy(repo_dir: Path) -> bool:
+    """Check whether a git clone is in a usable state.
+
+    Detects common corruption patterns:
+    - Missing .git directory
+    - Empty repo (no commits)
+    - Duplicate directories (e.g. "skills 2/") from failed operations
+    """
+    git_dir = repo_dir / ".git"
+    if not git_dir.is_dir():
+        return False
+
+    # Check for commits — "No commits yet" means the clone is broken
+    try:
+        result = run_cmd(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(repo_dir),
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+    # Check for duplicate directories (e.g. "skills 2/", ".git 2/")
+    # which indicate a broken clone from a failed copy operation
+    try:
+        for entry in repo_dir.iterdir():
+            if entry.is_dir() and " " in entry.name:
+                return False
+    except OSError:
+        pass
+
+    return True
+
+
+def _get_marketplace_repo_url() -> str | None:
+    """Get the GitHub repo URL for the deriva-plugins marketplace."""
+    known_marketplaces = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+    if known_marketplaces.exists():
+        try:
+            data = json.loads(known_marketplaces.read_text())
+            entry = data.get("deriva-plugins", {})
+            source = entry.get("source", {})
+            repo = source.get("repo")
+            if repo:
+                return f"https://github.com/{repo}.git"
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return None
+
+
 def _refresh_marketplace_cache() -> bool:
     """Pull latest commits into the local marketplace cache.
 
@@ -371,16 +423,46 @@ def _refresh_marketplace_cache() -> bool:
     '/plugin update' reports "already at latest" even when newer versions
     exist on GitHub. Running 'git pull' fixes this.
 
+    If the clone is broken (no commits, duplicate directories), it is
+    deleted and re-cloned from the source repository.
+
     Returns:
         True if the cache was successfully refreshed, False otherwise.
     """
     cache_dir = _find_marketplace_cache_dir()
-    if cache_dir is None or not cache_dir.is_dir():
-        return False
-    git_dir = cache_dir / ".git"
-    if not git_dir.is_dir():
+    if cache_dir is None:
         return False
 
+    # If the directory exists but is broken, remove and re-clone
+    if cache_dir.is_dir() and not _is_git_clone_healthy(cache_dir):
+        repo_url = _get_marketplace_repo_url()
+        if not repo_url:
+            return False
+        try:
+            shutil.rmtree(cache_dir)
+            result = run_cmd(
+                ["git", "clone", repo_url, str(cache_dir)],
+                timeout=60,
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+
+    if not cache_dir.is_dir():
+        # Directory doesn't exist at all — try to clone
+        repo_url = _get_marketplace_repo_url()
+        if not repo_url:
+            return False
+        try:
+            result = run_cmd(
+                ["git", "clone", repo_url, str(cache_dir)],
+                timeout=60,
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return False
+
+    # Healthy clone — just pull
     try:
         result = run_cmd(
             ["git", "pull", "origin", "main"],
@@ -395,13 +477,12 @@ def _refresh_marketplace_cache() -> bool:
 def update_skills(status: VersionStatus) -> VersionStatus:
     """Update the skills plugin.
 
-    First refreshes the local marketplace cache (git pull) so that
-    '/plugin update' sees the latest version. Then instructs the user
-    to run the plugin update command.
+    First refreshes the local marketplace cache (git pull, or re-clone if
+    broken) so that Claude Code's auto-update sees the latest version.
 
-    The final '/plugin update deriva' step must be run by the user because
-    Claude Code manages its plugin cache with internal locking that external
-    processes cannot safely bypass.
+    With ``autoUpdate: true`` in settings.json, Claude Code will pick up
+    the new version on next session start.  Otherwise the user needs to
+    restart Claude Code for the update to take effect.
     """
     # Step 1: Refresh the marketplace cache
     print("  Refreshing marketplace cache...")
@@ -411,11 +492,17 @@ def update_skills(status: VersionStatus) -> VersionStatus:
     else:
         print("    Could not refresh marketplace cache (this is non-fatal).")
 
-    # Step 2: Instruct user to run the plugin update
-    status.update_message = (
-        "Marketplace cache has been refreshed. "
-        "Now run '/plugin update deriva' in Claude Code to complete the update."
-    )
+    # Step 2: Advise the user
+    if refreshed:
+        status.update_message = (
+            "Marketplace cache refreshed. "
+            "Restart Claude Code to pick up the new version."
+        )
+    else:
+        status.update_message = (
+            "Could not refresh marketplace cache automatically. "
+            "Restart Claude Code — auto-update should re-clone on next start."
+        )
     return status
 
 
