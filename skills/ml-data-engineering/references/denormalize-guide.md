@@ -30,6 +30,47 @@ for row in bag.denormalize_as_dict(include_tables=["Image", "Subject"]):
 | Catalog (MCP tool, `Dataset.denormalize_as_dataframe`) | `Table_Column` | `Image_Filename`, `Subject_Age` |
 | Bag (`DatasetBag.denormalize_as_dataframe`) | `Table.Column` | `Image.Filename`, `Subject.Age` |
 
+## Discovering Columns Before Denormalizing
+
+Use `columns_only=True` to preview the column schema without fetching any data. This is fast and helps you:
+- See what columns a denormalization would produce
+- Verify FK paths resolve correctly before running expensive queries
+- Find the correct column name for `stratify_by_column` in `split_dataset`
+- Debug ambiguous FK path errors without waiting for data
+
+**MCP tool:**
+```
+denormalize_dataset(
+    dataset_rid="2-XXXX",
+    include_tables=["Image", "Subject", "Diagnosis"],
+    columns_only=True
+)
+```
+
+Returns:
+```json
+{
+  "columns": [
+    {"name": "Image.RID", "type": "ermrest_rid"},
+    {"name": "Image.Filename", "type": "text"},
+    {"name": "Subject.Gender", "type": "text"},
+    {"name": "Diagnosis.Label", "type": "text"}
+  ],
+  "column_names": ["Image.RID", "Image.Filename", "Subject.Gender", "Diagnosis.Label"],
+  "rows": [],
+  "columns_only": true
+}
+```
+
+**Python API:**
+```python
+# Returns list of (column_name, column_type) tuples
+columns = bag.denormalize_columns(include_tables=["Image", "Subject"])
+# [("Image.RID", "ermrest_rid"), ("Image.Filename", "text"), ...]
+```
+
+This calls the same FK path analysis as the full denormalization but skips the data fetch entirely.
+
 ## How FK Traversal Works
 
 Denormalization starts from a **primary table** — the first table in `include_tables` that has dataset members. It then joins other tables by following FK relationships.

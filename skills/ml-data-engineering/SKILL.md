@@ -95,7 +95,17 @@ For the full restructuring guide — `group_by` options, value selectors, file t
 
 Best for tabular ML, feature engineering, or interactive exploration.
 
-**From the catalog (no download needed):**
+**Step 1 — Preview columns (no data fetched):**
+```
+denormalize_dataset(
+    dataset_rid="2-XXXX",
+    include_tables=["Image", "Subject", "Diagnosis"],
+    columns_only=True
+)
+```
+This returns column names and types instantly. Use it to verify FK paths, discover available columns, or find the right column name for `stratify_by_column`.
+
+**Step 2 — Fetch the data:**
 ```
 denormalize_dataset(
     dataset_rid="2-XXXX",
@@ -105,8 +115,12 @@ denormalize_dataset(
 )
 ```
 
-**From a downloaded bag:**
+**From a downloaded bag (Python API):**
 ```python
+# Preview columns without data
+columns = bag.denormalize_columns(include_tables=["Image", "Subject"])
+
+# Fetch the data
 df = bag.denormalize_as_dataframe(include_tables=["Image", "Subject"])
 ```
 

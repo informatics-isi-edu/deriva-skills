@@ -115,6 +115,19 @@ denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
 
 This joins the dataset's member tables, resolving foreign keys into human-readable values. The result is a flat table suitable for loading into a DataFrame. Denormalize follows multi-hop FK chains automatically — tables don't need to be explicit dataset members. If ambiguous FK paths exist between tables, add intermediate tables to `include_tables` to disambiguate.
 
+### Preview Columns Before Denormalizing
+
+Use `columns_only=True` to see the column schema without fetching data — useful for debugging FK paths or finding column names for stratification:
+
+```
+denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], columns_only=True)
+```
+
+Returns column names and types instantly. Use this when:
+- You need the correct column name for `stratify_by_column` in `split_dataset`
+- You want to verify FK paths resolve before running an expensive query
+- You hit an ambiguous FK path error and want to iterate quickly
+
 ### Query a Single Table
 
 For simpler needs, `query_table` on the relevant table is sufficient:

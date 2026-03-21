@@ -194,7 +194,13 @@ Read resource: deriva://dataset/{rid}
 list_dataset_members(dataset_rid="...", version="1.0.0")
 ```
 
-**Step 3: Browse actual data** — pick the element type you want to explore, then denormalize to see real values. Include related tables to see joined data (e.g., an Image's Subject metadata, or feature annotations):
+**Step 3: Preview columns** — before fetching data, use `columns_only=True` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
+```
+denormalize_dataset(dataset_rid="...", include_tables=["Image", "Subject"], columns_only=True)
+```
+Returns column names and types without any data. Use this to debug FK path errors or find the right column name for stratification.
+
+**Step 4: Browse actual data** — denormalize to see real values. Include related tables to see joined data (e.g., an Image's Subject metadata, or feature annotations):
 ```
 # See Image data joined with Subject metadata
 denormalize_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=10)
