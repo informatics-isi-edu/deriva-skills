@@ -22,6 +22,7 @@
         "./skills/configure-experiment",
         "./skills/create-feature",
         "./skills/create-table",
+        "./skills/create-web-app",
         "./skills/customize-display",
         "./skills/dataset-lifecycle",
         "./skills/debug-bag-contents",

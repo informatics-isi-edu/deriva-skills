@@ -5,68 +5,41 @@ description: "Use this skill to launch an interactive ERD (Entity-Relationship D
 
 # Interactive ERD Browser
 
-Launch a local React application that provides an interactive visual ERD for the connected catalog.
+Launch the Schema Workbench — an interactive visual ERD for the connected catalog.
 
 ## Prerequisites
 
 - An active catalog connection (call `connect_catalog` first if needed)
-- Node.js 18+ installed locally
-- The `deriva-mcp` repository cloned locally
+- The `deriva-ml-apps` package installed (`cd ~/GitHub/deriva-ml-apps && uv sync`)
+- The Schema Workbench built (`cd ~/GitHub/deriva-ml-apps/schema-workbench && pnpm install && pnpm build`)
 
 ## Steps
 
-### 1. Get catalog connection info
+### 1. Confirm catalog connection
 
-Read the catalog connection info. You need the hostname and catalog ID.
+Read `deriva://catalog/connections` to verify you're connected. Note the hostname and catalog ID.
 
-Use the MCP tool `get_record` or read `deriva://catalog/schema` to confirm the connection is active and get `hostname` and `catalog_id`.
+### 2. Launch the app server
 
-### 2. Locate the ERD browser app
+Use the MCP tool:
 
-The app lives in the `deriva-mcp` repository at `apps/erd-browser/`. Find it relative to the plugin installation:
+```
+start_app(app_id="schema-workbench", hostname="<hostname>", catalog_id="<catalog_id>")
+```
+
+Or start from the command line:
 
 ```bash
-# The app is at: <deriva-mcp-repo>/apps/erd-browser/
-# Find it relative to this skill's location
-SKILL_DIR="$(dirname "$(find ~/.claude -path '*/skills/browse-erd/SKILL.md' -print -quit 2>/dev/null)")"
-APP_DIR="$(cd "$SKILL_DIR/../../../apps/erd-browser" && pwd)"
+cd ~/GitHub/deriva-ml-apps
+uv run deriva-ml-apps serve --backend <hostname>
+# Then open: http://localhost:8080/apps/schema-workbench/#catalog=<catalog_id>
 ```
 
-If the app directory doesn't exist, tell the user they need to update their `deriva-mcp` repo:
-```
-git -C <repo> pull
-```
+### 3. Tell the user
 
-### 3. Install dependencies (first run only)
-
-```bash
-cd "$APP_DIR"
-if [ ! -d node_modules ]; then
-  pnpm install
-fi
-```
-
-### 4. Launch the dev server
-
-Set environment variables for the catalog connection and start the Vite dev server:
-
-```bash
-cd "$APP_DIR"
-VITE_CATALOG_HOST=<hostname> VITE_CATALOG_ID=<catalog_id> pnpm dev
-```
-
-This will:
-- Start a local dev server (typically at http://localhost:5173)
-- Open the browser automatically
-- Connect to the catalog using the browser's existing authentication cookies
-
-### 5. Tell the user
-
-Let the user know:
-- The ERD browser is running at the URL shown in the terminal
+- The Schema Workbench is running at the URL shown
 - They must be logged into the Deriva server in their browser for authentication to work
-- Press Ctrl+C in the terminal to stop the server
-- They can search, filter by table type, click tables for details, and link out to Chaise
+- The app-launcher homepage at `http://localhost:8080` shows all available apps
 
 ## Features
 
