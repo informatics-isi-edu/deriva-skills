@@ -197,7 +197,7 @@ Read resource: deriva://feature/{table}/{feature}/values
 Read resource: deriva://table/{table}/feature-values/newest
 
 # With selection/filtering
-fetch_table_features(table_name="Image", feature_name="Diagnosis", selector="newest")
+resource deriva://table/{name}/features (table_name="Image", feature_name="Diagnosis", selector="newest")
 ```
 
 ### Resolve multiple values
@@ -225,7 +225,7 @@ Feature values are also available as pre-deduplicated MCP resources:
 
 ### Custom selection logic
 
-When built-in selectors don't fit (highest confidence, specific annotator, etc.), write a Python script. All selectors now use a single type — `FeatureRecord` — everywhere (catalog queries, bag queries, and `restructure_assets`).
+When built-in selectors don't fit (highest confidence, specific annotator, etc.), write a Python script. All selectors now use a single type — `FeatureRecord` — everywhere (catalog queries, bag queries, and Python API `bag.restructure_assets()`).
 
 ```python
 from deriva_ml.feature import FeatureRecord
@@ -235,7 +235,7 @@ def select_highest_confidence(records: list[FeatureRecord]) -> FeatureRecord:
     return max(records, key=lambda r: getattr(r, "Confidence", 0))
 
 # Works with catalog queries
-features = ml.fetch_table_features("Image", selector=select_highest_confidence)
+features = ml.resource deriva://table/{name}/features ("Image", selector=select_highest_confidence)
 
 # Same selector works with bag restructuring
 bag.restructure_assets(output_dir="./data", group_by=["Diagnosis"],
@@ -249,7 +249,7 @@ See `references/concepts.md` under "Feature Selection" for the full Python API a
 Features are tightly coupled with datasets:
 
 - **In dataset bags** — feature values for dataset members are automatically included in BDBag exports
-- **In denormalize_dataset** — include feature tables to see labels alongside data. Column names: `{FeatureTableName}_{ColumnName}`
+- **In preview_denormalized_dataset** — include feature tables to see labels alongside data. Column names: `{FeatureTableName}_{ColumnName}`
 - **Dataset versioning** — adding feature values does NOT update existing versions. Call `increment_dataset_version` after adding features to make them visible in new versions
 - **In split_dataset** — the `stratify_by_column` parameter references feature columns in denormalized format
 

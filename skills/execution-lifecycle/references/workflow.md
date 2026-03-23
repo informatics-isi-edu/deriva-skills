@@ -30,16 +30,16 @@ Step-by-step MCP tool and Python API examples for running executions. For backgr
 | `cache_dataset` | Pre-flight: download data into cache without execution |
 | `create_execution` | Create execution (finds/creates workflow automatically) |
 | `start_execution` / `stop_execution` | Manage lifecycle timing |
-| `download_execution_dataset` | Download dataset as BDBag within execution |
-| `download_asset` | Download individual asset within execution |
-| `asset_file_path` | Register output file for upload |
-| `upload_execution_outputs` | Upload all registered files to catalog |
-| `get_execution_info` | Active execution details |
+| Python API `exe.download_dataset_bag()` | Download dataset as BDBag within execution |
+| Python API `ml.download_asset(rid)` | Download individual asset within execution |
+| Python API `exe.asset_file_path()` | Register output file for upload |
+| Python API `exe.upload_execution_outputs()` | Upload all registered files to catalog |
+| resource `deriva://execution/{rid}` | Active execution details |
 | `update_execution_status` | Progress tracking |
 | `restore_execution` | Re-download previous execution's inputs |
 | `add_nested_execution` | Link parent-child executions |
 | `list_nested_executions` | Navigate parent → children (supports `recurse`) |
-| `list_parent_executions` | Navigate child → parent (supports `recurse`) |
+| resource `deriva://execution/{rid}` | Navigate child → parent (supports `recurse`) |
 
 ---
 
@@ -94,17 +94,17 @@ Call `start_execution`. No parameters — operates on the active execution. Sets
 
 **Step 3: Download input data.**
 
-Call `download_execution_dataset` with `dataset_rid` and `version` to download a dataset as a BDBag. See [Downloading Input Data](#downloading-input-data) for full parameter details.
+Call Python API `exe.download_dataset_bag()` with `dataset_rid` and `version` to download a dataset as a BDBag. See [Downloading Input Data](#downloading-input-data) for full parameter details.
 
-Call `download_asset` with `asset_rid` to download individual input assets.
+Call Python API `ml.download_asset(rid)` with `asset_rid` to download individual input assets.
 
 **Step 4: Do your work.**
 
-Run notebooks, scripts, or interactive analysis. Use `get_execution_working_dir` to find the local working directory.
+Run notebooks, scripts, or interactive analysis. Use Python API `exe.working_dir` to find the local working directory.
 
 **Step 5: Register output files.**
 
-Call `asset_file_path` to register each output file for upload. See [Registering and Uploading Outputs](#registering-and-uploading-outputs) for full parameter details.
+Call Python API `exe.asset_file_path()` to register each output file for upload. See [Registering and Uploading Outputs](#registering-and-uploading-outputs) for full parameter details.
 
 **Step 6: Stop the execution.**
 
@@ -112,7 +112,7 @@ Call `stop_execution`. Sets status to "Completed" and records the stop time.
 
 **Step 7: Upload outputs.**
 
-Call `upload_execution_outputs` to upload all registered files to the catalog. Optionally set `clean_folder` to `false` to keep local staging files.
+Call Python API `exe.upload_execution_outputs()` to upload all registered files to the catalog. Optionally set `clean_folder` to `false` to keep local staging files.
 
 **Important:** Steps 2-7 operate on the **active execution** — they take no `execution_rid` parameter. Only one execution can be active at a time.
 
@@ -200,7 +200,7 @@ For the full CLI reference including pre-flight checks, Hydra override syntax, a
 
 ### Download a dataset within an execution
 
-Call `download_execution_dataset` with:
+Call Python API `exe.download_dataset_bag()` with:
 - `dataset_rid` (required): RID of the dataset
 - `version` (required): semantic version string (e.g., `"1.0.0"`)
 - `materialize` (optional, default `true`): set to `false` for metadata only
@@ -211,17 +211,17 @@ The dataset is downloaded as a BDBag to the execution's working directory, and t
 
 ### Download a single asset
 
-Call `download_asset` with `asset_rid`. Optionally set `dest_dir` to specify the destination (defaults to the execution's working directory). The asset is recorded as an input.
+Call Python API `ml.download_asset(rid)` with `asset_rid`. Optionally set `dest_dir` to specify the destination (defaults to the execution's working directory). The asset is recorded as an input.
 
 ### Find the working directory
 
-Call `get_execution_working_dir` to get the local path where downloads are stored.
+Call Python API `exe.working_dir` to get the local path where downloads are stored.
 
 ## Registering and Uploading Outputs
 
 ### Register files for upload
 
-Call `asset_file_path` with:
+Call Python API `exe.asset_file_path()` with:
 - `asset_name` (required): target asset table (e.g., `"Execution_Asset"`, `"Image"`, `"Model"`)
 - `file_name` (required): path to an existing file to stage, or a filename for a new file to create
 - `asset_types` (optional): list of `Asset_Type` vocabulary terms (defaults to `[asset_name]`)
@@ -232,7 +232,7 @@ Returns a `file_path`. If `file_name` is a path to an existing file, it's symlin
 
 ### Upload all registered files
 
-Call `upload_execution_outputs` with `clean_folder` (optional, default `true`) to upload all staged files to the catalog, create asset records, and link them to the execution with role "Output".
+Call Python API `exe.upload_execution_outputs()` with `clean_folder` (optional, default `true`) to upload all staged files to the catalog, create asset records, and link them to the execution with role "Output".
 
 **`Execution_Asset` vs domain asset tables:** Use `Execution_Asset` (the default) for general outputs like model weights, predictions, and plots. Use a domain asset table (e.g., `Image`, `Model`) when outputs should be queryable as first-class catalog entities with custom metadata.
 
@@ -240,7 +240,7 @@ For creating new asset tables and managing asset types, see the `work-with-asset
 
 ### Recording feature values
 
-An execution can also record **feature values** (e.g., per-image predictions, classification labels). Like output files, feature values are **staged locally** and uploaded when `upload_execution_outputs` is called — they are not written to the catalog immediately.
+An execution can also record **feature values** (e.g., per-image predictions, classification labels). Like output files, feature values are **staged locally** and uploaded when Python API `exe.upload_execution_outputs()` is called — they are not written to the catalog immediately.
 
 In MCP tools, call `add_feature_value` or `add_feature_value_record` during the execution. In Python, call `execution.add_features(records)`. Both write JSONL files to the execution's `feature/` directory on disk. The catalog is updated when `upload_execution_outputs()` processes these files.
 
@@ -258,11 +258,11 @@ Read `deriva://execution/{execution_rid}/inputs` to see just the input datasets 
 
 ### Get active execution info
 
-Call `get_execution_info` — operates on the active execution (no parameters). Returns workflow, status, datasets, assets, nested executions, and timestamps.
+Call resource `deriva://execution/{rid}` — operates on the active execution (no parameters). Returns workflow, status, datasets, assets, nested executions, and timestamps.
 
 ### Find executions for a dataset or asset
 
-Call `list_dataset_executions` with `dataset_rid` to find all executions that used a dataset.
+Call resource `deriva://dataset/{rid}` with `dataset_rid` to find all executions that used a dataset.
 
 Call `list_asset_executions` with `asset_rid` to find executions that created or used an asset. Optionally filter with `asset_role`: `"Output"` or `"Input"`.
 
@@ -289,7 +289,7 @@ Call `add_nested_execution` with:
 
 Call `list_nested_executions` with `execution_rid` to get children. Set `recurse` to `true` for the full tree.
 
-Call `list_parent_executions` with `execution_rid` to get parents. Set `recurse` to `true` to walk up the full chain.
+Call resource `deriva://execution/{rid}` with `execution_rid` to get parents. Set `recurse` to `true` to walk up the full chain.
 
 ## Restoring a Previous Execution
 
@@ -318,17 +318,17 @@ End-to-end MCP workflow: set up a workflow, run an execution, upload outputs.
 
 **Step 3:** Call `start_execution`.
 
-**Step 4:** Call `download_execution_dataset` with `dataset_rid`: `"2-ABC1"`, `version`: `"1.0.0"`.
+**Step 4:** Call Python API `exe.download_dataset_bag()` with `dataset_rid`: `"2-ABC1"`, `version`: `"1.0.0"`.
 
-**Step 5:** Call `get_execution_working_dir` to find the local data path. Run your training script.
+**Step 5:** Call Python API `exe.working_dir` to find the local data path. Run your training script.
 
-**Step 6:** Call `asset_file_path` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`. Write the weights to the returned path.
+**Step 6:** Call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`. Write the weights to the returned path.
 
-**Step 7:** Call `asset_file_path` with `asset_name`: `"Execution_Asset"`, `file_name`: `"predictions.csv"`, `asset_types`: `["Predictions"]`. Write the predictions to the returned path.
+**Step 7:** Call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"predictions.csv"`, `asset_types`: `["Predictions"]`. Write the predictions to the returned path.
 
 **Step 8:** Call `stop_execution`.
 
-**Step 9:** Call `upload_execution_outputs`.
+**Step 9:** Call Python API `exe.upload_execution_outputs()`.
 
 ## Complete Example: Python API
 

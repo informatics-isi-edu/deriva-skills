@@ -1,6 +1,6 @@
 ---
 name: dataset-lifecycle
-description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using denormalize_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
+description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using preview_denormalized_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
 ---
 
 # Dataset Lifecycle
@@ -21,7 +21,7 @@ If you don't know the catalog ID, read `deriva://registry/{hostname}` to see ava
 
 Before creating a dataset, determine whether an existing one can be reused, extended, or split.
 
-1. **Search existing datasets.** Read `deriva://catalog/datasets` to browse what exists. Check descriptions, types, and member counts. Use `count_table(table_name="Image")` to understand how much data is available.
+1. **Search existing datasets.** Read `deriva://catalog/datasets` to browse what exists. Check descriptions, types, and member counts. Use `preview_table(table_name="Image")` to understand how much data is available.
 2. **Check available element types.** Read `deriva://catalog/dataset-element-types` to see which tables can contribute members. Read `deriva://catalog/element-type-paths` to understand FK traversal paths for bag exports. If the table you need isn't registered, call `add_dataset_element_type`.
 3. **Decide: reuse, extend, or create.**
 
@@ -191,42 +191,42 @@ Read resource: deriva://dataset/{rid}
 
 **Step 2: See what's inside** — members are returned grouped by element type (table). This tells you which tables have data in this dataset:
 ```
-list_dataset_members(dataset_rid="...", version="1.0.0")
+resource deriva://dataset/{rid}/members (dataset_rid="...", version="1.0.0")
 ```
 
 **Step 3: Preview columns** — before fetching data, use `columns_only=True` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
 ```
-denormalize_dataset(dataset_rid="...", include_tables=["Image", "Subject"], columns_only=True)
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], columns_only=True)
 ```
 Returns column names and types without any data. Use this to debug FK path errors or find the right column name for stratification.
 
 **Step 4: Browse actual data** — denormalize to see real values. Include related tables to see joined data (e.g., an Image's Subject metadata, or feature annotations):
 ```
 # See Image data joined with Subject metadata
-denormalize_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=10)
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=10)
 
 # See Images with their classification labels
-denormalize_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=10)
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=10)
 ```
 
 Once denormalized, you can filter by passing column criteria to narrow the results — for example, only images from a specific subject or with a specific diagnosis.
 
 **Step 4: Check features and labels** — see what annotations exist on member records:
 ```
-fetch_table_features(table_name="Image")
+resource deriva://table/{name}/features (table_name="Image")
 ```
 
 **Step 5: Navigate the hierarchy** — check for children (splits) and parents:
 ```
-list_dataset_children(dataset_rid="...")
+# Resource: deriva://dataset/{rid} (dataset_rid="...")
 list_dataset_parents(dataset_rid="...")
-list_dataset_members(dataset_rid="...", recurse=true)  # members across full tree
+resource deriva://dataset/{rid}/members (dataset_rid="...", recurse=true)  # members across full tree
 ```
 
 **Step 6: Check provenance and validate:**
 ```
-list_dataset_executions(dataset_rid="...")                 # which executions used this
-validate_dataset_bag(dataset_rid="...", version="1.0.0")  # verify bag integrity
+# Resource: deriva://dataset/{rid} (dataset_rid="...")                 # which executions used this
+# Python API: bag inspection (dataset_rid="...", version="1.0.0")  # verify bag integrity
 ```
 
 For individual records, use `get_record(table_name="Image", rid="2-IMG1")`.
@@ -239,13 +239,13 @@ For production pipelines and reproducible experiments:
 
 ```
 estimate_bag_size(dataset_rid="...", version="1.0.0")  # preview first
-download_dataset(dataset_rid="...", version="1.0.0")
+# Python API: dataset.download_dataset_bag(dataset_rid="...", version="1.0.0")
 ```
 
 For slow downloads, increase the timeout or exclude tables:
 ```
-download_dataset(dataset_rid="...", version="1.0.0", timeout=[10, 1800])
-download_dataset(dataset_rid="...", version="1.0.0", exclude_tables=["Study"])
+# Python API: dataset.download_dataset_bag(dataset_rid="...", version="1.0.0", timeout=[10, 1800])
+# Python API: dataset.download_dataset_bag(dataset_rid="...", version="1.0.0", exclude_tables=["Study"])
 ```
 
 ### Restructure for ML frameworks

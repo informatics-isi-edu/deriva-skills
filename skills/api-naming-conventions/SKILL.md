@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Consistent naming conventions for API methods ensure discoverability and predictable behavior. Use this reference when calling DerivaML tools or writing scripts.
 
-**Note**: This reference covers both MCP tools and Python API methods. Some methods listed here (e.g., `lookup_dataset`, `find_datasets`, `list_vocabulary_terms`, `list_tables`) exist only in the Python API, not as MCP tools. When working via MCP, use the corresponding resource or tool (e.g., `deriva://catalog/datasets` resource, `query_table` tool).
+**Note**: This reference covers both MCP tools and Python API methods. Some methods listed here (e.g., `lookup_dataset`, `find_datasets`, `list_vocabulary_terms`, `list_tables`) exist only in the Python API, not as MCP tools. When working via MCP, use the corresponding resource or tool (e.g., `deriva://catalog/datasets` resource, `preview_table` tool).
 
 ## Method Prefixes
 
@@ -48,11 +48,11 @@ Returns all items of a type within a given context.
 | `list_vocabulary_terms` | All terms in a vocabulary |
 | `list_tables` | All tables in a schema |
 | `list_assets` | All assets of a type |
-| `list_dataset_members` | All members of a dataset |
+| resource `deriva://dataset/{rid}/members` | All members of a dataset |
 | `list_dataset_parents` | All parent datasets |
-| `list_dataset_children` | All child datasets |
+| resource `deriva://dataset/{rid}` | All child datasets |
 | `list_nested_executions` | All nested executions |
-| `list_parent_executions` | All parent executions |
+| resource `deriva://execution/{rid}` | All parent executions |
 
 **Behavior**: Returns a complete list. No filtering -- returns everything in scope.
 
@@ -62,12 +62,12 @@ Returns data in a specific format or with transformation applied.
 
 | Method | Description |
 |--------|-------------|
-| `get_table` | Get table schema/definition |
+| `preview_table` | Get table schema/definition |
 | `get_table_sample_data` | Get sample rows from a table |
 | `get_record` | Get a specific record by RID |
 | `get_dataset_spec` | Get dataset specification |
-| `get_execution_info` | Get execution details |
-| `get_execution_working_dir` | Get execution working directory path |
+| resource `deriva://execution/{rid}` | Get execution details |
+| Python API `exe.working_dir` | Get execution working directory path |
 
 **Behavior**: Returns a specific data type or transformed view. Use when you need data in a particular format.
 

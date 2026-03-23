@@ -13,7 +13,7 @@ This guide covers common problems encountered when running DerivaML executions a
 
 ## Problem: "No Active Execution"
 
-**Symptom**: Tools that require an execution context (like `asset_file_path`, `upload_execution_outputs`) fail with an error about no active execution.
+**Symptom**: Tools that require an execution context (like Python API `exe.asset_file_path()`, Python API `exe.upload_execution_outputs()`) fail with an error about no active execution.
 
 **Cause**: The execution was not properly started, or you are outside the execution context.
 
@@ -26,7 +26,7 @@ This guide covers common problems encountered when running DerivaML executions a
       # All execution work goes here
   ```
 - With MCP tools, ensure you called `start_execution()` before attempting execution-scoped operations.
-- If the execution was started but the error persists, the execution may have been stopped or may have failed. Check with `get_execution_info`.
+- If the execution was started but the error persists, the execution may have been stopped or may have failed. Check with resource `deriva://execution/{rid}`.
 
 ---
 
@@ -34,7 +34,7 @@ This guide covers common problems encountered when running DerivaML executions a
 
 **Symptom**: Execution completes but asset files are not visible in the catalog.
 
-**Cause**: `upload_execution_outputs` was not called, or files were written to the wrong path.
+**Cause**: Python API `exe.upload_execution_outputs()` was not called, or files were written to the wrong path.
 
 **Solution**:
 1. Call `upload_execution_outputs()` **after** the `with` block exits in Python, not inside it. With MCP tools, call it after `stop_execution()`.
@@ -128,7 +128,7 @@ This guide covers common problems encountered when running DerivaML executions a
 
 ## Problem: "Upload Timeout"
 
-**Symptom**: `upload_execution_outputs` hangs or times out.
+**Symptom**: Python API `exe.upload_execution_outputs()` hangs or times out.
 
 **Cause**: Large files, network issues, or server limits.
 
@@ -137,7 +137,7 @@ This guide covers common problems encountered when running DerivaML executions a
 - For large files, consider breaking them into smaller batches.
 - The server may have upload size limits. Check with your catalog administrator.
 - Retry the upload -- transient network issues are the most common cause.
-- **Tool**: `get_execution_info` to check if partial uploads succeeded.
+- **Tool**: resource `deriva://execution/{rid}` to check if partial uploads succeeded.
 
 ---
 
@@ -151,7 +151,7 @@ This guide covers common problems encountered when running DerivaML executions a
 - **Best practice**: Always use the context manager (`with ml.create_execution(config) as exe:`) which automatically handles cleanup on both success and failure.
 - To fix a stuck execution manually:
   - **Tool**: `update_execution_status` with `status="Failed"` and `message="Manually marked as failed"` (or `status="Completed"` if the work actually finished).
-- **Tool**: `get_execution_info` to inspect the execution's current state and metadata.
+- **Tool**: resource `deriva://execution/{rid}` to inspect the execution's current state and metadata.
 - For future runs, always use the context manager to prevent this issue.
 
 ---
@@ -190,20 +190,20 @@ logging.basicConfig(level=logging.DEBUG)
 ```
 
 ### Inspect Execution State
-- **Tool**: `get_execution_info` with the execution RID to see full execution metadata, status, inputs, and outputs.
-- **Tool**: `get_execution_working_dir` to find the local working directory and inspect files directly. (No params -- operates on the active execution.)
+- **Tool**: resource `deriva://execution/{rid}` with the execution RID to see full execution metadata, status, inputs, and outputs.
+- **Tool**: Python API `exe.working_dir` to find the local working directory and inspect files directly. (No params -- operates on the active execution.)
 
 ### Check Catalog State
 - Use the catalog resources to review the current catalog schema, tables, and vocabularies.
-- **Tool**: `count_table` to quickly verify data exists in expected tables.
+- **Tool**: `preview_table` (with limit=1) to quickly verify data exists in expected tables.
 
 ### Review Recent Executions
 - Check the recent executions resource to see the latest execution activity, statuses, and any patterns of failure.
 - **Tool**: `list_nested_executions` if the execution is part of a larger workflow to see the full execution tree.
-- **Tool**: `list_parent_executions` to find the parent execution if this is a nested step.
+- **Tool**: resource `deriva://execution/{rid}` to find the parent execution if this is a nested step.
 
 ### Verify Working Directory
-- **Tool**: `get_execution_working_dir` returns the local filesystem path for the active execution.
+- **Tool**: Python API `exe.working_dir` returns the local filesystem path for the active execution.
 - Inspect this directory to verify:
   - Input files were downloaded correctly.
   - Output files were written to the correct locations.

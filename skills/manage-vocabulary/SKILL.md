@@ -41,7 +41,7 @@ Before creating or modifying a vocabulary, determine whether one is needed and w
 
 To **list all vocabularies**, read the `deriva://catalog/vocabularies` resource.
 
-To **browse terms** in a specific vocabulary, read the `deriva://vocabulary/{vocab_name}` resource (e.g., `deriva://vocabulary/Species`). Alternatively, call `query_table` with `table_name` set to the vocabulary name.
+To **browse terms** in a specific vocabulary, read the `deriva://vocabulary/{vocab_name}` resource (e.g., `deriva://vocabulary/Species`). Alternatively, call `preview_table` with `table_name` set to the vocabulary name.
 
 To **look up a specific term**, read the `deriva://vocabulary/{vocab_name}/{term_name}` resource. This matches against both names and synonyms — looking up `"Xray"` will find `"X-ray"`. In the Python API, `ml.lookup_term("Species", "Mouse")` provides the same synonym-aware lookup.
 

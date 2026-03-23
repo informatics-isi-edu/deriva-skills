@@ -25,10 +25,10 @@ Use `get_table_sample_data(table_name="...")` to preview sample rows.
 
 ### Query All Rows
 
-Use the `query_table` MCP tool:
+Use the `preview_table` MCP tool:
 
 ```
-query_table(table_name="Subject")
+preview_table(table_name="Subject")
 ```
 
 This returns all rows. For large tables, use `limit` and `offset` for pagination.
@@ -36,21 +36,21 @@ This returns all rows. For large tables, use `limit` and `offset` for pagination
 ### Specific Columns
 
 ```
-query_table(table_name="Subject", columns=["RID", "Name", "Species"])
+preview_table(table_name="Subject", columns=["RID", "Name", "Species"])
 ```
 
 ### Limit Results
 
 ```
-query_table(table_name="Subject", limit=10)
+preview_table(table_name="Subject", limit=10)
 ```
 
 ### Paginate Through Results
 
 ```
-query_table(table_name="Subject", limit=100, offset=0)    # First 100
-query_table(table_name="Subject", limit=100, offset=100)   # Next 100
-query_table(table_name="Subject", limit=100, offset=200)   # Next 100
+preview_table(table_name="Subject", limit=100, offset=0)    # First 100
+preview_table(table_name="Subject", limit=100, offset=100)   # Next 100
+preview_table(table_name="Subject", limit=100, offset=200)   # Next 100
 ```
 
 ## Filter Queries
@@ -58,13 +58,13 @@ query_table(table_name="Subject", limit=100, offset=200)   # Next 100
 ### Equality Filter
 
 ```
-query_table(table_name="Subject", filters={"Species": "Mouse"})
+preview_table(table_name="Subject", filters={"Species": "Mouse"})
 ```
 
 ### Multiple AND Conditions
 
 ```
-query_table(
+preview_table(
     table_name="Subject",
     filters={"Species": "Mouse", "Status": "Active"}
 )
@@ -74,11 +74,11 @@ This returns rows where Species is "Mouse" AND Status is "Active".
 
 ### Count Rows
 
-Use the `count_table` MCP tool to get the number of matching rows without fetching data:
+Use the `preview_table` (with limit=1) MCP tool to get the number of matching rows without fetching data:
 
 ```
-count_table(table_name="Subject")
-count_table(table_name="Subject", filters={"Species": "Mouse"})
+preview_table(table_name="Subject")
+preview_table(table_name="Subject", filters={"Species": "Mouse"})
 ```
 
 ## Get Specific Records
@@ -107,10 +107,10 @@ To resolve an unknown RID to its table, read the `deriva://rid/{rid}` resource i
 
 ### Denormalize for ML
 
-Use the `denormalize_dataset` MCP tool to get ML-ready joined data from a dataset:
+Use the `preview_denormalized_dataset` MCP tool to get ML-ready joined data from a dataset:
 
 ```
-denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
+preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
 ```
 
 This joins the dataset's member tables, resolving foreign keys into human-readable values. The result is a flat table suitable for loading into a DataFrame. Denormalize follows multi-hop FK chains automatically — tables don't need to be explicit dataset members. If ambiguous FK paths exist between tables, add intermediate tables to `include_tables` to disambiguate.
@@ -120,7 +120,7 @@ This joins the dataset's member tables, resolving foreign keys into human-readab
 Use `columns_only=True` to see the column schema without fetching data — useful for debugging FK paths or finding column names for stratification:
 
 ```
-denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], columns_only=True)
+preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], columns_only=True)
 ```
 
 Returns column names and types instantly. Use this when:
@@ -130,15 +130,15 @@ Returns column names and types instantly. Use this when:
 
 ### Query a Single Table
 
-For simpler needs, `query_table` on the relevant table is sufficient:
+For simpler needs, `preview_table` on the relevant table is sufficient:
 
 ```
-query_table(table_name="Image", filters={"Subject": "2-A1B2"})
+preview_table(table_name="Image", filters={"Subject": "2-A1B2"})
 ```
 
 ### Download a Full Dataset
 
-Use the `download_dataset` MCP tool to get a complete local copy of a dataset:
+Use the Python API `dataset.download_dataset_bag(version)` MCP tool to get a complete local copy of a dataset:
 
 ```
 download_dataset(dataset_rid="2-B4C8", version="3")
@@ -155,11 +155,11 @@ Deriva uses controlled vocabularies for categorical values. Look them up via MCP
 
 Common vocabularies include dataset types, workflow types, species, and status values.
 
-Use `query_table` to query vocabulary tables directly:
+Use `preview_table` to query vocabulary tables directly:
 
 ```
-query_table(table_name="Species")
-query_table(table_name="Dataset_Type")
+preview_table(table_name="Species")
+preview_table(table_name="Dataset_Type")
 ```
 
 ## Feature Queries
@@ -181,10 +181,10 @@ Features have:
 
 ### Query Feature Values
 
-Use `query_table` on the feature table:
+Use `preview_table` on the feature table:
 
 ```
-query_table(table_name="Image_Cell_Count")
+preview_table(table_name="Image_Cell_Count")
 ```
 
 Or use the `get_table_sample_data` MCP tool for a quick preview:
@@ -198,14 +198,14 @@ get_table_sample_data(table_name="Image_Cell_Count")
 ### Find Images for a Subject
 
 ```
-query_table(table_name="Image", filters={"Subject": "2-A1B2"})
+preview_table(table_name="Image", filters={"Subject": "2-A1B2"})
 ```
 
 ### Find All Subjects in a Dataset
 
 First get the dataset members:
 ```
-list_dataset_members(dataset_rid="2-B4C8")
+resource deriva://dataset/{rid}/members (dataset_rid="2-B4C8")
 ```
 
 ### Date Range Queries
@@ -213,22 +213,22 @@ list_dataset_members(dataset_rid="2-B4C8")
 Deriva supports date filtering. Use ISO 8601 format:
 
 ```
-query_table(
+preview_table(
     table_name="Execution",
     filters={"Status": "Complete"},
     limit=20
 )
 ```
 
-Note: `query_table` does not support a `sort` parameter. For sorted or complex date range queries, filter results client-side or use the ERMrest API directly.
+Note: `preview_table` does not support a `sort` parameter. For sorted or complex date range queries, filter results client-side or use the ERMrest API directly.
 
 ### Export Data for ML
 
 To get data ready for ML training:
 
 1. **Identify the dataset**: `get_record(table_name="Dataset", rid="2-B4C8")`
-2. **Get the members**: `list_dataset_members(dataset_rid="2-B4C8")`
-3. **Denormalize**: `denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])`
+2. **Get the members**: `resource deriva://dataset/{rid}/members (dataset_rid="2-B4C8")`
+3. **Denormalize**: `preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])`
 4. **Download assets**: `download_dataset(dataset_rid="2-B4C8", version="3")`
 
 ## Historical Queries with Versions
@@ -261,17 +261,17 @@ Here is a typical workflow for exploring and extracting data from a catalog:
 
 2. **Explore a table**: Read `deriva://table/Subject/schema` to understand columns, then `get_table_sample_data(table_name="Subject")` for sample rows.
 
-3. **Count records**: `count_table(table_name="Subject")` and `count_table(table_name="Subject", filters={"Species": "Mouse"})`.
+3. **Count records**: `preview_table(table_name="Subject")` and `preview_table(table_name="Subject", filters={"Species": "Mouse"})`.
 
-4. **Query with filters**: `query_table(table_name="Subject", filters={"Species": "Mouse"}, limit=50)`.
+4. **Query with filters**: `preview_table(table_name="Subject", filters={"Species": "Mouse"}, limit=50)`.
 
 5. **Inspect a specific record**: `get_record(table_name="Subject", rid="2-A1B2")`.
 
-6. **Find related data**: `query_table(table_name="Image", filters={"Subject": "2-A1B2"})`.
+6. **Find related data**: `preview_table(table_name="Image", filters={"Subject": "2-A1B2"})`.
 
-7. **Check features**: Read `deriva://table/Image/features`, then `query_table(table_name="Image_Cell_Count", filters={"Image": "2-C3D4"})`.
+7. **Check features**: Read `deriva://table/Image/features`, then `preview_table(table_name="Image_Cell_Count", filters={"Image": "2-C3D4"})`.
 
-8. **Get dataset for ML**: `denormalize_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])` for a flat view, or `download_dataset(dataset_rid="2-B4C8", version="3")` for a full local copy.
+8. **Get dataset for ML**: `preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])` for a flat view, or `download_dataset(dataset_rid="2-B4C8", version="3")` for a full local copy.
 
 9. **Share with a colleague**: Read `deriva://chaise-url/2-A1B2` to get a shareable URL for a specific record, or `deriva://chaise-url/Subject` for the table view.
 
@@ -296,7 +296,7 @@ download_asset(asset_rid="2-IMG1")
 - **Large tables**: Always use `limit` and `offset` for tables with more than a few hundred rows. Fetching the entire table can be slow and may time out.
 - **Column names are case-sensitive**: Use the exact column names from the schema. `"Species"` is not the same as `"species"`.
 - **RID format**: RIDs look like `2-B4C8` (a number, a dash, and an alphanumeric string). They are unique within a catalog.
-- **Foreign keys**: Many columns contain RIDs referencing other tables. Use `denormalize_dataset` to resolve these into readable values, or `get_record` to look up individual references.
-- **Empty results**: If a query returns no rows, double-check the filter values. Use `query_table` without filters first to verify the table has data, then add filters incrementally.
+- **Foreign keys**: Many columns contain RIDs referencing other tables. Use `preview_denormalized_dataset` to resolve these into readable values, or `get_record` to look up individual references.
+- **Empty results**: If a query returns no rows, double-check the filter values. Use `preview_table` without filters first to verify the table has data, then add filters incrementally.
 - **Schema mismatch**: If a table is not found, verify you are connected to the correct schema. Use `set_default_schema` if needed.
 - **Stale data**: Catalog data can change. If you need a stable snapshot, use versioned datasets.

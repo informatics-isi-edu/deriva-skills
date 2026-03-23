@@ -25,8 +25,8 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 ## Critical Rules
 
 1. **Use RIDs to reference assets** — not filenames or URLs. RIDs are immutable and unique.
-2. **Upload within an execution** — assets must be registered with `asset_file_path` and uploaded with `upload_execution_outputs` inside an active execution for provenance tracking.
-3. **Download records provenance automatically** — calling `download_asset` within an execution links the asset as an "Input" to that execution.
+2. **Upload within an execution** — assets must be registered with Python API `exe.asset_file_path()` and uploaded with Python API `exe.upload_execution_outputs()` inside an active execution for provenance tracking.
+3. **Download records provenance automatically** — calling Python API `ml.download_asset(rid)` within an execution links the asset as an "Input" to that execution.
 4. **Create the asset table before uploading** — the table must exist before you can register files for upload to it.
 
 ## Workflow Summary
@@ -40,10 +40,10 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 ### Downloading assets
 
-1. `download_asset` — download a single asset by RID
-2. `download_dataset` — download a dataset as a BDBag with all asset files (no execution required)
-3. `download_execution_dataset` — same as above but within an active execution (records the dataset as an input for provenance)
-4. `restructure_assets` — organize downloaded assets into ML-ready directory layouts
+1. Python API `ml.download_asset(rid)` — download a single asset by RID
+2. Python API `dataset.download_dataset_bag(version)` — download a dataset as a BDBag with all asset files (no execution required)
+3. Python API `exe.download_dataset_bag()` — same as above but within an active execution (records the dataset as an input for provenance)
+4. Python API `bag.restructure_assets()` — organize downloaded assets into ML-ready directory layouts
 
 ### Creating asset tables
 
@@ -52,8 +52,8 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 ### Uploading assets (within an execution)
 
 1. `create_execution` + `start_execution` — start provenance tracking
-2. `asset_file_path` — register each output file for upload (returns a path to write to)
-3. `upload_execution_outputs` — upload all registered files to the object store and catalog
+2. Python API `exe.asset_file_path()` — register each output file for upload (returns a path to write to)
+3. Python API `exe.upload_execution_outputs()` — upload all registered files to the object store and catalog
 4. `stop_execution` — finalize
 
 ### Managing asset types

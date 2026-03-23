@@ -48,7 +48,7 @@ Read resource: deriva://catalog/datasets
 Read resource: deriva://dataset/{rid}
 
 # Query datasets with filters (when you need specific column filters)
-query_table(table_name="Dataset", filters={"Description": "..."})
+preview_table(table_name="Dataset", filters={"Description": "..."})
 ```
 
 **Python API:**
@@ -358,7 +358,7 @@ current = dataset.current_version  # e.g., "1.2.0"
 
 # Bind a dataset object to a specific version for version-aware operations
 versioned_dataset = dataset.set_version("1.0.0")
-members = versioned_dataset.list_dataset_members()  # members at v1.0.0
+members = versioned_dataset.resource deriva://dataset/{rid}/members ()  # members at v1.0.0
 ```
 
 ## Exploring and Navigating Datasets
@@ -393,35 +393,35 @@ Members are the records that belong to a dataset. Results are returned as a JSON
 }
 ```
 
-This is the starting point for browsing — the table names tell you which element types to explore with `denormalize_dataset`.
+This is the starting point for browsing — the table names tell you which element types to explore with `preview_denormalized_dataset`.
 
 **MCP tools:**
 ```
 # All members of the current version
-list_dataset_members(dataset_rid="1-ABC4")
+resource deriva://dataset/{rid}/members (dataset_rid="1-ABC4")
 
 # Members at a specific version
-list_dataset_members(dataset_rid="1-ABC4", version="1.0.0")
+resource deriva://dataset/{rid}/members (dataset_rid="1-ABC4", version="1.0.0")
 
 # Members including all nested child datasets
-list_dataset_members(dataset_rid="1-ABC4", recurse=true)
+resource deriva://dataset/{rid}/members (dataset_rid="1-ABC4", recurse=true)
 
 # Limit results (useful for large datasets)
-list_dataset_members(dataset_rid="1-ABC4", limit=100)
+resource deriva://dataset/{rid}/members (dataset_rid="1-ABC4", limit=100)
 ```
 
 **Python API:**
 ```python
 # Current version — returns dict[str, list[dict]]
-members = dataset.list_dataset_members()
+members = dataset.resource deriva://dataset/{rid}/members ()
 for table_name, rids in members.items():
     print(f"{table_name}: {len(rids)} members")
 
 # Specific version
-members_v1 = dataset.list_dataset_members(version="1.0.0")
+members_v1 = dataset.resource deriva://dataset/{rid}/members (version="1.0.0")
 ```
 
-Note that `list_dataset_members` returns only RIDs, not actual record data. To see the data values (demographics, labels, metadata), use `denormalize_dataset` with the table names discovered here — see [Using Datasets](#using-datasets).
+Note that resource `deriva://dataset/{rid}/members` returns only RIDs, not actual record data. To see the data values (demographics, labels, metadata), use `preview_denormalized_dataset` with the table names discovered here — see [Using Datasets](#using-datasets).
 
 ### Navigating hierarchies
 
@@ -430,13 +430,13 @@ Datasets form parent-child hierarchies. The most common is the split hierarchy c
 **Listing children:**
 ```
 # Direct children only
-list_dataset_children(dataset_rid="1-ABC4")
+# Resource: deriva://dataset/{rid} (dataset_rid="1-ABC4")
 
 # All descendants (children, grandchildren, etc.)
-list_dataset_children(dataset_rid="1-ABC4", recurse=true)
+# Resource: deriva://dataset/{rid} (dataset_rid="1-ABC4", recurse=true)
 
 # Children at a specific version
-list_dataset_children(dataset_rid="1-ABC4", version="1.0.0")
+# Resource: deriva://dataset/{rid} (dataset_rid="1-ABC4", version="1.0.0")
 ```
 
 **Listing parents:**
@@ -451,7 +451,7 @@ list_dataset_parents(dataset_rid="1-CHD", recurse=true)
 **When to use recursion:**
 - Use `recurse=false` (default) when you only need the immediate level — e.g., listing the Training/Testing/Validation children of a Split dataset
 - Use `recurse=true` when you need the full tree — e.g., listing all members across a Complete → Split → Training/Testing hierarchy
-- Recursive member listing (`list_dataset_members` with `recurse=true`) aggregates members from the dataset and all its descendants
+- Recursive member listing (resource `deriva://dataset/{rid}/members` with `recurse=true`) aggregates members from the dataset and all its descendants
 
 ### Checking element types
 
@@ -475,7 +475,7 @@ Track which executions created or used a dataset:
 
 ```
 # MCP
-list_dataset_executions(dataset_rid="1-ABC4")
+# Resource: deriva://dataset/{rid} (dataset_rid="1-ABC4")
 ```
 
 This returns all executions that used this dataset as an input — useful for understanding a dataset's lineage and which experiments depend on it.
@@ -529,10 +529,10 @@ For interactive exploration without downloading:
 
 ```
 # Denormalize into a flat table (joins across FK relationships)
-denormalize_dataset(dataset_rid="1-ABC4", include_tables=["Image", "Subject"])
+preview_denormalized_dataset(dataset_rid="1-ABC4", include_tables=["Image", "Subject"])
 
 # Query individual tables
-query_table(table_name="Image", filters={"Subject": "2-SUB1"})
+preview_table(table_name="Image", filters={"Subject": "2-SUB1"})
 ```
 
 ### Download as a BDBag
@@ -541,7 +541,7 @@ For production training pipelines and reproducible experiments, download the dat
 
 ```
 # MCP
-download_dataset(dataset_rid="1-ABC4", version="1.0.0")
+# Python API: dataset.download_dataset_bag(dataset_rid="1-ABC4", version="1.0.0")
 
 # Within an execution (records provenance)
 download_execution_dataset(dataset_rid="1-ABC4", version="1.0.0")
@@ -571,7 +571,7 @@ print(dataset.dataset_types)
 
 # Work with a specific version
 v1 = dataset.set_version("1.0.0")
-members = v1.list_dataset_members()
+members = v1.resource deriva://dataset/{rid}/members ()
 
 # Download and work with the bag
 bag = dataset.download_dataset_bag(version="1.0.0")
@@ -688,11 +688,11 @@ Deletion removes the dataset container and member associations, not the member r
 |-----------|----------|------------|-------|
 | Find datasets | Resource: `deriva://catalog/datasets` | `ml.find_datasets()` | Browse all datasets |
 | Lookup by RID | `get_record("Dataset", rid)` | `ml.lookup_dataset(rid)` | Get specific dataset |
-| List members | `list_dataset_members` | `dataset.list_dataset_members()` | Grouped by table; supports `version`, `recurse`, `limit` |
-| List children | `list_dataset_children` | `dataset.list_dataset_children()` | Supports `recurse`, `version` |
+| List members | resource `deriva://dataset/{rid}/members` | `dataset.resource deriva://dataset/{rid}/members ()` | Grouped by table; supports `version`, `recurse`, `limit` |
+| List children | resource `deriva://dataset/{rid}` | `dataset.list_dataset_children()` | Supports `recurse`, `version` |
 | List parents | `list_dataset_parents` | `dataset.list_dataset_parents()` | Supports `recurse`, `version` |
 | Check element types | Resource: `dataset-element-types` | `ml.list_dataset_element_types()` | Catalog-wide |
-| List executions | `list_dataset_executions` | — | Provenance: which runs used this dataset |
+| List executions | resource `deriva://dataset/{rid}` | — | Provenance: which runs used this dataset |
 | Validate RIDs | `validate_rids` | — | Check RIDs exist before adding |
 | Estimate bag size | `estimate_bag_size` | `dataset.estimate_bag_size()` | Preview before download |
 | Get version spec | `get_dataset_spec` | — | Generate `DatasetSpecConfig` string |
@@ -702,8 +702,8 @@ Deletion removes the dataset container and member associations, not the member r
 
 | Operation | MCP Tool | Python API | Notes |
 |-----------|----------|------------|-------|
-| Download bag | `download_dataset` | `dataset.download_dataset_bag()` | Standalone download |
-| Download in execution | `download_execution_dataset` | `exe.download_dataset_bag()` | Records provenance |
-| Restructure assets | `restructure_assets` | `bag.restructure_assets()` | ML-ready directory layout |
-| Validate bag | `validate_dataset_bag` | — | Cross-check bag vs catalog |
-| Denormalize | `denormalize_dataset` | — | Flat DataFrame for analysis |
+| Download bag | Python API `dataset.download_dataset_bag(version)` | `dataset.download_dataset_bag()` | Standalone download |
+| Download in execution | Python API `exe.download_dataset_bag()` | `exe.download_dataset_bag()` | Records provenance |
+| Restructure assets | Python API `bag.restructure_assets()` | `bag.restructure_assets()` | ML-ready directory layout |
+| Validate bag | Python API bag inspection | — | Cross-check bag vs catalog |
+| Denormalize | `preview_denormalized_dataset` | — | Flat DataFrame for analysis |

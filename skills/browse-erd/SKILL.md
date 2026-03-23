@@ -55,5 +55,5 @@ uv run deriva-ml-apps serve --backend <hostname>
 ## Troubleshooting
 
 - **CORS errors**: The browser must have valid cookies for the Deriva server. Log in via Chaise first.
-- **Empty graph**: Check that the catalog has tables. Try `count_table` on a known table.
+- **Empty graph**: Check that the catalog has tables. Try `preview_table` (with limit=1) on a known table.
 - **Auth failure**: For `localhost` catalogs, ensure the local server is running and you're logged in.

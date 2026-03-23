@@ -68,7 +68,7 @@ Alternatively, add members grouped by table (faster for large datasets):
 
 **Step 5: Finalize**
 
-Call `stop_execution`. (No need to call `upload_execution_outputs` — dataset operations don't produce output files.)
+Call `stop_execution`. (No need to call Python API `exe.upload_execution_outputs()` — dataset operations don't produce output files.)
 
 ### Python API
 
@@ -108,7 +108,7 @@ To **delete a custom type**, call `delete_dataset_type_term` with `type_name`.
 
 ## Managing Members
 
-To **list current members**, call `list_dataset_members` with `dataset_rid`.
+To **list current members**, call resource `deriva://dataset/{rid}/members` with `dataset_rid`.
 
 To **validate RIDs** before adding (catches invalid RIDs early), call `validate_rids` with `dataset_rids` (for dataset RIDs) or `asset_rids` (for asset RIDs).
 
@@ -138,7 +138,7 @@ To **create a three-way split**, also include `val_size` (e.g., `0.1` for 10% Va
 
 ### Stratified and labeled splits
 
-To maintain class distribution, add `stratify_by_column` with the denormalized column name. Derive this from the table schema — do **not** call `denormalize_dataset` just to discover column names.
+To maintain class distribution, add `stratify_by_column` with the denormalized column name. Derive this from the table schema — do **not** call `preview_denormalized_dataset` just to discover column names.
 
 **Finding the stratify column name:**
 
@@ -191,11 +191,11 @@ To label partitions with ground truth metadata (needed for evaluation, ROC curve
 
 `split_dataset` creates a parent "Split" dataset with child datasets for each partition.
 
-To **list children** of a dataset, call `list_dataset_children` with `dataset_rid`. Add `recurse`: `true` to include all descendants, or `version` to list children at a specific version.
+To **list children** of a dataset, call resource `deriva://dataset/{rid}` with `dataset_rid`. Add `recurse`: `true` to include all descendants, or `version` to list children at a specific version.
 
 To **list parents** of a child dataset, call `list_dataset_parents` with `dataset_rid`.
 
-To **list members across nested datasets**, call `list_dataset_members` with `dataset_rid`, `recurse`: `true`, and optionally `limit`.
+To **list members across nested datasets**, call resource `deriva://dataset/{rid}/members` with `dataset_rid`, `recurse`: `true`, and optionally `limit`.
 
 To create parent-child relationships manually (without `split_dataset`), call `add_dataset_child` with `parent_rid` and `child_rid`. See `concepts.md` for background on nested dataset hierarchies.
 
@@ -215,7 +215,7 @@ For downloading, preparing, and restructuring dataset data for ML training, see 
 
 ## Provenance
 
-To find **which executions used a dataset**, call `list_dataset_executions` with `dataset_rid`.
+To find **which executions used a dataset**, call resource `deriva://dataset/{rid}` with `dataset_rid`.
 
 To find **which executions used an asset**, call `list_asset_executions` with `asset_rid`.
 

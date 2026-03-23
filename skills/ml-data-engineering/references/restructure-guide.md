@@ -17,7 +17,7 @@
 
 ## Overview
 
-After downloading a dataset bag, `restructure_assets` organizes asset files into directory hierarchies expected by ML frameworks like PyTorch ImageFolder or TensorFlow image_dataset_from_directory.
+After downloading a dataset bag, Python API `bag.restructure_assets()` organizes asset files into directory hierarchies expected by ML frameworks like PyTorch ImageFolder or TensorFlow image_dataset_from_directory.
 
 The tool reads the bag's metadata (dataset types, feature values, vocabulary terms) to determine how to place each file. It works with any asset type — images, model weights, CSVs — not just images.
 
@@ -139,7 +139,7 @@ bag.restructure_assets(
 )
 ```
 
-**MCP tool:** The `restructure_assets` MCP tool also accepts `value_selector` as a string: `"newest"`, `"first"`, `"latest"`, or `"majority_vote"`.
+**MCP tool:** The Python API `bag.restructure_assets()` MCP tool also accepts `value_selector` as a string: `"newest"`, `"first"`, `"latest"`, or `"majority_vote"`.
 
 ### Custom selector
 
@@ -301,8 +301,8 @@ images_df = bag.get_table_as_dataframe("Image")
 subjects = list(bag.get_table_as_dict("Subject"))
 
 # List members grouped by table
-members = bag.list_dataset_members()  # {"Image": [...], "Subject": [...]}
-members = bag.list_dataset_members(recurse=True)  # includes nested datasets
+members = bag.resource deriva://dataset/{rid}/members ()  # {"Image": [...], "Subject": [...]}
+members = bag.resource deriva://dataset/{rid}/members (recurse=True)  # includes nested datasets
 ```
 
 ### Feature values
@@ -312,7 +312,7 @@ members = bag.list_dataset_members(recurse=True)  # includes nested datasets
 features = bag.find_features("Image")  # [Feature(name="Diagnosis", ...)]
 
 # Fetch feature values
-feature_df = bag.fetch_table_features(
+feature_df = bag.resource deriva://table/{name}/features (
     table="Image",
     feature_name="Diagnosis",
     selector="newest",           # or: workflow="classify", execution="3-XYZ"
@@ -345,12 +345,12 @@ element_types = bag.list_dataset_element_types()
 
 ## Denormalization for Flat DataFrames
 
-The `denormalize_dataset` MCP tool and `bag.denormalize_as_dataframe()` method join dataset tables into a single flat DataFrame, following FK relationships. This is the fastest path from catalog data to ML-ready tabular features.
+The `preview_denormalized_dataset` MCP tool and `bag.denormalize_as_dataframe()` method join dataset tables into a single flat DataFrame, following FK relationships. This is the fastest path from catalog data to ML-ready tabular features.
 
 ### MCP tool
 
 ```
-denormalize_dataset(
+preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
     version="1.0.0",
@@ -422,10 +422,10 @@ bag.restructure_assets(
 
 | Resource / Tool | Purpose |
 |-----------------|---------|
-| `download_dataset` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
-| `restructure_assets` | Organize assets into ML-ready directory layouts |
-| `denormalize_dataset` | Flatten dataset tables for ML (without full bag download) |
+| Python API `dataset.download_dataset_bag(version)` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
+| Python API `bag.restructure_assets()` | Organize assets into ML-ready directory layouts |
+| `preview_denormalized_dataset` | Flatten dataset tables for ML (without full bag download) |
 | `estimate_bag_size` | Preview row counts and asset sizes per table |
-| `fetch_table_features` | Access feature values within a bag |
+| resource `deriva://table/{name}/features` | Access feature values within a bag |
 | `deriva://dataset/{rid}` | Dataset details including version and element types |
 | `deriva://catalog/features` | Available features for building training labels |

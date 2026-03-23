@@ -64,7 +64,7 @@ The input and output links are tracked through association tables with role info
 - Read `deriva://execution/{execution_rid}` for full details
 - Read `deriva://experiment/{execution_rid}` for a richer view with Hydra config and model parameters
 - Read `deriva://execution/{execution_rid}/inputs` for just the input datasets and assets
-- Call `list_dataset_executions` to find all executions that used a dataset
+- Call resource `deriva://dataset/{rid}` to find all executions that used a dataset
 - Call `list_asset_executions` to find executions that created or used an asset
 
 **The ExecutionRecord class** in the Python API is the lightweight read-only representation of an execution record. It's returned by lookup and query methods:
@@ -190,7 +190,7 @@ add_nested_execution(parent_execution_rid="1-PARENT", child_execution_rid="1-CHI
 | Tool | Direction | Parameters |
 |------|-----------|-----------|
 | `list_nested_executions` | Parent → Children | `execution_rid`, `recurse=True` for all descendants |
-| `list_parent_executions` | Child → Parent | `execution_rid`, `recurse=True` for all ancestors |
+| resource `deriva://execution/{rid}` | Child → Parent | `execution_rid`, `recurse=True` for all ancestors |
 
 **MCP resources:**
 
@@ -234,18 +234,18 @@ An execution consumes inputs, does work in a local working directory, and produc
 
 An execution's inputs are **datasets** and **assets** specified when the execution is created. During execution, you download these to a local working directory:
 
-- **Datasets** are downloaded as BDBags — self-contained, versioned archives that include all member records, asset files, feature values, and vocabulary terms at the exact catalog state when the version was created. Call `download_execution_dataset` with a dataset RID and version. See the `dataset-lifecycle` skill for how datasets and versions work, and its `references/bags.md` for details on the BDBag format.
-- **Individual assets** (e.g., pretrained model weights) are downloaded directly. Call `download_asset` with an asset RID. See the `work-with-assets` skill for asset concepts including caching.
+- **Datasets** are downloaded as BDBags — self-contained, versioned archives that include all member records, asset files, feature values, and vocabulary terms at the exact catalog state when the version was created. Call Python API `exe.download_dataset_bag()` with a dataset RID and version. See the `dataset-lifecycle` skill for how datasets and versions work, and its `references/bags.md` for details on the BDBag format.
+- **Individual assets** (e.g., pretrained model weights) are downloaded directly. Call Python API `ml.download_asset(rid)` with an asset RID. See the `work-with-assets` skill for asset concepts including caching.
 
 Both operations automatically record provenance — the downloaded dataset or asset is linked to the execution with role "Input".
 
 ### The working directory
 
-Each execution gets a local working directory where all downloaded inputs and staged outputs live. This directory is created automatically and persists until cleaned up. Access it via `get_execution_working_dir` (MCP) or `execution.working_dir` (Python). See [Execution Working Directory](#execution-working-directory) for the layout.
+Each execution gets a local working directory where all downloaded inputs and staged outputs live. This directory is created automatically and persists until cleaned up. Access it via Python API `exe.working_dir` (MCP) or `execution.working_dir` (Python). See [Execution Working Directory](#execution-working-directory) for the layout.
 
 ### Producing outputs
 
-Output files (model weights, predictions, plots, etc.) must be **registered** before they can be uploaded to the catalog. Registration is done via `asset_file_path`, which:
+Output files (model weights, predictions, plots, etc.) must be **registered** before they can be uploaded to the catalog. Registration is done via Python API `exe.asset_file_path()`, which:
 
 1. Takes an asset table name (e.g., `"Execution_Asset"`) and filename
 2. Stages the file in the execution's working directory
@@ -256,18 +256,18 @@ Registered files are **not yet in the catalog** — they exist only in the local
 
 ### Uploading outputs
 
-After the execution's work is complete, call `upload_execution_outputs` to upload all registered files to the catalog in one batch. This:
+After the execution's work is complete, call Python API `exe.upload_execution_outputs()` to upload all registered files to the catalog in one batch. This:
 
 1. Uploads each staged file to the object store
 2. Creates asset records in the appropriate asset tables
 3. Links each asset to the execution with role "Output"
 4. Optionally cleans up the local staging directory
 
-Until `upload_execution_outputs` is called, output files exist only locally. This is a deliberate design — it allows the execution to complete (or fail) without partial uploads.
+Until Python API `exe.upload_execution_outputs()` is called, output files exist only locally. This is a deliberate design — it allows the execution to complete (or fail) without partial uploads.
 
 ### Recording feature values
 
-An execution can also produce **feature values** — structured annotations on catalog records (e.g., per-image classification labels, confidence scores). Like output files, feature values are **staged locally** and uploaded when `upload_execution_outputs` is called:
+An execution can also produce **feature values** — structured annotations on catalog records (e.g., per-image classification labels, confidence scores). Like output files, feature values are **staged locally** and uploaded when Python API `exe.upload_execution_outputs()` is called:
 
 - In MCP tools, call `add_feature_value` or `add_feature_value_record` during the execution.
 - In Python, call `execution.add_features(records)`. This writes JSONL files to disk in the execution's `feature/` directory — the catalog is not updated until `upload_execution_outputs()` runs.
@@ -365,7 +365,7 @@ Execution/<execution_rid>/
 └── downloaded-assets/        # Downloaded input assets
 ```
 
-Access via `get_execution_working_dir` (MCP) or `execution.working_dir` (Python).
+Access via Python API `exe.working_dir` (MCP) or `execution.working_dir` (Python).
 
 ## Dry Run Mode
 
@@ -392,15 +392,15 @@ Use dry runs to:
 - **Continuing work** — resume from where a previous execution left off
 - **Analysis** — run new analysis on the same inputs without re-configuring
 
-The restored execution becomes the active execution, so subsequent MCP tool calls (`get_execution_working_dir`, `asset_file_path`, etc.) operate on it.
+The restored execution becomes the active execution, so subsequent MCP tool calls (Python API `exe.working_dir`, Python API `exe.asset_file_path()`, etc.) operate on it.
 
 ### Finding execution RIDs to restore
 
 You need the execution's RID to restore it. Several ways to find it:
 
-- **From the catalog**: Read `deriva://execution/{execution_rid}` if you know the RID, or query the `Execution` table via `query_table` to search by workflow, status, or description.
+- **From the catalog**: Read `deriva://execution/{execution_rid}` if you know the RID, or query the `Execution` table via `preview_table` to search by workflow, status, or description.
 - **From local storage**: Read the `deriva://storage/execution-dirs` resource to see execution working directories that still exist locally. Each entry includes the execution RID, a label, size, and modification time.
-- **From provenance**: Call `list_asset_executions` with an asset RID to find which execution produced it, or `list_dataset_executions` with a dataset RID to find executions that used it.
+- **From provenance**: Call `list_asset_executions` with an asset RID to find which execution produced it, or resource `deriva://dataset/{rid}` with a dataset RID to find executions that used it.
 - **From the web UI**: Browse executions in Chaise and copy the RID from the record page.
 
 ## Pre-Flight Validation

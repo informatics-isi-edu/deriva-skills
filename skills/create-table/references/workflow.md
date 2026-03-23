@@ -132,7 +132,7 @@ get_table(table_name="Sample")
 get_table_sample_data(table_name="Sample", limit=5)
 
 # Count records
-count_table(table_name="Sample")
+preview_table(table_name="Sample")
 ```
 
 ## Common Patterns

@@ -27,7 +27,7 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 Dataset members are the explicit records that belong to a dataset. If data is missing from a bag, the first question is whether the right members are in the dataset.
 
 - **Resource**: Check the dataset resource to see the dataset's summary and member counts.
-- **Tool**: `list_dataset_members` with the dataset RID to get the full list of members, grouped by table.
+- **Tool**: resource `deriva://dataset/{rid}/members` with the dataset RID to get the full list of members, grouped by table.
 - Verify that the records you expect are listed as members. If they are missing, add them with `add_dataset_members`.
 
 ---
@@ -148,7 +148,7 @@ The bag export algorithm uses foreign key (FK) path traversal to determine which
 
 Use the validation tool to get a detailed comparison of expected vs. actual bag contents.
 
-- **Tool**: `validate_dataset_bag` with the dataset RID.
+- **Tool**: Python API bag inspection with the dataset RID.
   - Returns a **per-table comparison** showing:
     - Expected RIDs (based on dataset members and FK traversal).
     - Actual RIDs present in the downloaded bag.
@@ -225,7 +225,7 @@ Add records from intermediate tables as direct dataset members rather than relyi
 
 **Fix**:
 - Check the FK columns on the related records. Ensure they contain the correct RID values pointing to the dataset member records.
-- **Tool**: `query_table` with filters to verify FK column values.
+- **Tool**: `preview_table` with filters to verify FK column values.
 
 ---
 
@@ -234,7 +234,7 @@ Add records from intermediate tables as direct dataset members rather than relyi
 Use this checklist when data is missing from a bag:
 
 1. **Are the records dataset members?**
-   - `list_dataset_members` -- check if expected records appear.
+   - resource `deriva://dataset/{rid}/members` -- check if expected records appear.
    - If not: `add_dataset_members`.
 
 2. **Is the table a registered element type?**
@@ -246,7 +246,7 @@ Use this checklist when data is missing from a bag:
    - If not: add intermediate records as members, or restructure FKs.
 
 4. **Does validation show the discrepancy?**
-   - `validate_dataset_bag` -- look at missing RIDs per table.
+   - Python API bag inspection -- look at missing RIDs per table.
 
 5. **Is the version current?**
    - `increment_dataset_version` if members were recently changed.
@@ -270,15 +270,15 @@ Use this checklist when data is missing from a bag:
 
 | Tool | Purpose |
 |------|---------|
-| `list_dataset_members` | List all members of a dataset |
+| resource `deriva://dataset/{rid}/members` | List all members of a dataset |
 | `add_dataset_members` | Add records to a dataset |
 | `delete_dataset_members` | Remove records from a dataset |
 | `add_dataset_element_type` | Register a table as dataset element type |
-| `validate_dataset_bag` | Validate bag contents against expectations |
+| Python API bag inspection | Validate bag contents against expectations |
 | `increment_dataset_version` | Bump dataset version after changes |
 | `get_dataset_spec` | View dataset specification |
 | `estimate_bag_size` | Preview row counts and asset sizes before downloading |
-| `download_dataset` | Download the dataset bag (supports `exclude_tables` and `timeout`) |
-| `denormalize_dataset` | Flatten dataset for analysis |
-| `query_table` | Inspect FK column values |
-| `get_table` | Check table schema and FK relationships (or read `deriva://table/{name}/schema` resource) |
+| Python API `dataset.download_dataset_bag(version)` | Download the dataset bag (supports `exclude_tables` and `timeout`) |
+| `preview_denormalized_dataset` | Flatten dataset for analysis |
+| `preview_table` | Inspect FK column values |
+| `preview_table` | Check table schema and FK relationships (or read `deriva://table/{name}/schema` resource) |

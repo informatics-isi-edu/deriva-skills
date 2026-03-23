@@ -28,9 +28,9 @@ To check whether a specific table is an asset table, read `deriva://catalog/sche
 
 Read the `deriva://table/{table_name}/assets` resource to see all assets in a specific table with their RIDs, filenames, sizes, types, and descriptions.
 
-To query with filters, call `query_table` with `table_name` set to the asset table and `filters` for your criteria. For example, to find images linked to a specific subject, call `query_table` with `table_name`: `"Image"`, `filters`: `{"Subject": "2-A1B2"}`.
+To query with filters, call `preview_table` with `table_name` set to the asset table and `filters` for your criteria. For example, to find images linked to a specific subject, call `preview_table` with `table_name`: `"Image"`, `filters`: `{"Subject": "2-A1B2"}`.
 
-To get a count, call `count_table` with `table_name` set to the asset table.
+To get a count, call `preview_table` (with limit=1) with `table_name` set to the asset table.
 
 ### Finding a specific asset by RID
 
@@ -50,13 +50,13 @@ To inspect an asset's properties:
 
 ### Download a single asset
 
-Call `download_asset` with `asset_rid` set to the asset's RID. Optionally set `dest_dir` to specify where to save the file (defaults to the active execution's working directory).
+Call Python API `ml.download_asset(rid)` with `asset_rid` set to the asset's RID. Optionally set `dest_dir` to specify where to save the file (defaults to the active execution's working directory).
 
 Returns the local file path, filename, asset table name, and asset types.
 
 ### Download assets as part of a dataset
 
-Within an active execution, call `download_execution_dataset` with `dataset_rid` and `version`. This downloads the full dataset as a BDBag, including all asset files for dataset members.
+Within an active execution, call Python API `exe.download_dataset_bag()` with `dataset_rid` and `version`. This downloads the full dataset as a BDBag, including all asset files for dataset members.
 
 Parameters:
 - `dataset_rid` (required): RID of the dataset
@@ -67,11 +67,11 @@ Parameters:
 
 ### Restructure downloaded assets for ML
 
-After downloading a dataset, call `restructure_assets` to organize asset files into a directory hierarchy suitable for ML frameworks like PyTorch ImageFolder. See the `ml-data-engineering` skill for details.
+After downloading a dataset, call Python API `bag.restructure_assets()` to organize asset files into a directory hierarchy suitable for ML frameworks like PyTorch ImageFolder. See the `ml-data-engineering` skill for details.
 
 ### Get the execution working directory
 
-Call `get_execution_working_dir` to find the local path where downloaded assets and staged outputs are located.
+Call Python API `exe.working_dir` to find the local path where downloaded assets and staged outputs are located.
 
 ## Creating Asset Tables
 
@@ -102,7 +102,7 @@ Call `create_execution` with `workflow_name`, `workflow_type`, and `description`
 
 ### Step 2: Register output files
 
-Call `asset_file_path` to register each file for upload:
+Call Python API `exe.asset_file_path()` to register each file for upload:
 - `asset_name` (required): target asset table (e.g., `"Execution_Asset"`, `"Image"`, `"Model"`)
 - `file_name` (required): path to an existing file to stage, or a filename for a new file to create
 - `asset_types` (optional): list of Asset_Type vocabulary terms (defaults to `[asset_name]`)
@@ -111,15 +111,15 @@ Call `asset_file_path` to register each file for upload:
 
 Returns a `file_path` — if creating a new file, write your output to this path. If staging an existing file, the file is symlinked or copied to the staging area.
 
-**Example:** To register model weights for upload, call `asset_file_path` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`. Then write or copy the weights file to the returned `file_path`.
+**Example:** To register model weights for upload, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`. Then write or copy the weights file to the returned `file_path`.
 
-**Example:** To stage an existing CSV, call `asset_file_path` with `asset_name`: `"Execution_Asset"`, `file_name`: `"/path/to/predictions.csv"`, `asset_types`: `["Predictions"]`.
+**Example:** To stage an existing CSV, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"/path/to/predictions.csv"`, `asset_types`: `["Predictions"]`.
 
 ### Step 3: Upload all staged files
 
-Call `upload_execution_outputs` with `clean_folder` (optional, default `true`) to remove the local staging directory after upload.
+Call Python API `exe.upload_execution_outputs()` with `clean_folder` (optional, default `true`) to remove the local staging directory after upload.
 
-This uploads all files registered via `asset_file_path` to the object store, creates catalog records, assigns asset types, and links each asset to the execution with role "Output".
+This uploads all files registered via Python API `exe.asset_file_path()` to the object store, creates catalog records, assigns asset types, and links each asset to the execution with role "Output".
 
 ### Step 4: Stop the execution
 

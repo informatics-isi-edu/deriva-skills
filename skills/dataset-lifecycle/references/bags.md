@@ -22,7 +22,7 @@
 
 A **BDBag** (Big Data Bag) is a self-describing, portable archive of a specific dataset version. It packages everything needed to reproduce a dataset offline: member records, related data, asset files, feature values, and vocabulary terms — all checksummed for integrity.
 
-Bags are the standard way to get data out of a DerivaML catalog for ML training, analysis, or sharing. When you call `download_dataset`, the result is a bag.
+Bags are the standard way to get data out of a DerivaML catalog for ML training, analysis, or sharing. When you call Python API `dataset.download_dataset_bag(version)`, the result is a bag.
 
 The downloaded bag is backed by a **SQLite database** — all queries against a `DatasetBag` use SQL under the hood. The `DatasetBag` class mirrors the live `Dataset` API, so code can work uniformly with both live catalog data and downloaded snapshots.
 
@@ -33,7 +33,7 @@ A bag for a specific dataset version includes:
 1. **Member records** — All records from registered element types that belong to the dataset (e.g., Image, Subject rows), stored as CSV files per table and loaded into SQLite.
 2. **Related records** — Data from tables reachable via foreign key paths from member records (see [How Bag Contents Are Determined](#how-bag-contents-are-determined)).
 3. **Nested datasets** — Child datasets are included recursively with all their members. Navigate with `bag.list_dataset_children()`.
-4. **Feature values** — All feature annotations for dataset members (e.g., Image_Classification labels). Access with `bag.fetch_table_features()`.
+4. **Feature values** — All feature annotations for dataset members (e.g., Image_Classification labels). Access with `bag.resource deriva://table/{name}/features ()`.
 5. **Vocabulary terms** — Controlled vocabulary terms referenced by included records, exported separately.
 6. **Asset files** — Binary files (images, model weights, etc.) referenced by member records, fetched when `materialize=True`.
 7. **Checksums** — Every file has a cryptographic checksum for integrity verification.
@@ -89,19 +89,19 @@ Each bag is tied to a **catalog snapshot** — the exact catalog state at the ti
 - **`materialize=True`** (default): The bag fetches all referenced asset files from the object store. Creates a fully self-contained archive.
 - **`materialize=False`**: The bag contains only metadata and remote file references. Smaller download, but requires network access to use the assets later.
 
-Use `materialize=False` when you only need the tabular data (record metadata, feature values) and not the actual files. Also useful for validation (`validate_dataset_bag` uses `materialize=False` to check contents quickly).
+Use `materialize=False` when you only need the tabular data (record metadata, feature values) and not the actual files. Also useful for validation (Python API bag inspection uses `materialize=False` to check contents quickly).
 
 ## Caching
 
 Bags are cached locally by checksum. When you download the same dataset version again, the cached bag is reused without re-downloading. The cache key is `{dataset_rid}_{checksum}`.
 
-The cache location can be configured via the `cache_dir` argument when creating a DerivaML instance. Read the `deriva://storage/cache` resource to see cached bags, and use `clear_cache` to remove all cached data.
+The cache location can be configured via the `cache_dir` argument when creating a DerivaML instance. Read the `deriva://storage/cache` resource to see cached bags, and use Python API `ml.clear_cache()` to remove all cached data.
 
 ## Downloading a Bag
 
 ### MCP tool
 
-Call `download_dataset` with `dataset_rid` and `version`. Returns JSON with `bag_path`, `bag_tables` inventory, `dataset_types`, and `execution_rid`.
+Call Python API `dataset.download_dataset_bag(version)` with `dataset_rid` and `version`. Returns JSON with `bag_path`, `bag_tables` inventory, `dataset_types`, and `execution_rid`.
 
 ### Python API
 
@@ -139,7 +139,7 @@ Call `estimate_bag_size` with `dataset_rid` and `version`. Returns row counts an
 - Decide whether to increase the timeout or use `exclude_tables`
 - Estimate disk space needed
 
-Supports the same `exclude_tables` parameter as `download_dataset`, so you can preview the effect of pruning FK branches before committing to a download:
+Supports the same `exclude_tables` parameter as Python API `dataset.download_dataset_bag(version)`, so you can preview the effect of pruning FK branches before committing to a download:
 
 ```
 estimate_bag_size(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Institution"])
@@ -151,7 +151,7 @@ Read `deriva://dataset/{rid}/bag-preview` to see projected FK paths and tables w
 
 ## Validating Bag Contents
 
-Call `validate_dataset_bag` with `dataset_rid` (and optionally `version`) to cross-validate a downloaded bag against the live catalog. Returns a per-table comparison:
+Call Python API bag inspection with `dataset_rid` (and optionally `version`) to cross-validate a downloaded bag against the live catalog. Returns a per-table comparison:
 
 - **Expected RIDs** — records the catalog says should be in the bag (based on members + FK traversal)
 - **Bag RIDs** — records actually present in the downloaded bag
@@ -167,11 +167,11 @@ Deep FK chains (e.g., Image → Sample → Subject → Study → Institution) ca
 
 ### 1. Increase the download timeout
 
-The default read timeout is 610 seconds (~10 min). For large datasets, call `download_dataset` with `timeout`: `[10, 1800]`. The first value is the connect timeout (rarely needs changing), the second is the read timeout (30 min in this example).
+The default read timeout is 610 seconds (~10 min). For large datasets, call Python API `dataset.download_dataset_bag(version)` with `timeout`: `[10, 1800]`. The first value is the connect timeout (rarely needs changing), the second is the read timeout (30 min in this example).
 
 ### 2. Exclude tables from the FK graph
 
-Prune tables whose data you don't need by calling `download_dataset` with `exclude_tables` (e.g., `["Study", "Institution"]`). This prevents traversal into those tables entirely.
+Prune tables whose data you don't need by calling Python API `dataset.download_dataset_bag(version)` with `exclude_tables` (e.g., `["Study", "Institution"]`). This prevents traversal into those tables entirely.
 
 ### 3. Add intermediate records as direct members
 
@@ -192,8 +192,8 @@ images_df = bag.get_table_as_dataframe("Image")
 subjects = list(bag.get_table_as_dict("Subject"))
 
 # List members grouped by table
-members = bag.list_dataset_members()  # {"Image": [...], "Subject": [...]}
-members = bag.list_dataset_members(recurse=True)  # includes nested datasets
+members = bag.resource deriva://dataset/{rid}/members ()  # {"Image": [...], "Subject": [...]}
+members = bag.resource deriva://dataset/{rid}/members (recurse=True)  # includes nested datasets
 
 # Check version
 bag.current_version  # DatasetVersion("1.0.0")
@@ -209,7 +209,7 @@ bag.execution_rid    # "3-XYZ" or None
 features = bag.find_features("Image")  # [Feature(name="Diagnosis", ...)]
 
 # Fetch feature values (same selector API as live Dataset)
-feature_df = bag.fetch_table_features(
+feature_df = bag.resource deriva://table/{name}/features (
     table="Image",
     feature_name="Diagnosis",
     selector="newest",           # or: workflow="classify", execution="3-XYZ"
@@ -256,7 +256,7 @@ history = bag.dataset_history()
 
 ## Restructuring Assets for ML
 
-The `restructure_assets` method organizes downloaded asset files into directory hierarchies for ML frameworks (e.g., PyTorch ImageFolder).
+The Python API `bag.restructure_assets()` method organizes downloaded asset files into directory hierarchies for ML frameworks (e.g., PyTorch ImageFolder).
 
 ### Basic usage
 
@@ -345,10 +345,10 @@ DatasetSpecConfig(rid="28EA", version="0.4.0", exclude_tables=["Study", "Institu
 
 | Resource / Tool | Purpose |
 |-----------------|---------|
-| `download_dataset` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
+| Python API `dataset.download_dataset_bag(version)` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
 | `estimate_bag_size` | Preview row counts and asset sizes per table |
-| `validate_dataset_bag` | Cross-validate bag contents against live catalog |
-| `denormalize_dataset` | Flatten dataset tables for ML (without full bag download) |
+| Python API bag inspection | Cross-validate bag contents against live catalog |
+| `preview_denormalized_dataset` | Flatten dataset tables for ML (without full bag download) |
 | `deriva://dataset/{rid}/bag-preview` | Preview FK paths and tables before downloading |
 | `deriva://catalog/dataset-element-types` | Check registered element types |
 | `deriva://storage/cache` | View cached bags |

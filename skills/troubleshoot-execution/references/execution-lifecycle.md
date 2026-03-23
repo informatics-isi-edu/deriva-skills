@@ -266,7 +266,7 @@ The `timeout` tuple is `(connect_timeout, read_timeout)`. urllib3 uses `connect_
 2. Increase timeout — transient network issues are the most common cause
 3. Reduce chunk size — smaller chunks are more resilient to interruptions
 4. Increase retries — retries use exponential backoff
-5. Check `get_execution_info` to see if partial uploads succeeded
+5. Check resource `deriva://execution/{rid}` to see if partial uploads succeeded
 
 ## Status Updates
 
@@ -432,10 +432,10 @@ Returns the local filesystem path for the active execution. Inspect to verify in
 |-----------------|---------|
 | `deriva://execution/{rid}` | Execution details, status, inputs, outputs |
 | `deriva://storage/execution-dirs` | Local execution working directories |
-| `get_execution_info` | Full execution metadata and state |
-| `get_execution_working_dir` | Local filesystem path for active execution |
+| resource `deriva://execution/{rid}` | Full execution metadata and state |
+| Python API `exe.working_dir` | Local filesystem path for active execution |
 | `update_execution_status` | Report progress during long runs |
 | `list_nested_executions` | View execution tree for complex workflows |
-| `list_parent_executions` | Find parent of a nested execution |
+| resource `deriva://execution/{rid}` | Find parent of a nested execution |
 | `restore_execution` | Resume a previous execution |
-| `upload_execution_outputs` | Upload registered files to catalog |
+| Python API `exe.upload_execution_outputs()` | Upload registered files to catalog |

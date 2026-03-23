@@ -56,7 +56,7 @@ Assets and datasets serve different purposes:
 | **Storage** | File in object store + metadata row in an asset table | Membership associations in the catalog |
 | **Versioning** | Immutable once uploaded (new version = new asset) | Semantic versioning with snapshot semantics |
 | **Primary use** | Track individual files with provenance | Organize data for reproducible experiments |
-| **Download** | `download_asset` → one file | `download_dataset` → BDBag with all members + assets |
+| **Download** | Python API `ml.download_asset(rid)` → one file | Python API `dataset.download_dataset_bag(version)` → BDBag with all members + assets |
 
 **Key distinction:** A dataset *contains* assets (among other records). When you download a dataset as a BDBag, the bag includes all asset files reachable from the dataset's members. But an asset exists independently — you can download, reference, and track a single asset without it being part of any dataset.
 
@@ -86,7 +86,7 @@ Asset tables also get automatically created **association tables**:
 
 Every asset has a unique **RID** (Resource IDentifier) — a short, immutable string like `3-JSE4` or `2-IMG1`. RIDs are the primary way to reference assets across the system:
 
-- **In MCP tools**: Pass `asset_rid` to `download_asset`, `list_asset_executions`, etc.
+- **In MCP tools**: Pass `asset_rid` to Python API `ml.download_asset(rid)`, `list_asset_executions`, etc.
 - **In configurations**: Use RIDs in `AssetSpecConfig` to specify execution inputs
 - **In provenance**: Execution records reference asset RIDs for inputs and outputs
 - **In the web UI**: Each asset's Chaise page URL includes its RID
@@ -135,7 +135,7 @@ Assets are created as part of the execution lifecycle — you register files dur
 
 | Field | How it's set |
 |-------|-------------|
-| `Filename` | From the file name provided to `asset_file_path` |
+| `Filename` | From the file name provided to Python API `exe.asset_file_path()` |
 | `URL` | Set by the upload process (object store path) |
 | `Length` | Computed from the file size during upload |
 | `MD5` | Computed from the file content during upload |
@@ -174,7 +174,7 @@ This bidirectional tracking means you can answer two key questions:
 - "Where did this asset come from?" — find the execution with role "Output"
 - "What used this asset?" — find all executions with role "Input"
 
-Provenance is recorded automatically: uploading via `upload_execution_outputs` records "Output" links, and downloading via `download_asset` within an execution records "Input" links.
+Provenance is recorded automatically: uploading via Python API `exe.upload_execution_outputs()` records "Output" links, and downloading via Python API `ml.download_asset(rid)` within an execution records "Input" links.
 
 ## Built-in Asset Tables
 

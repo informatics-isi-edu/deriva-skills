@@ -33,7 +33,7 @@ Analyze the user's intent and read the matching skill:
 - **Project setup from scratch, pyproject.toml structure, uv configuration, Git workflow, Google docstrings, ruff linting, type hints, version bumping** → Read and follow `../coding-guidelines/SKILL.md`
 
 ### Troubleshooting data exports
-- **Missing data in downloaded dataset bags, FK traversal issues, materialization problems, bag export timeouts, validate_dataset_bag** → Read and follow `../debug-bag-contents/SKILL.md`
+- **Missing data in downloaded dataset bags, FK traversal issues, materialization problems, bag export timeouts, Python API bag inspection** → Read and follow `../debug-bag-contents/SKILL.md`
 
 ## Important
 

@@ -95,7 +95,7 @@ For individual assets (model weights, etc.):
 cache_dataset(asset_rid="3WSE")
 ```
 
-These download into the local cache without creating execution records. Subsequent `download_execution_dataset` / `download_asset` calls will use the cached copy.
+These download into the local cache without creating execution records. Subsequent dataset/asset downloads (via `exe.download_dataset_bag()` / `ml.download_asset()` in Python, or the CLI runner) will use the cached copy.
 
 ### Step 5: Code and environment checks (CLI runs)
 
@@ -119,7 +119,7 @@ There are three ways to run an execution. Choose based on context:
 
 | Path | When to use | Lifecycle managed by |
 |------|-------------|---------------------|
-| **MCP Tools** | Claude-driven interactive work | Explicit tool calls (create → start → work → stop → upload) |
+| **MCP Tools** | Claude-driven interactive work | Explicit tool calls (create → start → work → stop) + Python API for I/O |
 | **Python API** | Scripts and custom workflows | Context manager (`with ml.create_execution(config) as exe:`) |
 | **CLI** | Reproducible experiment runs | `deriva-ml-run` handles everything automatically |
 
@@ -129,6 +129,8 @@ The execution lifecycle is always the same regardless of path:
 1. Create execution (with workflow, inputs, description)
 2. Start → download inputs → do work → register outputs → stop
 3. Upload outputs to catalog
+
+**Important:** Downloading inputs, registering output files, and uploading outputs are done via the **Python API** (not MCP tools). Use `exe.download_dataset_bag()`, `exe.asset_file_path()`, and `exe.upload_execution_outputs()`.
 
 For the complete tool call sequences, code examples, and CLI commands for each path, see `references/workflow.md`.
 
@@ -150,7 +152,7 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 2. **Dry run first** — test with `dry_run=True` before production runs
 3. **Every execution needs a workflow** — find with `lookup_workflow_by_url` or let `create_execution` create one
 4. **Upload AFTER the with block** — `exe.upload_execution_outputs()` goes after `with`, not inside
-5. **Use `asset_file_path` for all outputs** — never manually place files in the working directory
+5. **Use Python API `exe.asset_file_path()` for all outputs** — never manually place files in the working directory
 6. **Commit code before running** — git hash is recorded for provenance
 
 ## Reference Resources

@@ -53,7 +53,7 @@ Not every piece of metadata belongs in a feature. Features have overhead (a sepa
 - The value needs **provenance** — you need to know *who* assigned it (which execution, which annotator, which model run)
 - The value is **multivalued** — the same record can have multiple values from different sources (multiple annotators, successive model runs)
 - The value comes from a **controlled vocabulary** — ensuring consistency across annotators and experiments
-- The value will be used for **ML training labels** — features integrate with dataset bags, denormalization, and `restructure_assets`
+- The value will be used for **ML training labels** — features integrate with dataset bags, denormalization, and Python API `bag.restructure_assets()`
 - The value may **change over time** — features accumulate history, columns overwrite
 
 **Use a column on the table when:**
@@ -324,11 +324,11 @@ Resources provide quick, no-parameter access for exploring what feature data exi
 | `deriva://table/{table}/feature-values/newest` | Deduplicated to one value per target record per feature — picks newest by RCT. |
 | `deriva://feature/{table}/{feature}/values` | All values for a specific feature, with full provenance (Execution RID, RCT). |
 
-### MCP tool: `fetch_table_features`
+### MCP tool: resource `deriva://table/{name}/features`
 
 The tool provides filtering options that resources can't express. Returns a JSON dict mapping feature names to lists of feature value records.
 
-Call `fetch_table_features` with:
+Call resource `deriva://table/{name}/features` with:
 - `table_name` (required): the target table (e.g., `"Image"`)
 - `feature_name` (optional): fetch only a specific feature; if omitted, fetches all
 - One of the following selection options (mutually exclusive):
@@ -344,10 +344,10 @@ If none of `selector`, `workflow`, or `execution` is specified, all values are r
 from deriva_ml.feature import FeatureRecord
 
 # Newest by creation time
-features = ml.fetch_table_features("Image", selector=FeatureRecord.select_newest)
+features = ml.resource deriva://table/{name}/features ("Image", selector=FeatureRecord.select_newest)
 
 # Filter by execution RID, then pick newest
-features = ml.fetch_table_features(
+features = ml.resource deriva://table/{name}/features (
     "Image",
     selector=FeatureRecord.select_by_execution("3WY2"),
 )
@@ -365,7 +365,7 @@ values = list(ml.list_feature_values(
 ```python
 from collections import defaultdict
 
-features = ml.fetch_table_features("Image", feature_name="Classification")
+features = ml.resource deriva://table/{name}/features ("Image", feature_name="Classification")
 records = features.get("Classification", [])
 
 grouped = defaultdict(list)
@@ -383,12 +383,12 @@ The MCP tool's `workflow` parameter handles this grouping automatically.
 def select_best(records):
     return max(records, key=lambda r: getattr(r, "Confidence", 0))
 
-features = ml.fetch_table_features("Image", selector=select_best)
+features = ml.resource deriva://table/{name}/features ("Image", selector=select_best)
 ```
 
 ### Predefined selectors
 
-All selectors live on `FeatureRecord` and work everywhere — catalog queries, bag queries, and `restructure_assets`. The MCP tool maps string names to selectors automatically.
+All selectors live on `FeatureRecord` and work everywhere — catalog queries, bag queries, and Python API `bag.restructure_assets()`. The MCP tool maps string names to selectors automatically.
 
 | Selector | Type | What it does |
 |----------|------|-------------|
@@ -431,7 +431,7 @@ Feature values are also available as MCP resources, pre-deduplicated:
 
 ### Writing custom selectors
 
-When the predefined selectors don't fit, write a Python callable with signature `(list[FeatureRecord]) -> FeatureRecord`. The same signature works for both catalog queries and bag `restructure_assets`.
+When the predefined selectors don't fit, write a Python callable with signature `(list[FeatureRecord]) -> FeatureRecord`. The same signature works for both catalog queries and bag Python API `bag.restructure_assets()`.
 
 ```python
 from deriva_ml.feature import FeatureRecord
@@ -441,7 +441,7 @@ def select_highest_confidence(records: list[FeatureRecord]) -> FeatureRecord:
     return max(records, key=lambda r: getattr(r, "Confidence", 0))
 
 # Works with catalog queries
-features = ml.fetch_table_features(
+features = ml.resource deriva://table/{name}/features (
     "Image", feature_name="Diagnosis",
     selector=select_highest_confidence,
 )
@@ -465,7 +465,7 @@ When the MCP tool's built-in selectors are insufficient, write the script, test 
 | `majority_vote` without `feature_name` | Error — needs to know which feature to look up column info | Always specify `feature_name` with `majority_vote` |
 | No selector, surprised by duplicates | Returns ALL values including multiple per record | Add `selector="newest"` or another selection option |
 | `workflow="Training"` vs `workflow="2-ABC1"` | Both work — auto-detected as type name vs RID | Just pass whichever you have |
-| Using `fetch_table_features` for one feature | Works but returns a dict | Use `list_feature_values` for a flat list |
+| Using resource `deriva://table/{name}/features` for one feature | Works but returns a dict | Use `list_feature_values` for a flat list |
 
 ## Feature Value Table Naming
 
@@ -511,7 +511,7 @@ Feature values for dataset members are automatically included in BDBag exports. 
 ```python
 # Query features in a downloaded bag (same API as live catalog)
 bag = dataset.download_dataset_bag(version="1.0.0")
-features = bag.fetch_table_features("Image")
+features = bag.resource deriva://table/{name}/features ("Image")
 values = list(bag.list_feature_values("Image", "Diagnosis",
                                        selector=FeatureRecord.select_newest))
 features_on_table = bag.find_features("Image")
@@ -519,12 +519,12 @@ features_on_table = bag.find_features("Image")
 
 Note: `select_by_workflow` is not available on bags since it requires live catalog access.
 
-### In denormalize_dataset
+### In preview_denormalized_dataset
 
 Feature tables can be included in denormalization. Column names follow the pattern `{FeatureTableName}_{ColumnName}`:
 
 ```
-denormalize_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"])
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"])
 # Produces columns like: Image_RID, Image_Filename, Image_Classification_Image_Class
 ```
 
@@ -563,7 +563,7 @@ Read resource: deriva://feature/{table}/{feature}/values
 Read resource: deriva://table/{table}/feature-values/newest
 
 # MCP — fetch with selection/filtering
-fetch_table_features(table_name="Image", feature_name="Diagnosis", selector="newest")
+resource deriva://table/{name}/features (table_name="Image", feature_name="Diagnosis", selector="newest")
 ```
 
 ```python
@@ -605,7 +605,7 @@ for f in features:
 | Features on a table | Resource: `deriva://catalog/features` | `ml.find_features("Image")` | Filtered to one table |
 | Feature details | Resource: `deriva://feature/{table}/{name}` | `ml.lookup_feature()` | Column types, requirements |
 | Feature values (all) | Resource: `deriva://feature/{table}/{name}/values` | `ml.list_feature_values()` | With provenance |
-| Table values (all) | Resource: `deriva://table/{table}/feature-values` | `ml.fetch_table_features()` | Grouped by feature |
-| Table values (newest) | Resource: `deriva://table/{table}/feature-values/newest` | `ml.fetch_table_features(..., selector=...)` | Deduplicated |
-| Fetch with selection | `fetch_table_features` | `ml.fetch_table_features()` | selector, workflow, execution |
-| Values in a bag | — | `bag.fetch_table_features()` | Same API on downloaded bags |
+| Table values (all) | Resource: `deriva://table/{table}/feature-values` | `ml.resource deriva://table/{name}/features ()` | Grouped by feature |
+| Table values (newest) | Resource: `deriva://table/{table}/feature-values/newest` | `ml.resource deriva://table/{name}/features (..., selector=...)` | Deduplicated |
+| Fetch with selection | resource `deriva://table/{name}/features` | `ml.resource deriva://table/{name}/features ()` | selector, workflow, execution |
+| Values in a bag | — | `bag.resource deriva://table/{name}/features ()` | Same API on downloaded bags |

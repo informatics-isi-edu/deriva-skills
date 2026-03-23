@@ -78,7 +78,7 @@ create_dataset(
 
 # 3. Add a representative sample of members
 # Query to find records spanning all classes:
-denormalize_dataset(dataset_rid="<source>",
+preview_denormalized_dataset(dataset_rid="<source>",
                     include_tables=["Image", "Image_Diagnosis"],
                     limit=200)
 # Pick records that cover all classes, then:
@@ -116,7 +116,7 @@ Before training, confirm the feature schema works with your development data.
 **Inspection sequence:**
 1. Read `deriva://feature/Image/<feature_name>` — confirm column structure (required vs optional)
 2. Read `deriva://vocabulary/<vocab_name>` — confirm valid term values
-3. `fetch_table_features(table_name="Image", selector="newest")` — check that labels exist for your dev records
+3. `resource deriva://table/{name}/features (table_name="Image", selector="newest")` — check that labels exist for your dev records
 
 **If labels are missing**, add them to the development dataset first:
 ```
@@ -129,7 +129,7 @@ stop_execution()
 
 **Verify the full pipeline** by denormalizing:
 ```
-denormalize_dataset(dataset_rid="<dev_dataset>",
+preview_denormalized_dataset(dataset_rid="<dev_dataset>",
                     include_tables=["Image", "Image_Diagnosis"],
                     limit=20)
 ```
@@ -253,7 +253,7 @@ uv run deriva-ml-run +multirun=lr_sweep
 
 ML development is iterative. After each production run:
 
-1. **Analyze results** — use `denormalize_dataset` or download the bag to examine predictions
+1. **Analyze results** — use `preview_denormalized_dataset` or download the bag to examine predictions
 2. **Identify improvements** — more data? Better labels? Different architecture?
 3. **Go back to the appropriate tier:**
    - Config change only → Tier 1 (dry run)

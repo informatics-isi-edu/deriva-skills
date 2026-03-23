@@ -204,7 +204,7 @@ Before running experiments, validate that all RIDs and versions in config files 
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Dataset not found: RID=...` | RID doesn't exist in target catalog | Verify RID against correct catalog (dev vs prod) |
-| `Version X not found` | Version never created | Use `get_current_version` to find latest, or `increment_dataset_version` |
+| `Version X not found` | Version never created | Use CLI `git describe --tags` to find latest, or `increment_dataset_version` |
 | Stale version | Data changed since version was created | Call `increment_dataset_version`, then update config |
 | Wrong catalog | Config RIDs are from a different catalog | Check `deriva_ml` config group — are you pointing at the right host/catalog? |
 

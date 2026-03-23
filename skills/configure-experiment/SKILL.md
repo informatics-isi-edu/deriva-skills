@@ -218,19 +218,19 @@ cache_dir="/scratch/ml-work/cache"  # ❌ Cache dir INSIDE working dir
 
 ### Managing storage
 
-Use the `list_storage_contents` MCP tool to see what's consuming disk space:
+Use the Bash `ls -la ~/.deriva-ml/` MCP tool to see what's consuming disk space:
 
 ```
-list_storage_contents()                    # Everything
-list_storage_contents(filter="cache")      # Just cached bags
-list_storage_contents(filter="executions") # Just execution dirs
+# Python API or Bash: inspect ~/.deriva-ml/ ()                    # Everything
+# Python API or Bash: inspect ~/.deriva-ml/ (filter="cache")      # Just cached bags
+# Python API or Bash: inspect ~/.deriva-ml/ (filter="executions") # Just execution dirs
 ```
 
-To free disk space, use `delete_storage` with specific RIDs:
+To free disk space, use Bash `rm -rf ~/.deriva-ml/...` with specific RIDs:
 
 ```
-delete_storage(rids=["28CT"], confirm=False)  # Preview what would be deleted
-delete_storage(rids=["28CT"], confirm=True)   # Actually delete
+# Python API: ml.clean_storage(rids=["28CT"], confirm=False)  # Preview what would be deleted
+# Python API: ml.clean_storage(rids=["28CT"], confirm=True)   # Actually delete
 ```
 
 **Caution:** Cached bags can be re-downloaded, but execution outputs that haven't been uploaded to the catalog will be permanently lost.

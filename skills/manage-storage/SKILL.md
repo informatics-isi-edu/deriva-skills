@@ -24,7 +24,7 @@ All DerivaML local data lives under a **working directory**, typically `~/.deriv
 
 | Directory | Contents | Grows from |
 |-----------|----------|------------|
-| `cache/` | Downloaded dataset bags (BDBags), keyed by RID + checksum | `download_dataset`, `download_execution_dataset`, `cache_dataset` |
+| `cache/` | Downloaded dataset bags (BDBags), keyed by RID + checksum | Python API `dataset.download_dataset_bag(version)`, Python API `exe.download_dataset_bag()`, `cache_dataset` |
 | `cache/assets/` | Individually cached assets (model weights, etc.), keyed by RID + MD5 | `AssetSpec(cache=True)` |
 | `execution_{RID}/` | Execution working directories — staged output files, logs | `create_execution` |
 | Other dirs | Hydra configs, client exports, temporary files | Various |
@@ -61,7 +61,7 @@ default_deriva(hostname="...", catalog_id="...", cache_dir="/fast-ssd/deriva-cac
 ### Browse all storage
 
 ```
-list_storage_contents()
+# Python API or Bash: inspect ~/.deriva-ml/ ()
 ```
 
 Returns every cached bag, execution directory, and other artifact with size, category, and last-modified date.
@@ -69,8 +69,8 @@ Returns every cached bag, execution directory, and other artifact with size, cat
 **Filter by category:**
 
 ```
-list_storage_contents(filter="cache")       # Only cached dataset bags
-list_storage_contents(filter="executions")  # Only execution working directories
+# Python API or Bash: inspect ~/.deriva-ml/ (filter="cache")       # Only cached dataset bags
+# Python API or Bash: inspect ~/.deriva-ml/ (filter="executions")  # Only execution working directories
 ```
 
 ### Check a specific dataset's cache status
@@ -98,7 +98,7 @@ Same as `bag_info` but does not require the bag to be cached — estimates from 
 ### Preview what would be deleted (dry run)
 
 ```
-delete_storage(rids=["28CT"], confirm=false)
+# Python API: ml.clean_storage(rids=["28CT"], confirm=false)
 ```
 
 Returns a preview of matching entries without deleting anything. A single RID may match multiple entries (e.g., a dataset cached at several versions, or an execution working directory).
@@ -106,7 +106,7 @@ Returns a preview of matching entries without deleting anything. A single RID ma
 ### Delete cached data
 
 ```
-delete_storage(rids=["28CT", "3WSE"], confirm=true)
+# Python API: ml.clean_storage(rids=["28CT", "3WSE"], confirm=true)
 ```
 
 **What's safe to delete:**
@@ -115,23 +115,23 @@ delete_storage(rids=["28CT", "3WSE"], confirm=true)
 - Completed execution directories — outputs already uploaded to catalog
 
 **What's NOT safe to delete:**
-- Execution directories where `upload_execution_outputs` was never called — those outputs are **only** on local disk
+- Execution directories where Python API `exe.# Python API: exe.upload_execution_outputs()` was never called — those outputs are **only** on local disk
 
 ### Bulk cleanup workflow
 
-1. `list_storage_contents()` — see everything
+1. Bash: `ls -la ~/.deriva-ml/` — see everything
 2. Identify old or large entries
-3. `delete_storage(rids=[...], confirm=false)` — preview
-4. `delete_storage(rids=[...], confirm=true)` — delete
+3. Bash: `du -sh ~/.deriva-ml/cache/*` — check sizes
+4. Bash: `rm -rf ~/.deriva-ml/cache/...` — delete
 
 ## Phase 2b: Find and Resume Incomplete Executions
 
-Execution working directories may contain outputs that were never uploaded — from interrupted runs, crashes, or forgotten `upload_execution_outputs` calls. These are the **only** local data that can't be re-downloaded from the catalog.
+Execution working directories may contain outputs that were never uploaded — from interrupted runs, crashes, or forgotten Python API `exe.# Python API: exe.upload_execution_outputs()` calls. These are the **only** local data that can't be re-downloaded from the catalog.
 
 ### Find incomplete executions
 
 ```
-list_storage_contents(filter="executions")
+# Python API or Bash: inspect ~/.deriva-ml/ (filter="executions")
 ```
 
 Look for execution directories that:
@@ -156,15 +156,15 @@ restore_execution(execution_rid="<execution_rid>")
 
 This restores the execution context so you can:
 1. Inspect the working directory contents
-2. Register any output files with `asset_file_path`
-3. Call `stop_execution()` then `upload_execution_outputs()` to save them to the catalog
+2. Register any output files with Python API `exe.asset_file_path()`
+3. Call `stop_execution()` then `# Python API: exe.upload_execution_outputs()` to save them to the catalog
 
 ### After successful upload, clean up
 
 Once outputs are safely in the catalog, the local execution directory can be deleted:
 
 ```
-delete_storage(rids=["<execution_rid>"], confirm=true)
+# Python API: ml.clean_storage(rids=["<execution_rid>"], confirm=true)
 ```
 
 ## Phase 3: Pre-fetch — Warm the Cache
@@ -177,7 +177,7 @@ Download datasets or assets into the local cache **without creating an execution
 cache_dataset(dataset_rid="28CT", version="0.9.0")
 ```
 
-Downloads the full bag (including materialized assets) into the cache. Subsequent calls to `download_execution_dataset` with the same RID and version will reuse the cached copy.
+Downloads the full bag (including materialized assets) into the cache. Subsequent calls to Python API `exe.download_dataset_bag()` with the same RID and version will reuse the cached copy.
 
 ### Cache metadata only (no asset files)
 
@@ -225,8 +225,8 @@ This launches a web UI that shows all cached data with filters, sizes, and bulk 
 
 ## Reference Resources
 
-- `list_storage_contents` — Browse all local storage
-- `delete_storage` — Remove cached items by RID
+- Bash `ls -la ~/.deriva-ml/` — Browse all local storage
+- Bash `rm -rf ~/.deriva-ml/...` — Remove cached items by RID
 - `bag_info` — Check cache status and size for a specific dataset version
 - `cache_dataset` — Pre-fetch a dataset or asset into cache
 - `estimate_bag_size` — Estimate download size before caching

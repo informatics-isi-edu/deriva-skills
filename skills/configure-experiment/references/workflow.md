@@ -242,7 +242,7 @@ Overrides use Hydra's syntax. Comma-separated values create the sweep:
 ### Navigating multirun results
 
 - `list_nested_executions` with the parent execution RID — see all children
-- `list_parent_executions` with a child RID — find the parent
+- resource `deriva://execution/{rid}` with a child RID — find the parent
 - Read `deriva://experiment/{parent_rid}` — see the full multirun with description and children
 
 ## Best Practices

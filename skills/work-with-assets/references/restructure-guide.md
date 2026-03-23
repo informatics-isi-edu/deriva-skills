@@ -15,7 +15,7 @@
 
 ## Overview
 
-After downloading a dataset bag, `restructure_assets` organizes asset files into directory hierarchies expected by ML frameworks. It reads the bag's metadata (dataset types, feature values, vocabulary terms) to determine placement. This reference covers the full parameter set and integration patterns.
+After downloading a dataset bag, Python API `bag.restructure_assets()` organizes asset files into directory hierarchies expected by ML frameworks. It reads the bag's metadata (dataset types, feature values, vocabulary terms) to determine placement. This reference covers the full parameter set and integration patterns.
 
 For the complete asset upload and download workflow, see `workflow.md`. For background on asset tables and provenance, see `concepts.md`.
 
@@ -175,10 +175,10 @@ exe.upload_execution_outputs(
 
 | Resource / Tool | Purpose |
 |-----------------|---------|
-| `restructure_assets` | Organize assets into ML-ready layouts |
-| `download_dataset` | Download bag with assets |
-| `download_asset` | Download single asset by RID |
-| `asset_file_path` | Register file for upload |
-| `upload_execution_outputs` | Upload staged files to catalog |
+| Python API `bag.restructure_assets()` | Organize assets into ML-ready layouts |
+| Python API `dataset.download_dataset_bag(version)` | Download bag with assets |
+| Python API `ml.download_asset(rid)` | Download single asset by RID |
+| Python API `exe.asset_file_path()` | Register file for upload |
+| Python API `exe.upload_execution_outputs()` | Upload staged files to catalog |
 | `create_asset_table` | Create new asset table with custom columns |
 | `estimate_bag_size` | Preview what a download will contain |

@@ -36,7 +36,7 @@ Returns row counts and asset sizes per table so you know what to expect.
 
 ```
 # MCP — standalone download
-download_dataset(dataset_rid="2-XXXX", version="1.0.0")
+# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0")
 
 # MCP — within an execution (records provenance)
 download_execution_dataset(dataset_rid="2-XXXX", version="1.0.0")
@@ -52,8 +52,8 @@ bag = exe.download_dataset_bag(DatasetSpec(rid="2-XXXX", version="1.0.0"))
 
 For slow downloads, increase the timeout or exclude tables:
 ```
-download_dataset(dataset_rid="2-XXXX", version="1.0.0", timeout=[10, 1800])
-download_dataset(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Study"])
+# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0", timeout=[10, 1800])
+# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Study"])
 ```
 
 Use `materialize=False` to skip downloading actual asset files (only metadata).
@@ -97,7 +97,7 @@ Best for tabular ML, feature engineering, or interactive exploration.
 
 **Step 1 — Preview columns (no data fetched):**
 ```
-denormalize_dataset(
+preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
     columns_only=True
@@ -107,7 +107,7 @@ This returns column names and types instantly. Use it to verify FK paths, discov
 
 **Step 2 — Fetch the data:**
 ```
-denormalize_dataset(
+preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
     version="1.0.0",
@@ -147,7 +147,7 @@ images_df = bag.get_table_as_dataframe("Image")
 subjects = list(bag.get_table_as_dict("Subject"))
 
 # From the catalog directly
-query_table(table_name="Image", columns=["RID", "Filename", "Subject"],
+preview_table(table_name="Image", columns=["RID", "Filename", "Subject"],
             filters={"Subject": "2-SUB1"})
 ```
 
@@ -160,21 +160,21 @@ query_table(table_name="Image", columns=["RID", "Filename", "Subject"],
 features = bag.find_features("Image")
 
 # From the catalog
-fetch_table_features(table_name="Image")
+resource deriva://table/{name}/features (table_name="Image")
 ```
 
 ### Fetch feature values
 
 ```python
 # From a bag — with deduplication
-feature_df = bag.fetch_table_features(
+feature_df = bag.resource deriva://table/{name}/features (
     table="Image",
     feature_name="Diagnosis",
     selector="newest",           # most recent annotation per record
 )
 
 # From the catalog
-fetch_table_features(table_name="Image", feature_name="Diagnosis", selector="newest")
+resource deriva://table/{name}/features (table_name="Image", feature_name="Diagnosis", selector="newest")
 ```
 
 ### Handling multiple annotators / model runs
@@ -266,8 +266,8 @@ bag.get_table_as_dataframe("Image")          # pandas DataFrame
 bag.get_table_as_dict("Subject")             # generator of dicts
 
 # Members
-bag.list_dataset_members()                   # {"Image": [...], "Subject": [...]}
-bag.list_dataset_members(recurse=True)       # includes nested datasets
+bag.resource deriva://dataset/{rid}/members ()                   # {"Image": [...], "Subject": [...]}
+bag.resource deriva://dataset/{rid}/members (recurse=True)       # includes nested datasets
 
 # Hierarchy
 bag.list_dataset_children()
@@ -276,7 +276,7 @@ bag.list_dataset_element_types()
 
 # Features
 bag.find_features("Image")                   # [Feature(name="Diagnosis", ...)]
-bag.fetch_table_features(table="Image", feature_name="Diagnosis", selector="newest")
+bag.resource deriva://table/{name}/features (table="Image", feature_name="Diagnosis", selector="newest")
 
 # Denormalization
 bag.denormalize_as_dataframe(include_tables=["Image", "Subject"])

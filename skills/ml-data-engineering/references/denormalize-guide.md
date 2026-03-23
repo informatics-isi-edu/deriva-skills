@@ -6,7 +6,7 @@ Denormalization joins related tables into a single flat table (a "wide table") s
 
 **MCP tool (catalog-side):**
 ```
-denormalize_dataset(
+preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
     version="1.0.0",
@@ -40,7 +40,7 @@ Use `columns_only=True` to preview the column schema without fetching any data. 
 
 **MCP tool:**
 ```
-denormalize_dataset(
+preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
     columns_only=True
@@ -232,7 +232,7 @@ for _, row in valid.iterrows():
 
 **Cause:** No table in `include_tables` has dataset members. Denormalize needs at least one table with members to drive the output.
 
-**Fix:** Ensure at least one table in `include_tables` is a registered element type with members in this dataset. Check with `list_dataset_members`.
+**Fix:** Ensure at least one table in `include_tables` is a registered element type with members in this dataset. Check with resource `deriva://dataset/{rid}/members`.
 
 ### Row count doesn't match expectations
 
@@ -240,4 +240,4 @@ for _, row in valid.iterrows():
 
 **Cause:** Row count equals the number of primary table members (the first table in `include_tables` with members). It is NOT the count of the joined table. One-to-many or many-to-many joins do not duplicate rows — each primary member appears exactly once.
 
-**Fix:** Check `list_dataset_members` for the primary table to confirm the expected count.
+**Fix:** Check resource `deriva://dataset/{rid}/members` for the primary table to confirm the expected count.

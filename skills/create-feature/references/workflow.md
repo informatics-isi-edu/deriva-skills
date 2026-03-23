@@ -79,7 +79,7 @@ Feature values require an active execution for provenance tracking. Every label 
 - `entries`: list of dicts, each with `target_rid` plus column values matching the feature's schema
 - `execution_rid` (optional): defaults to the active execution
 
-**Step 3:** Call `stop_execution` to finalize. Feature values are written directly to the catalog by `add_feature_value` — no `upload_execution_outputs` call is needed unless you also registered file assets with `asset_file_path`.
+**Step 3:** Call `stop_execution` to finalize. Feature values are written directly to the catalog by `add_feature_value` — no Python API `exe.upload_execution_outputs()` call is needed unless you also registered file assets with Python API `exe.asset_file_path()`.
 
 ### Python API with context manager
 
@@ -118,7 +118,7 @@ with ml.create_execution(config) as exe:
 
 ### Preferred: Use dedicated feature tools and resources
 
-Always prefer the feature-specific tools and resources over generic `query_table`:
+Always prefer the feature-specific tools and resources over generic `preview_table`:
 
 **Browse values via resources:**
 - Read `deriva://feature/{table}/{name}/values` — all values for a specific feature, with full provenance
@@ -127,7 +127,7 @@ Always prefer the feature-specific tools and resources over generic `query_table
 
 **Fetch with selection via tool:**
 
-Call `fetch_table_features` with:
+Call resource `deriva://table/{name}/features` with:
 - `table_name`: the target table (e.g., `"Image"`)
 - `feature_name` (optional): fetch only a specific feature
 - `selector`: `"newest"` to pick the most recent value per record
@@ -138,11 +138,11 @@ Only one of `selector`, `workflow`, or `execution` may be specified. See `concep
 
 ### Fallback: Filtered queries on the feature value table
 
-When you need to filter by specific column values (e.g., "all images with Grade III"), use `query_table` on the feature value table directly:
+When you need to filter by specific column values (e.g., "all images with Grade III"), use `preview_table` on the feature value table directly:
 
-Call `query_table` with `table_name` set to the feature value table (e.g., `"Tumor_Classification_Feature_Value"`). Use `filters` to narrow results (e.g., `{"Image": "2-IMG1"}` for a specific image, or `{"Tumor_Grade": "Grade III"}` for all images with a specific grade).
+Call `preview_table` with `table_name` set to the feature value table (e.g., `"Tumor_Classification_Feature_Value"`). Use `filters` to narrow results (e.g., `{"Image": "2-IMG1"}` for a specific image, or `{"Tumor_Grade": "Grade III"}` for all images with a specific grade).
 
-This is the only case where `query_table` is appropriate for feature values — the dedicated tools above don't support arbitrary column filters.
+This is the only case where `preview_table` is appropriate for feature values — the dedicated tools above don't support arbitrary column filters.
 
 ## Managing Features
 

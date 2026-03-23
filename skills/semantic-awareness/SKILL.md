@@ -79,7 +79,7 @@ deriva://dataset/<rid>       # Specific dataset details
 deriva://catalog/workflows   # All workflows with descriptions
 ```
 
-For queries that need actual data (counts, specific records, filtering), use the `query_table` or `count_table` MCP tools.
+For queries that need actual data (counts, specific records, filtering), use the `preview_table` or `preview_table` (with limit=1) MCP tools.
 
 ### 4. Score Closeness Across Multiple Signals
 

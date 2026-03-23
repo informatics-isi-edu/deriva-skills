@@ -69,7 +69,7 @@ uv run deriva-ml-install-kernel
 This registers the project's virtual environment as a Jupyter kernel. The kernel name is derived from the project name in `pyproject.toml`.
 
 Alternatively, use the MCP tool:
-- `install_jupyter_kernel` to install the kernel programmatically.
+- CLI `uv run deriva-ml-install-kernel` to install the kernel programmatically.
 
 To verify the kernel was installed:
 ```bash
