@@ -23,7 +23,7 @@ Step-by-step MCP tool and Python API examples for running executions. For backgr
 
 ## Tool Quick Reference
 
-| Tool | Purpose |
+| Tool / API | Purpose |
 |------|---------|
 | `validate_rids` | Pre-flight: verify RIDs and versions exist |
 | `bag_info` | Pre-flight: check dataset size and cache status |
@@ -308,9 +308,9 @@ Call `create_execution_dataset` to create a new dataset linked to the active exe
 
 This is useful when an execution's output is a curated set of records (not just files).
 
-## Complete Example: MCP Workflow
+## Complete Example: MCP + Python API Workflow
 
-End-to-end MCP workflow: set up a workflow, run an execution, upload outputs.
+End-to-end workflow combining MCP tools (for lifecycle management) with Python API (for I/O operations).
 
 **Step 1:** Read `deriva://catalog/workflows` to check for existing workflows.
 

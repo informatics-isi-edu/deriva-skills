@@ -34,26 +34,18 @@ Returns row counts and asset sizes per table so you know what to expect.
 
 ### Download as BDBag
 
-```
-# MCP — standalone download
-# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0")
-
-# MCP — within an execution (records provenance)
-download_execution_dataset(dataset_rid="2-XXXX", version="1.0.0")
-```
-
 ```python
-# Python API
+# Python API -- standalone download (no execution required)
 bag = dataset.download_dataset_bag(version="1.0.0")
 
-# Within an execution context
+# Python API -- within an execution context (records provenance)
 bag = exe.download_dataset_bag(DatasetSpec(rid="2-XXXX", version="1.0.0"))
 ```
 
 For slow downloads, increase the timeout or exclude tables:
-```
-# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0", timeout=[10, 1800])
-# Python API: dataset.download_dataset_bag(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Study"])
+```python
+bag = dataset.download_dataset_bag(version="1.0.0", timeout=[10, 1800])
+bag = dataset.download_dataset_bag(version="1.0.0", exclude_tables=["Study"])
 ```
 
 Use `materialize=False` to skip downloading actual asset files (only metadata).
@@ -66,13 +58,11 @@ For details on bag contents, FK traversal, and caching, see the `dataset-lifecyc
 
 Best when you need files organized into directories (image classification, object detection).
 
-```
-restructure_assets(
-    dataset_rid="2-XXXX",
-    asset_table="Image",
+```python
+# Python API — after downloading
+bag.restructure_assets(
     output_dir="./ml_data",
-    group_by=["Diagnosis"],
-    version="1.0.0"
+    group_by=["Diagnosis"]
 )
 ```
 

@@ -21,18 +21,20 @@ Read `deriva://catalog/connections` to verify you're connected. Note the hostnam
 
 ### 2. Launch the app server
 
-Use the MCP tool:
-
-```
-start_app(app_id="schema-workbench", hostname="<hostname>", catalog_id="<catalog_id>")
-```
-
-Or start from the command line:
+Start the app server from the command line:
 
 ```bash
 cd ~/GitHub/deriva-ml-apps
 uv run deriva-ml-apps serve --backend <hostname>
 # Then open: http://localhost:8080/apps/schema-workbench/#catalog=<catalog_id>
+```
+
+Alternatively, if you have the reverse proxy script available:
+
+```bash
+# Start the local proxy for the Schema Workbench
+cd ~/GitHub/deriva-ml-apps
+uv run python -m deriva_ml_apps.proxy --backend <hostname> --port 8080
 ```
 
 ### 3. Tell the user

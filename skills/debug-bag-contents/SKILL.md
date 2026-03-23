@@ -179,7 +179,7 @@ For each registered element type, examine the FK paths that the export will foll
 The default network timeout is (10, 610) seconds — 10s to connect, 610s (~10 min) to read each query response. For large datasets with deep FK joins, increase the read timeout:
 
 ```
-download_dataset(dataset_rid="2-XXXX", version="1.0.0", timeout=[10, 1800])
+dataset.download_dataset_bag(version="1.0.0", timeout=[10, 1800])  # Python API
 ```
 
 This gives the server 30 minutes per query instead of 10. The connect timeout (first value) rarely needs changing.
@@ -193,7 +193,7 @@ DatasetSpecConfig(rid="28EA", version="0.4.0", timeout=[10, 1800])
 If you don't need data from certain tables, prune them from the FK traversal:
 
 ```
-download_dataset(dataset_rid="2-XXXX", version="1.0.0", exclude_tables=["Study", "Protocol"])
+dataset.download_dataset_bag(version="1.0.0", exclude_tables=["Study", "Protocol"])  # Python API
 ```
 
 This prevents the export from traversing into those tables entirely. Use this when the excluded tables' data is not needed in the bag.
