@@ -209,7 +209,9 @@ preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subjec
 preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=10)
 ```
 
-Once denormalized, you can filter by passing column criteria to narrow the results — for example, only images from a specific subject or with a specific diagnosis.
+**Important:** `preview_denormalized_dataset` is a preview only — results are not cached or stored. It returns a small sample (max 100 rows) to help you understand the data shape, column names, and relationships. Do NOT attempt to use `list_cached_results` or `query_cached_result` on preview results — they are not cached.
+
+Once you understand the shape and decide on your filter criteria, use the DerivaML Python API to access the full dataset for building subsets or ML pipelines.
 
 **Step 4: Check features and labels** — see what annotations exist on member records:
 ```
