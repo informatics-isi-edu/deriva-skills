@@ -1,6 +1,6 @@
 ---
 name: dataset-lifecycle
-description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using preview_denormalized_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
+description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using preview_denormalized_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup', 'curated subset', 'filter dataset', 'top N classes', 'subset by class', 'select by value'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
 ---
 
 # Dataset Lifecycle
@@ -41,7 +41,7 @@ Before creating a dataset, determine whether an existing one can be reused, exte
 |---------|-------------|-----|
 | Standalone | Building a new collection from scratch | `create_dataset` |
 | Split children | Need train/test/val partitions | `split_dataset` from a parent |
-| Curated subset | Focused set for a specific experiment | `create_dataset` + `add_dataset_members` with selected RIDs |
+| Curated subset | Focused set filtered by data values | Preview shape → generate script from template → run |
 | Manual nesting | Grouping related datasets together | `create_dataset` + `add_dataset_child` |
 
 ### Choose dataset types
@@ -130,6 +130,22 @@ The recommended pattern:
 4. All team members use the same splits — results are comparable
 
 This is especially important for stratified splits — recomputing a stratified split each time may produce different partitions if the underlying data changes.
+
+## Phase 3b: Curated Subsets
+
+When the user wants a dataset filtered by data values (e.g., "top 2 classes", "only cats and dogs", "images with confidence > 0.8"), follow this workflow:
+
+**Step 1: Preview the data shape.** Use `preview_denormalized_dataset` with `limit=10` to understand the columns, table joins, and value distributions. This is a small sample only — results are not cached or downloaded.
+
+**Step 2: Discuss criteria with the user.** Based on the preview, confirm what filter they want (specific values, top-N by frequency, numeric ranges, compound predicates).
+
+**Step 3: Generate a script from the template.** Read `scripts/create_curated_subset.py` and adapt the CONFIGURATION and FILTER STRATEGY sections for the user's criteria. The template provides common filter strategies (top-N, value list, numeric range, custom predicate) as commented examples. Write the customized script to the user's project (e.g., `scripts/create_<name>_subset.py`).
+
+**Step 4: Test with `--dry-run`.** Run the script with `--dry-run` to verify the filter produces the expected count and selection before modifying the catalog.
+
+**Step 5: Commit and run.** Have the user commit the script for provenance, then run it for real.
+
+This is the same denormalize-filter-create pattern that `split_dataset` uses internally — the difference is that splitting partitions all members, while curated subsets select members by data values. Both produce child datasets with full provenance.
 
 ## Phase 4: Version
 
@@ -260,6 +276,7 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 
 ## Reference Resources
 
+- `scripts/create_curated_subset.py` — Reusable script template for creating datasets filtered by data values (top-N, value lists, numeric ranges)
 - `references/concepts.md` — Full background: what datasets are, types, element types, versioning, navigation, consumption, bag downloads
 - `references/workflow.md` — Step-by-step MCP and Python API examples for every operation
 - `references/bags.md` — BDBag contents, FK traversal, materialization, caching, timeouts
