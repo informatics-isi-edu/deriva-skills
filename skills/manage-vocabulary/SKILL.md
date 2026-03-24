@@ -39,6 +39,14 @@ Before creating or modifying a vocabulary, determine whether one is needed and w
 
 ### Search existing vocabularies
 
+**Start with `rag_search`** to discover vocabularies and terms by concept. The RAG index includes all vocabulary terms with their descriptions and synonyms, making it ideal for fuzzy matching:
+```
+rag_search("species organism", doc_type="catalog-schema")
+rag_search("image quality grade", doc_type="catalog-schema")
+```
+
+Then use resources for full structured details:
+
 To **list all vocabularies**, read the `deriva://catalog/vocabularies` resource.
 
 To **browse terms** in a specific vocabulary, read the `deriva://vocabulary/{vocab_name}` resource (e.g., `deriva://vocabulary/Species`). Alternatively, call `preview_table` with `table_name` set to the vocabulary name.

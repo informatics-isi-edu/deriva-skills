@@ -47,39 +47,29 @@ Before querying, expand the user's term into a set of candidates:
 
 ### 3. Query the Catalog
 
-Use MCP resources to retrieve candidates. Which resources depend on the entity type:
+**Use `rag_search` as the primary discovery tool.** The RAG index includes the catalog's schema (tables, columns, FKs, feature definitions, vocabulary terms with descriptions and synonyms) and catalog data (datasets with types/versions, executions with workflow/status). Semantic embeddings make it ideal for fuzzy matching across synonyms, misspellings, and related concepts — exactly what this skill needs.
 
-**Tables:**
+**For tables, columns, features, and vocabulary terms** — use `doc_type="catalog-schema"`:
 ```
-deriva://catalog/schema                       # All tables with columns and descriptions
-deriva://table/{table_name}/schema            # Specific table details
-```
-
-**Vocabulary terms:**
-```
-deriva://vocabulary/{vocab_name}              # All terms with descriptions and synonyms
-deriva://vocabulary/{vocab_name}/{term_name}  # Lookup by name or synonym
+rag_search("patient demographics subject", doc_type="catalog-schema")
+rag_search("quality label score", doc_type="catalog-schema")
+rag_search("diagnosis classification", doc_type="catalog-schema")
 ```
 
-**Features:**
+**For datasets and executions** — use `doc_type="catalog-data"`:
 ```
-deriva://table/{table_name}/features          # Features on a target table
-deriva://feature/{table_name}/{feature_name}  # Feature details
-deriva://catalog/features                     # All features across all tables
-```
-
-**Datasets:**
-```
-deriva://catalog/datasets    # All datasets with types and descriptions
-deriva://dataset/<rid>       # Specific dataset details
+rag_search("training split labeled images", doc_type="catalog-data")
+rag_search("ResNet training workflow", doc_type="catalog-data")
 ```
 
-**Workflows:**
+**Fall back to MCP resources** only when you need full structured details of a specific entity already identified via RAG:
 ```
-deriva://catalog/workflows   # All workflows with descriptions
+deriva://table/{table_name}/schema            # Full table structure
+deriva://vocabulary/{vocab_name}/{term_name}  # Confirm exact term match
+deriva://dataset/{rid}                        # Full dataset details
 ```
 
-For queries that need actual data (counts, specific records, filtering), use the `preview_table` or `preview_table` (with limit=1) MCP tools.
+For queries that need actual data (counts, specific records, filtering), use the `preview_table` MCP tool.
 
 ### 4. Score Closeness Across Multiple Signals
 

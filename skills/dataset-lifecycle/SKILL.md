@@ -21,7 +21,7 @@ If you don't know the catalog ID, read `deriva://registry/{hostname}` to see ava
 
 Before creating a dataset, determine whether an existing one can be reused, extended, or split.
 
-1. **Search existing datasets.** Read `deriva://catalog/datasets` to browse what exists. Check descriptions, types, and member counts. Use `preview_table(table_name="Image")` to understand how much data is available.
+1. **Search existing datasets.** Use `rag_search("your purpose", doc_type="catalog-data")` to find datasets by description, type, or purpose. Fall back to `deriva://catalog/datasets` for the full structured list. Use `preview_table(table_name="Image")` to understand how much data is available.
 2. **Check available element types.** Read `deriva://catalog/dataset-element-types` to see which tables can contribute members. Read `deriva://catalog/element-type-paths` to understand FK traversal paths for bag exports. If the table you need isn't registered, call `add_dataset_element_type`.
 3. **Decide: reuse, extend, or create.**
 

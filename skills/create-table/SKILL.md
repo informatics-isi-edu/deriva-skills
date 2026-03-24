@@ -78,7 +78,8 @@ add_column(table_name="Subject", column_name="Weight_kg", column_type="float8", 
 
 ## Reference Resources
 
-- `deriva://catalog/schema` — Full catalog schema to check existing tables
+- `rag_search("your concept", doc_type="catalog-schema")` — **Search first** to find existing tables, columns, and relationships by concept
+- `deriva://catalog/schema` — Full catalog schema as structured JSON (large; use when you need the complete output)
 - `deriva://table/{table_name}/schema` — Table details including columns and foreign keys
 - `deriva://docs/ermrest/naming` — ERMrest naming conventions
 

@@ -28,15 +28,17 @@ Features have overhead (separate table, execution requirement, provenance). Use 
 
 ### Search existing features
 
+**Start with `rag_search`** to discover features by concept, not just name:
 ```
-# Browse all features — target tables, types, column schemas
-Read resource: deriva://catalog/features
+rag_search("diagnosis label classification", doc_type="catalog-schema")
+rag_search("quality score confidence", doc_type="catalog-schema")
+```
 
-# Details for a specific feature
-Read resource: deriva://feature/{table_name}/{feature_name}
-
-# What feature values already exist on a table
-Read resource: deriva://table/{table_name}/feature-values/newest
+Then use resources for full structured details of a specific feature:
+```
+Read resource: deriva://catalog/features               # All features (structured JSON)
+Read resource: deriva://feature/{table_name}/{feature_name}  # Specific feature details
+Read resource: deriva://table/{table_name}/feature-values/newest  # Existing values
 ```
 
 ```python
