@@ -141,9 +141,13 @@ When the user wants a dataset filtered by data values (e.g., "top 2 classes", "o
 
 **Step 3: Generate a script from the template.** Read `scripts/create_curated_subset.py` and adapt the CONFIGURATION and FILTER STRATEGY sections for the user's criteria. The template provides common filter strategies (top-N, value list, numeric range, custom predicate) as commented examples. Write the customized script to the user's project (e.g., `scripts/create_<name>_subset.py`).
 
-**Step 4: Test with `--dry-run`.** Run the script with `--dry-run` to verify the filter produces the expected count and selection before modifying the catalog.
+**Step 4: Test with `--dry-run`.** Run the script with `--dry-run` to verify the filter produces the expected count and selection before modifying the catalog. Show the user the output and wait for their approval before proceeding.
 
-**Step 5: Commit and run.** Have the user commit the script for provenance, then run it for real.
+**Step 5: Commit the script.** The script creates a new data element in the catalog, so it MUST be committed before running. The execution record captures the git hash — uncommitted code means no code provenance link. Commit to a feature branch if testing, to avoid polluting the main branch.
+
+**Step 6: Run for real.** After the user approves the dry-run output and the script is committed, run it without `--dry-run`.
+
+**Step 7: Log the decision.** Use the `maintain-experiment-notes` skill to record: what was created, the filter criteria chosen, why those criteria were selected, and the resulting dataset RID and member count. This captures the reasoning that would otherwise be lost.
 
 This is the same denormalize-filter-create pattern that `split_dataset` uses internally — the difference is that splitting partitions all members, while curated subsets select members by data values. Both produce child datasets with full provenance.
 
