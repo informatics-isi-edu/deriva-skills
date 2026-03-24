@@ -90,7 +90,7 @@ Best for tabular ML, feature engineering, or interactive exploration.
 preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
-    columns_only=True
+    limit=1
 )
 ```
 This returns column names and types instantly. Use it to verify FK paths, discover available columns, or find the right column name for `stratify_by_column`.

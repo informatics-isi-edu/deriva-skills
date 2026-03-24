@@ -117,10 +117,10 @@ This joins the dataset's member tables, resolving foreign keys into human-readab
 
 ### Preview Columns Before Denormalizing
 
-Use `columns_only=True` to see the column schema without fetching data — useful for debugging FK paths or finding column names for stratification:
+Use `limit=1` to see the column schema without fetching data — useful for debugging FK paths or finding column names for stratification:
 
 ```
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], columns_only=True)
+preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], limit=1)
 ```
 
 Returns column names and types instantly. Use this when:

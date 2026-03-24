@@ -32,7 +32,7 @@ for row in bag.denormalize_as_dict(include_tables=["Image", "Subject"]):
 
 ## Discovering Columns Before Denormalizing
 
-Use `columns_only=True` to preview the column schema without fetching any data. This is fast and helps you:
+Use `limit=1` to preview the column schema without fetching any data. This is fast and helps you:
 - See what columns a denormalization would produce
 - Verify FK paths resolve correctly before running expensive queries
 - Find the correct column name for `stratify_by_column` in `split_dataset`
@@ -43,7 +43,7 @@ Use `columns_only=True` to preview the column schema without fetching any data. 
 preview_denormalized_dataset(
     dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
-    columns_only=True
+    limit=1
 )
 ```
 
@@ -58,7 +58,7 @@ Returns:
   ],
   "column_names": ["Image.RID", "Image.Filename", "Subject.Gender", "Diagnosis.Label"],
   "rows": [],
-  "columns_only": true
+  "limit": 1
 }
 ```
 

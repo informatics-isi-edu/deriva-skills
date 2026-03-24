@@ -59,7 +59,7 @@ preview_table(table_name="Image", limit=100, offset=200)
 get_record(table_name="Subject", rid="2-B4C8")
 
 # Preview wide table columns (no data fetched — fast)
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], columns_only=True)
+preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], limit=1)
 
 # ML-ready flat data
 preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])

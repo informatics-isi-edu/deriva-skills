@@ -194,9 +194,9 @@ Read resource: deriva://dataset/{rid}
 resource deriva://dataset/{rid}/members (dataset_rid="...", version="1.0.0")
 ```
 
-**Step 3: Preview columns** — before fetching data, use `columns_only=True` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
+**Step 3: Preview columns** — before fetching data, use `limit=1` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
 ```
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], columns_only=True)
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=1)
 ```
 Returns column names and types without any data. Use this to debug FK path errors or find the right column name for stratification.
 
