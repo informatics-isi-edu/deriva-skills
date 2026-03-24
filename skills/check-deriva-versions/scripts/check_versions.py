@@ -331,6 +331,22 @@ def _get_cached_plugin_version() -> str | None:
     return best_version
 
 
+def _is_auto_update_enabled() -> bool:
+    """Check if autoUpdate is enabled for the deriva-plugins marketplace."""
+    settings_path = Path.home() / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return False
+    try:
+        data = json.loads(settings_path.read_text())
+        return (
+            data.get("extraKnownMarketplaces", {})
+            .get("deriva-plugins", {})
+            .get("autoUpdate", False)
+        )
+    except (json.JSONDecodeError, KeyError):
+        return False
+
+
 def check_skills() -> VersionStatus:
     """Check if the cached skills plugin is up to date.
 
@@ -355,10 +371,15 @@ def check_skills() -> VersionStatus:
     if not outdated:
         return VersionStatus("skills", installed, latest_tag, True, "Up to date")
     else:
+        auto_update = _is_auto_update_enabled()
+        if auto_update:
+            update_hint = "Refresh marketplace cache and restart Claude Code"
+        else:
+            update_hint = "Use the /plugin menu to update, or enable autoUpdate in settings.json"
         return VersionStatus(
             "skills", installed, latest_tag, False,
             f"Outdated: installed {installed}, latest is {latest_tag}",
-            update_commands=["Tell user: /plugin update deriva"],
+            update_commands=[update_hint],
         )
 
 
@@ -482,8 +503,10 @@ def update_skills(status: VersionStatus) -> VersionStatus:
 
     With ``autoUpdate: true`` in settings.json, Claude Code will pick up
     the new version on next session start.  Otherwise the user needs to
-    restart Claude Code for the update to take effect.
+    use the ``/plugin`` menu to update after restart.
     """
+    auto_update = _is_auto_update_enabled()
+
     # Step 1: Refresh the marketplace cache
     print("  Refreshing marketplace cache...")
     refreshed = _refresh_marketplace_cache()
@@ -492,17 +515,33 @@ def update_skills(status: VersionStatus) -> VersionStatus:
     else:
         print("    Could not refresh marketplace cache (this is non-fatal).")
 
-    # Step 2: Advise the user
+    # Step 2: Mark status and advise the user
     if refreshed:
-        status.update_message = (
-            "Marketplace cache refreshed. "
-            "Restart Claude Code to pick up the new version."
-        )
+        # Cache is now up to date — restart will pick up the new version
+        status.updated = True
+        status.update_commands = []  # Clear stale hints
+        if auto_update:
+            status.update_message = (
+                "Marketplace cache refreshed. "
+                "Restart Claude Code to pick up the new version."
+            )
+        else:
+            status.update_message = (
+                "Marketplace cache refreshed. "
+                "Restart Claude Code and use the /plugin menu to update, "
+                "or enable autoUpdate in settings.json for automatic updates."
+            )
     else:
-        status.update_message = (
-            "Could not refresh marketplace cache automatically. "
-            "Restart Claude Code — auto-update should re-clone on next start."
-        )
+        if auto_update:
+            status.update_message = (
+                "Could not refresh marketplace cache automatically. "
+                "Restart Claude Code — auto-update should re-clone on next start."
+            )
+        else:
+            status.update_message = (
+                "Could not refresh marketplace cache automatically. "
+                "Restart Claude Code and use the /plugin menu to update."
+            )
     return status
 
 

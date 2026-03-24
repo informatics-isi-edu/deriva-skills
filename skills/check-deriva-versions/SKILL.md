@@ -15,7 +15,7 @@ Check whether the user's DerivaML components are up to date, then offer to updat
 | Component | What | How to check | Who can update |
 |-----------|------|-------------|----------------|
 | **deriva-ml** | Python library in the project's `.venv` | Script (needs project venv) | Claude (automated) |
-| **skills** | Claude Code plugin | Script (reads plugin cache) | User (`/plugin update`) |
+| **skills** | Claude Code plugin | Script (reads plugin cache) | Automated (cache refresh + restart) |
 | **mcp-server** | Running MCP server | `deriva://server/version` resource | User (restart required) |
 
 ## Workflow
@@ -78,24 +78,17 @@ This runs `uv lock --upgrade-package deriva-ml && uv sync` and verifies the new 
 
 #### skills (Claude Code only)
 
-First, check if auto-update is enabled. Read `~/.claude/settings.json` and look for:
-```json
-"extraKnownMarketplaces": {
-  "deriva-plugins": {
-    "autoUpdate": true
-  }
-}
-```
-
-If `autoUpdate` is **not set or false**, suggest the user enable it:
-> "Auto-update is not enabled for the deriva skills plugin. To enable it, add `\"autoUpdate\": true` to your `~/.claude/settings.json` under `extraKnownMarketplaces.deriva-plugins`. This will keep skills up to date automatically."
-
-To update now, refresh the marketplace cache (also repairs broken clones):
+Run the update script, which refreshes the local marketplace cache (git pull, or re-clone if broken):
 ```bash
 python3 <skill-dir>/scripts/check_versions.py --component skills --update
 ```
 
-Then tell the user to restart Claude Code to pick up the new version.
+The script checks whether `autoUpdate` is enabled in `~/.claude/settings.json` and adjusts its advice:
+
+- **autoUpdate enabled**: Tell the user to restart Claude Code — the new version will be picked up automatically.
+- **autoUpdate not enabled**: Suggest the user enable it by adding `"autoUpdate": true` to `extraKnownMarketplaces.deriva-plugins` in settings.json, then restart. Alternatively, they can use the interactive `/plugin` menu to update manually.
+
+**Note:** `/plugin update` opens an interactive menu — it cannot be used as a scripted CLI command.
 
 #### mcp-server (user action — restart required)
 
