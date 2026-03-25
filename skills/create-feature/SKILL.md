@@ -136,9 +136,18 @@ For **value columns**, check the type:
 - `boolean` — true/false
 - `int4`/`int8` — integer values
 
-### Step 3: Add values within an execution
+### Step 3: Choose the right approach — script or MCP tools
 
-Feature values require provenance — every value is linked to the execution that created it:
+Feature values modify catalog data, so the approach depends on scale and reproducibility needs:
+
+| Situation | Approach |
+|-----------|----------|
+| Verifying a new feature works (1-5 test values) | MCP tools directly — quick and disposable |
+| Production annotations, batch labels, model predictions | Committed script — provides code provenance in the execution record |
+
+**For production data, always write a script first.** The execution record captures the git hash of the committed code. Without a committed script, the execution has provenance (who, when, what) but no code link (how). Use the `catalog-operations-workflow` skill or `dataset-lifecycle` skill's script templates to generate the script, commit it, then run via `deriva-ml-run`.
+
+**For quick testing** (verifying the feature works, adding a few sample values), MCP tools are fine:
 
 ```
 create_execution(workflow_name="Expert Annotation", workflow_type="Annotation")
@@ -174,15 +183,18 @@ stop_execution()
 - **Multiple annotators**: Each annotator gets their own execution (creates provenance trail)
 - **Model predictions**: Each model run gets its own execution
 - **Optional columns can be omitted**: Only required fields must be present in every entry. Optional fields can vary per entry
+- **Boolean values**: Pass as strings (`"true"`, `"false"`) — the MCP tools expect string values even for boolean columns
 
 ### Common mistakes
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
 | Adding values without an execution | Error — provenance required | `create_execution` + `start_execution` first |
+| Using MCP tools for production batch annotations | Works but no code provenance | Write and commit a script, run via `deriva-ml-run` |
 | Using wrong term name | Error — must match vocabulary exactly | Read `deriva://vocabulary/{vocab}` to check valid terms |
 | Missing required column | Error — required fields must be present | Read `deriva://feature/{table}/{feature}` for required fields |
 | One execution per label | Works but clutters provenance | Batch labels from same source into one execution |
+| Passing boolean as true/false literal | Pydantic validation error | Pass as string: `"true"` / `"false"` |
 | Forgetting `stop_execution()` | Execution stays "running" | Always stop after adding values |
 
 For the complete MCP tool parameters and Python API examples, see `references/workflow.md`.
