@@ -1,6 +1,6 @@
 ---
 name: dataset-lifecycle
-description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using preview_denormalized_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup', 'curated subset', 'filter dataset', 'top N classes', 'subset by class', 'select by value'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
+description: "Use this skill for ALL DerivaML dataset operations — creating, populating, splitting, versioning, browsing, and downloading datasets. Covers: creating datasets and adding members, train/test/validation splits (stratified, labeled, dry run), dataset version management after catalog changes, choosing and designing dataset types (orthogonal tagging), exploring and browsing dataset contents by element type using preview_denormalized_dataset, navigating parent/child hierarchies, downloading BDBags (timeouts, exclude_tables, bag_info), restructuring assets for ML frameworks, and referencing datasets in experiment configs via DatasetSpecConfig. Also covers preparing datasets specifically for model training — stratified splits by label distribution, setting up training/validation/testing partitions, and creating explicit split datasets in the catalog rather than computing on the fly. Triggers on: 'create a dataset', 'split dataset', 'stratify', 'train test split', 'prepare data for model', 'dataset version', 'what is in this dataset', 'browse dataset', 'wide table', 'flat table', 'denormalize', 'dataset types', 'element types', 'BDBag download', 'DatasetSpecConfig', 'add members', 'list members', 'dataset children', 'training data setup', 'curated subset', 'filter dataset', 'subset by class', 'select by value', 'create labeled dataset', 'filter by feature', 'subset with labels', 'has feature', 'images with labels', 'records that have', 'build dataset from'. Do NOT use for: creating features/labels (use create-feature), creating tables (use create-table), running experiments (use execution-lifecycle), uploading assets (use work-with-assets), or managing vocabularies (use manage-vocabulary)."
 ---
 
 # Dataset Lifecycle
@@ -133,23 +133,52 @@ This is especially important for stratified splits — recomputing a stratified 
 
 ## Phase 3b: Curated Subsets
 
-When the user wants a dataset filtered by data values (e.g., "top 2 classes", "only cats and dogs", "images with confidence > 0.8"), follow this workflow:
+When the user wants a dataset filtered by data values (e.g., "only labeled images", "just cats and dogs", "images with confidence > 0.8"), follow this workflow. Curated subsets run through `deriva-ml-run` using the `script_config` hydra group, giving them the same provenance tracking as model training.
 
-**Step 1: Preview the data shape.** Use `preview_denormalized_dataset` with `limit=10` to understand the columns, table joins, and value distributions. This is a small sample only — results are not cached or downloaded.
+### Scaffolding check
 
-**Step 2: Discuss criteria with the user.** Based on the preview, confirm what filter they want (specific values, top-N by frequency, numeric ranges, compound predicates).
+Before generating anything, verify the project has the required infrastructure. If any piece is missing, create it — this handles both first-time setup and subsequent subset scripts.
 
-**Step 3: Generate a script from the template.** Read `scripts/create_curated_subset.py` and adapt the CONFIGURATION and FILTER STRATEGY sections for the user's criteria. The template provides common filter strategies (top-N, value list, numeric range, custom predicate) as commented examples. Write the customized script to the user's project (e.g., `scripts/create_<name>_subset.py`).
+1. **Filter registry** — Check if `src/models/subset_filters.py` exists. If not, copy it from this skill's `scripts/subset_filters.py`. This provides built-in filters: `has_feature`, `feature_equals`, `feature_in`, `numeric_range`.
 
-**Step 4: Test with `--dry-run`.** Run the script with `--dry-run` to verify the filter produces the expected count and selection before modifying the catalog. Show the user the output and wait for their approval before proceeding.
+2. **Config file** — Check if `src/configs/dataset_generation.py` exists. If not, create it with `script_store = store(group="script_config")` and an import for the generation function being created.
 
-**Step 5: Commit the script.** The script creates a new data element in the catalog, so it MUST be committed before running. The execution record captures the git hash — uncommitted code means no code provenance link. Commit to a feature branch if testing, to avoid polluting the main branch.
+3. **Workflow config** — Check if `DatasetGenerationWorkflow` exists in `src/configs/workflow.py`. If not, add it with `workflow_type="Dataset_Generation"` and register as `name="dataset_generation"`.
 
-**Step 6: Run for real.** After the user approves the dry-run output and the script is committed, run it without `--dry-run`.
+4. **Base config** — Check if `script_config` appears in the hydra_defaults list in `src/configs/base.py`. If not, add `{"optional script_config": "none"}` to the defaults.
 
-**Step 7: Log the decision.** Use the `maintain-experiment-notes` skill to record: what was created, the filter criteria chosen, why those criteria were selected, and the resulting dataset RID and member count. This captures the reasoning that would otherwise be lost.
+5. **Workflow types** — Check if `Dataset_Generation` and `Skill_Generated` exist in the catalog's Workflow_Type vocabulary. If not, create them via `add_workflow_type` MCP tool.
 
-This is the same denormalize-filter-create pattern that `split_dataset` uses internally — the difference is that splitting partitions all members, while curated subsets select members by data values. Both produce child datasets with full provenance.
+### Subset workflow
+
+**Step 1: Preview the data shape.** Use `preview_denormalized_dataset` with `limit=10` to understand the columns, table joins, and value distributions. This is a small sample only — results are not cached or downloaded. Use it to understand what you're working with, not to extract the full data.
+
+**Step 2: Discuss criteria with the user.** Based on the preview, confirm what filter they want. Common patterns:
+- "Give me all labeled images" → `has_feature` on the label column
+- "Only cat images" → `feature_equals` with column + value
+- "Cats and dogs" → `feature_in` with column + value list
+- "High confidence predictions" → `numeric_range` on confidence column
+- Something complex → generate a custom filter function and register it
+
+**Step 3: Generate the model function.** Read `scripts/generate_subset_template.py` and fill in the placeholders (`{{FUNCTION_NAME}}`, `{{EXPERIMENT_NAME}}`). Write to `src/models/generate_<name>.py`. If the user needs a custom filter not in the built-in registry, write the filter function in the same file and register it with `@register_filter("custom_name")`.
+
+**Step 4: Generate config + experiment.** Add a named config to `src/configs/dataset_generation.py` using `builds(generate_function, ...)` with the filter name, params, source dataset RIDs, include_tables, and output metadata. Add an experiment entry to `src/configs/experiments.py` wiring together the connection, script_config, workflow, and datasets.
+
+**Step 5: Dry run.** Run `uv run deriva-ml-run +experiment=<name> dry_run=true`. Show the user the output (selected count, filter description) and wait for approval.
+
+**Step 6: Commit.** The script creates a new data element in the catalog, so it must be committed before running for real. The execution record captures the git hash — uncommitted code means no code provenance link.
+
+**Step 7: Run for real.** After approval: `uv run deriva-ml-run +experiment=<name>`
+
+**Step 8: Log the decision.** Use the `maintain-experiment-notes` skill to record what was created, the filter criteria, why those criteria were chosen, and the resulting dataset RID.
+
+### How this relates to split_dataset
+
+Splitting and curated subsets are both "given a source dataset, produce child datasets" — but they differ:
+- **split_dataset** partitions ALL members into non-overlapping train/test/val sets
+- **Curated subsets** SELECT members by data values — some members may be excluded entirely
+
+Both produce datasets with full provenance tracking. Bags downloaded with `materialize=False` are cached by checksum, so multiple subset scripts from the same source don't re-download data.
 
 ## Phase 4: Version
 
@@ -280,7 +309,8 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 
 ## Reference Resources
 
-- `scripts/create_curated_subset.py` — Reusable script template for creating datasets filtered by data values (top-N, value lists, numeric ranges)
+- `scripts/subset_filters.py` — Filter registry with built-in filters (has_feature, feature_equals, feature_in, numeric_range). Copy to user's `src/models/` on first use.
+- `scripts/generate_subset_template.py` — Template for generation model functions. Fill in placeholders per use case.
 - `references/concepts.md` — Full background: what datasets are, types, element types, versioning, navigation, consumption, bag downloads
 - `references/workflow.md` — Step-by-step MCP and Python API examples for every operation
 - `references/bags.md` — BDBag contents, FK traversal, materialization, caching, timeouts
