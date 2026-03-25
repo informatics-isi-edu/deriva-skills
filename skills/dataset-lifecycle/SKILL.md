@@ -180,6 +180,34 @@ Splitting and curated subsets are both "given a source dataset, produce child da
 
 Both produce datasets with full provenance tracking. Bags downloaded with `materialize=False` are cached by checksum, so multiple subset scripts from the same source don't re-download data.
 
+### Caching feature values with `cache_features()`
+
+When filtering by a single feature (e.g., "images with label X"), downloading a full bag just to read labels is overkill. The subset template supports a **catalog-query path** that uses `cache_features()` to fetch feature values directly from the catalog into SQLite-backed working data:
+
+```python
+from deriva_ml.feature import FeatureRecord
+
+feature_df = ml.cache_features(
+    "Image",                           # element table
+    "Image_Classification",            # feature name
+    selector=FeatureRecord.select_newest,
+)
+```
+
+**When to use each path:**
+
+| Situation | Path | Set `feature_name` in config? |
+|-----------|------|:-----------------------------:|
+| Filtering by a single feature column | Catalog-query | Yes |
+| Need columns from multiple joined tables | Bag | No |
+| Iterating on filter criteria interactively | Catalog-query | Yes |
+
+**Caching behavior:**
+- The first call to `cache_features()` fetches from the catalog and stores locally. Subsequent calls within the same script return the cached data instantly.
+- The cache persists across multiple filter iterations, making it efficient to experiment with different filter thresholds or value lists without re-querying.
+- Use `force=True` if feature values may have changed since the last cache (e.g., new labels were added between runs).
+- **Cache key limitation:** The cache key is `features_{table}_{feature}` and does NOT include the selector. Always use the same selector for a given table/feature pair within a session. Use `force=True` if you need to switch selectors.
+
 ## Phase 4: Version
 
 Versioning is essential for reproducible experiments. Every version is a frozen snapshot of the catalog state at the time it was created.

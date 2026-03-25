@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from deriva_ml import DerivaML
 from deriva_ml.execution import Execution
+from deriva_ml.feature import FeatureRecord
 
 from models.subset_filters import FILTER_REGISTRY
 
@@ -23,6 +24,8 @@ def {{FUNCTION_NAME}}(
     # Denormalization
     include_tables: list[str] | None = None,
     element_table: str = "Image",
+    # Feature caching (catalog-query path)
+    feature_name: str | None = None,
     # Filter
     filter_name: str = "",
     filter_params: dict | None = None,
@@ -33,11 +36,16 @@ def {{FUNCTION_NAME}}(
     ml_instance: DerivaML = None,
     execution: Execution | None = None,
 ) -> None:
-    """Create a dataset subset by filtering denormalized source datasets.
+    """Create a dataset subset by filtering source datasets.
 
-    Downloads metadata-only bags (no asset files) for each source dataset,
-    denormalizes them into DataFrames, applies the named filter, and creates
-    a new dataset with the selected RIDs.
+    Two data paths:
+    - **Bag path** (default): Downloads metadata-only bags, denormalizes into
+      DataFrames. Use when you need columns from multiple joined tables.
+    - **Catalog-query path** (when ``feature_name`` is set): Uses
+      ``cache_features()`` to fetch feature values directly from the catalog.
+      Faster when filtering by a single feature — no bag download required.
+      The cache persists across calls, so subsequent filter iterations are
+      instant.
     """
     source_dataset_rids = source_dataset_rids or []
     include_tables = include_tables or []
@@ -48,17 +56,32 @@ def {{FUNCTION_NAME}}(
         available = ", ".join(FILTER_REGISTRY.keys())
         raise ValueError(f"Unknown filter '{filter_name}'. Available: {available}")
 
-    # Download and denormalize each source dataset
     dataframes: dict[str, object] = {}
-    for rid in source_dataset_rids:
-        dataset = ml_instance.lookup_dataset(rid)
-        version = source_version or dataset.current_version
-        print(f"Source: {dataset.description} (RID: {rid}, version: {version})")
 
-        bag = dataset.download_dataset_bag(version=version, materialize=False)
-        df = bag.denormalize_as_dataframe(include_tables)
-        print(f"  Denormalized: {len(df)} rows, {len(df.columns)} columns")
-        dataframes[rid] = df
+    if feature_name:
+        # Catalog-query path: cache feature values directly (no bag download).
+        # First call fetches from catalog; subsequent calls return cached data.
+        feature_df = ml_instance.cache_features(
+            element_table,
+            feature_name,
+            selector=FeatureRecord.select_newest,
+        )
+        print(f"Cached features: {len(feature_df)} rows from {element_table}.{feature_name}")
+        for rid in source_dataset_rids:
+            dataset = ml_instance.lookup_dataset(rid)
+            print(f"Source: {dataset.description} (RID: {rid})")
+            dataframes[rid] = feature_df
+    else:
+        # Bag path: download and denormalize each source dataset.
+        for rid in source_dataset_rids:
+            dataset = ml_instance.lookup_dataset(rid)
+            version = source_version or dataset.current_version
+            print(f"Source: {dataset.description} (RID: {rid}, version: {version})")
+
+            bag = dataset.download_dataset_bag(version=version, materialize=False)
+            df = bag.denormalize_as_dataframe(include_tables)
+            print(f"  Denormalized: {len(df)} rows, {len(df.columns)} columns")
+            dataframes[rid] = df
 
     # Apply the filter
     filter_fn = FILTER_REGISTRY[filter_name]
