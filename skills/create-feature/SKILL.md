@@ -201,18 +201,25 @@ For the complete MCP tool parameters and Python API examples, see `references/wo
 
 ## Phase 5: Query and Explore Feature Values
 
-Feature queries range from quick previews to full data retrieval. Choose the right approach based on what you need.
+Feature queries fall into two categories. **Always choose the right one — never use preview tools to retrieve feature values.**
 
-### Quick preview (MCP tools — small samples for understanding shape)
+### Rule: "get values" = Python API, "explore shape" = preview
 
-Use MCP tools when you want to **spot-check** a few values or understand the data shape. These return limited rows and are safe for context windows:
+- **User asks to get, retrieve, list, or show feature values** → ALWAYS use the Python API via a script. Even for small numbers of values. Results stay out of context and are cached for reuse.
+- **User asks exploratory questions** ("what features exist?", "what does this feature look like?", "what columns does it have?") → Preview tools are fine for a small sample.
+
+**NEVER use `preview_table` with large limits to retrieve feature values.** This dumps raw records into the conversation context, which is wasteful and doesn't support selectors or caching.
+
+### Exploratory preview (MCP tools — understanding shape, not retrieving data)
+
+Use MCP tools only for speculative, exploratory questions — understanding what a feature looks like, checking column types, spot-checking a handful of values:
 
 ```
-# Quick look at raw feature values (up to 25 rows)
-preview_table(table_name="Execution_Image_Scouts_Pick", limit=25)
+# Spot-check: what do a few values look like? (keep limit small)
+preview_table(table_name="Execution_Image_Scouts_Pick", limit=5)
 
-# Preview feature values joined with domain data (up to 25 rows)
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"])
+# What features are joined with this data?
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=5)
 ```
 
 **To discover the feature table name**, use RAG search — don't guess from naming conventions:
@@ -226,9 +233,9 @@ Read resource: deriva://catalog/features               # All features overview
 Read resource: deriva://feature/{table}/{feature}      # Specific feature structure
 ```
 
-### Full retrieval (DerivaML Python API — for scripts and analysis)
+### Full retrieval (DerivaML Python API — always for actual values)
 
-For **production use** — analysis, filtering, dataset creation, or any case with potentially large result sets — use the DerivaML Python API in a script. This avoids blowing out context and supports caching, selectors, and DataFrames.
+When the user asks for feature values, use the Python API in a script. This applies regardless of how many values exist — the pattern is the same for 10 values or 10 million. Run a script, print a summary, cache the results.
 
 ```python
 from deriva_ml.feature import FeatureRecord
