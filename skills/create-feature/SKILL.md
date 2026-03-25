@@ -1,7 +1,7 @@
 ---
 name: create-feature
 description: "ALWAYS use this skill when creating features, adding labels or annotations to records, setting up classification categories, or working with feature values in DerivaML. Covers: deciding whether a feature is needed vs a column, discovering existing features, designing single vs multi-column features, creating vocabularies and features, adding feature values with provenance, querying and selecting among multiple annotations, and understanding how features integrate with datasets. Triggers on: 'create feature', 'add labels', 'annotate images', 'classification', 'ground truth', 'confidence score', 'feature values', 'what features exist', 'explore annotations'."
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Creating and Populating Features in DerivaML
