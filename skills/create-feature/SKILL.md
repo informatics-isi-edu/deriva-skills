@@ -276,28 +276,26 @@ Only proceed to full retrieval after the user confirms their selection strategy.
 ```python
 from deriva_ml.feature import FeatureRecord
 
-# Get all values for a feature — returns typed Pydantic models
-features = ml.fetch_table_features("Image", feature_name="Diagnosis")
-diagnosis_records = features["Diagnosis"]
+# cache_features fetches on first call, returns cached DataFrame on subsequent calls
+df = ml.cache_features("Image", "Scouts_Pick", selector=FeatureRecord.select_newest)
+print(f"Total: {len(df)}, Picks: {df['Is_Pick'].sum()}")
 
-# Deduplicate to newest value per record
-features = ml.fetch_table_features(
-    "Image", feature_name="Diagnosis",
-    selector=FeatureRecord.select_newest,
-)
-
-# Convert to DataFrame for analysis
-import pandas as pd
-df = pd.DataFrame([r.model_dump() for r in diagnosis_records])
+# Force re-fetch if catalog has changed or you need a different selector
+df = ml.cache_features("Image", "Scouts_Pick", force=True, selector=different_selector)
 ```
+
+Key points:
+- Returns a pandas DataFrame (not Pydantic models)
+- First call fetches from catalog and caches in SQLite-backed working data
+- Subsequent calls return cached data instantly
+- Pass `force=True` to re-fetch after catalog changes (new annotations added)
+- **Cache key warning**: Cache key is `features_{table}_{feature}` — does not include the selector. Always use the same selector for a given table/feature pair. Use `force=True` to re-fetch with a different selector.
 
 **When to use full retrieval:**
 - Feature table has more than ~50 values
 - You need to filter, aggregate, or join values
 - Results feed into dataset creation or model training
 - You need selector logic (newest, by workflow, custom)
-
-**Caching:** When feature values will be reused (e.g., for dataset subsetting, repeated analysis), cache the DataFrame in the script rather than re-querying the catalog each time.
 
 ### Resolve multiple values with selectors
 
