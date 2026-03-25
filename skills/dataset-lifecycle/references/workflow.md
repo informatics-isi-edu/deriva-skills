@@ -22,8 +22,8 @@ Step-by-step MCP tool examples for creating and managing datasets. For backgroun
 
 Before creating a dataset, review what already exists:
 
-- Read `deriva://catalog/datasets` to browse existing datasets with their types, versions, and descriptions.
-- Read `deriva://catalog/dataset-types` to see available dataset type vocabulary terms.
+- Use `rag_search("your purpose", doc_type="catalog-data")` to find existing datasets by description, type, or purpose. Fall back to `deriva://catalog/datasets` for the full structured list.
+- Use `rag_search("dataset types", doc_type="catalog-schema")` to find dataset type terms. Fall back to `deriva://catalog/dataset-types` for the full list.
 - Read `deriva://catalog/dataset-element-types` to see which tables are registered as element types.
 
 ### MCP Tools
@@ -142,7 +142,7 @@ To maintain class distribution, add `stratify_by_column` with the denormalized c
 
 **Finding the stratify column name:**
 
-1. Read `deriva://catalog/schema` or `deriva://catalog/features` to find the feature table name and its columns
+1. Use `rag_search("feature table columns", doc_type="catalog-schema")` to find the feature table name and its columns, or read `deriva://catalog/features` for the full structured output
 2. Construct the denormalized column name as `{FeatureTableName}_{ColumnName}`
 
 For example, if the feature table is `Execution_Image_Image_Classification` and the column is `Image_Class`, the stratify column is `Execution_Image_Image_Classification_Image_Class`.

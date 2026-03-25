@@ -41,7 +41,10 @@ Before creating a new dataset, check whether an existing one already serves your
 
 **MCP resources and tools:**
 ```
-# Browse all datasets with their types, versions, and descriptions
+# Search for datasets by description, type, or purpose (preferred for discovery)
+rag_search("your purpose here", doc_type="catalog-data")
+
+# Full structured list of all datasets (when you need complete output)
 Read resource: deriva://catalog/datasets
 
 # Get details about a specific dataset
@@ -103,7 +106,7 @@ The substitution test helps identify whether two types belong on the same dimens
 
 ### Creating custom types
 
-Custom types can be created with `create_dataset_type_term` (MCP) or `ml.add_term(MLVocab.dataset_type, ...)` (Python). Before creating, check existing types — the term you need may already exist under a different name. Read `deriva://catalog/dataset-types` to list all available types.
+Custom types can be created with `create_dataset_type_term` (MCP) or `ml.add_term(MLVocab.dataset_type, ...)` (Python). Before creating, check existing types — the term you need may already exist under a different name. Use `rag_search("dataset types", doc_type="catalog-schema")` to find types by meaning, or read `deriva://catalog/dataset-types` for the full list.
 
 For detailed guidance on naming conventions, facet design, and anti-patterns, see `type-naming-strategy.md`.
 
@@ -686,7 +689,7 @@ Deletion removes the dataset container and member associations, not the member r
 
 | Operation | MCP Tool | Python API | Notes |
 |-----------|----------|------------|-------|
-| Find datasets | Resource: `deriva://catalog/datasets` | `ml.find_datasets()` | Browse all datasets |
+| Find datasets | `rag_search("...", doc_type="catalog-data")` or Resource: `deriva://catalog/datasets` | `ml.find_datasets()` | RAG for discovery; resource for full list |
 | Lookup by RID | `get_record("Dataset", rid)` | `ml.lookup_dataset(rid)` | Get specific dataset |
 | List members | resource `deriva://dataset/{rid}/members` | `dataset.resource deriva://dataset/{rid}/members ()` | Grouped by table; supports `version`, `recurse`, `limit` |
 | List children | resource `deriva://dataset/{rid}` | `dataset.list_dataset_children()` | Supports `recurse`, `version` |

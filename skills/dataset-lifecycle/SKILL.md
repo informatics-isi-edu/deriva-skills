@@ -60,7 +60,7 @@ Types describe independent dimensions of a dataset — they are orthogonal tags,
 - Apply types from each relevant dimension — if the data has ground truth labels, add `Labeled`
 - Types compose freely across dimensions — `Training` + `Labeled` + `Fundus` is three independent tags
 - Don't compound dimensions — use `Training` + `Labeled`, never `TrainingLabeled`
-- Check existing types first — read `deriva://catalog/dataset-types`
+- Check existing types first — use `rag_search("dataset types", doc_type="catalog-schema")` or read `deriva://catalog/dataset-types` for the full list
 
 For detailed naming conventions, facet design, anti-patterns, and the substitution test, see `references/type-naming-strategy.md`.
 
@@ -343,8 +343,10 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 - `references/workflow.md` — Step-by-step MCP and Python API examples for every operation
 - `references/bags.md` — BDBag contents, FK traversal, materialization, caching, timeouts
 - `references/type-naming-strategy.md` — Orthogonal tagging principles, naming conventions, anti-patterns
-- `deriva://catalog/datasets` — Browse existing datasets
-- `deriva://catalog/dataset-types` — Available dataset type vocabulary terms
+- `rag_search("...", doc_type="catalog-data")` — Discover datasets by description, type, or purpose
+- `deriva://catalog/datasets` — Full structured list of all datasets (fallback)
+- `rag_search("...", doc_type="catalog-schema")` — Find dataset types by meaning
+- `deriva://catalog/dataset-types` — Full list of dataset type vocabulary terms (fallback)
 - `deriva://dataset/{rid}` — Dataset details including current version
 - `deriva://catalog/dataset-element-types` — Registered element types
 - `deriva://catalog/element-type-paths` — FK traversal paths for bag exports

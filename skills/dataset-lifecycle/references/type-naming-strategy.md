@@ -205,7 +205,10 @@ When creating a genuinely new type, check the existing vocabulary first to under
 - Whether the new type fills a gap in an existing dimension or introduces a new one
 
 ```
-# Check existing types before creating
+# Search for types by meaning (preferred for discovery)
+rag_search("dataset types", doc_type="catalog-schema")
+
+# Full structured list (when you need complete output)
 Read resource: deriva://catalog/dataset-types
 ```
 
