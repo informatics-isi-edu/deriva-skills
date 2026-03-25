@@ -9,6 +9,7 @@ Custom filters can be registered with @register_filter("name") and
 referenced by name in hydra configs via filter_name parameter.
 
 Built-in filters:
+  - all_records: All records from the element table (no filtering)
   - has_feature: Records that have a non-null value for a feature column
   - feature_equals: Records where a feature column matches a specific value
   - feature_in: Records where a feature column is in a list of values
@@ -58,6 +59,25 @@ def register_filter(name: str):
 # =============================================================================
 # Built-in filters
 # =============================================================================
+
+
+@register_filter("all_records")
+def all_records(
+    dataframes: dict[str, pd.DataFrame],
+    *,
+    element_table: str,
+    **kwargs,
+) -> tuple[list[str], str]:
+    """Select all records from the element table — no filtering.
+
+    Use this to create a dataset containing every record in a table.
+    The subset template treats this as a pass-through filter.
+    """
+    df = pd.concat(dataframes.values(), ignore_index=True)
+    rids = df[f"{element_table}.RID"].unique().tolist()
+
+    desc = f"Selected all {len(rids)} records from {element_table}"
+    return rids, desc
 
 
 @register_filter("has_feature")

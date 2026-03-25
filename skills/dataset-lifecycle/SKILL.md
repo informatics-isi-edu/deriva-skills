@@ -68,7 +68,27 @@ For creating custom types, see `references/workflow.md` under "Managing Types."
 
 ## Phase 3: Create
 
-The standard sequence:
+**Default: use the script-based workflow** for any dataset creation that adds more than a handful of members. This ensures code provenance — every execution record links to a committed git hash. The MCP tool path is only for trivial cases (creating an empty dataset, adding 2-3 members manually).
+
+### Script path (preferred)
+
+All dataset creation — including "all records from a table" — uses the same template workflow as Phase 3b (curated subsets). "All records" is just a subset with the `all_records` pass-through filter.
+
+1. **Register element types** (via MCP — idempotent, one-time setup):
+   ```
+   add_dataset_element_type(table_name="Image")
+   ```
+
+2. **Follow the Phase 3b workflow** below with `filter_name="all_records"` and no `filter_params`. The template, scaffolding check, dry run, commit, and run steps all apply.
+
+3. **Split** (optional — use `dry_run=true` to preview first):
+   ```
+   split_dataset(source_dataset_rid="...", test_size=0.2, seed=42, dry_run=true)
+   ```
+
+### MCP tool path (trivial cases only)
+
+For creating an empty dataset or adding a small number of known RIDs:
 
 1. **Start an execution** for provenance tracking:
    ```
@@ -76,29 +96,14 @@ The standard sequence:
    start_execution()
    ```
 
-2. **Register element types** (catalog-level, idempotent):
-   ```
-   add_dataset_element_type(table_name="Image")
-   ```
-
-3. **Create the dataset** with types and a good description:
+2. **Create the dataset** with types and a good description:
    ```
    create_dataset(description="...", dataset_types=["Complete", "Labeled"])
    ```
 
-4. **Validate and add members:**
+3. **Add members and finalize:**
    ```
-   validate_rids(dataset_rids=["2-IMG1", "2-IMG2"])
    add_dataset_members(dataset_rid="...", member_rids=["2-IMG1", "2-IMG2"])
-   ```
-
-5. **Split** (optional — use `dry_run=true` to preview first):
-   ```
-   split_dataset(source_dataset_rid="...", test_size=0.2, seed=42, dry_run=true)
-   ```
-
-6. **Finalize:**
-   ```
    stop_execution()
    ```
 
