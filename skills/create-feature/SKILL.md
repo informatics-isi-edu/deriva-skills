@@ -248,14 +248,26 @@ executions = set(r.Execution for r in all_values)
 print(f"Total values: {len(all_values)}, from {len(executions)} execution(s): {executions}")
 ```
 
-If there is more than one execution, **ask the user** which values they want:
+If there is more than one execution, **ask the user** which values they want. Present only the options that are **relevant** based on the provenance check — don't list every selector if it doesn't apply.
 
-| Option | When to use |
-|--------|-------------|
-| All values (no dedup) | User wants the complete picture, including duplicates |
-| Newest per record | Default for most analysis — latest annotation wins |
-| From a specific execution | User knows which run they trust |
-| From a specific workflow type | e.g., only "Annotation" not "Prediction" |
+**All available selectors:**
+
+| Option | When relevant | API |
+|--------|---------------|-----|
+| All values (no dedup) | Always available | No selector |
+| Newest per record | Multiple values exist per record | `FeatureRecord.select_newest` |
+| From a specific execution | Multiple executions contributed | Filter by `r.Execution == rid` |
+| From a specific workflow type | Executions span different workflow types (e.g., Annotation vs Prediction) | `ml.select_by_workflow(records, "type_name")` |
+| From a specific workflow RID | Multiple workflows of the same type exist | `ml.select_by_workflow(records, "workflow_rid")` |
+| Highest confidence / custom | Feature has metadata columns like confidence scores | Custom selector function |
+| Majority vote | Multiple annotators, need consensus | Custom selector with Counter |
+
+**Which options to present:** Check the provenance data and feature structure, then only show relevant options:
+- One execution, no duplicates → no need to ask, just retrieve all
+- Multiple executions, same workflow type → offer "all", "newest", "specific execution"
+- Multiple executions, different workflow types → also offer "by workflow type"
+- Feature has confidence/score columns → also offer "highest confidence"
+- Multiple annotators with same target → also offer "majority vote"
 
 Only proceed to full retrieval after the user confirms their selection strategy.
 
