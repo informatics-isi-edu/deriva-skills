@@ -49,9 +49,13 @@ Every execution needs a workflow. Before creating an execution, check if a suita
 
 ### Check existing workflows
 
-Read `deriva://catalog/workflows` to list all registered workflows with their names, types, descriptions, and URLs.
+**Start with `rag_search`** to find workflows and types by concept:
+```
+rag_search("training workflows", doc_type="catalog-data")
+rag_search("workflow types", doc_type="catalog-schema")
+```
 
-Read `deriva://catalog/workflow-types` to see available workflow type vocabulary terms.
+For the full structured list, read `deriva://catalog/workflows` or `deriva://catalog/workflow-types`.
 
 ### Find a workflow by URL
 

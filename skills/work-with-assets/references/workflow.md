@@ -20,9 +20,13 @@ Step-by-step MCP tool and Python API examples for working with assets. For backg
 
 ### Finding asset tables
 
-Read the `deriva://catalog/asset-tables` resource to list all asset tables in the catalog, or read `deriva://catalog/assets` for a summary including record counts.
+**Start with `rag_search`** to discover asset tables by concept:
+```
+rag_search("image assets files", doc_type="catalog-schema")
+rag_search("model weights checkpoints", doc_type="catalog-schema")
+```
 
-To check whether a specific table is an asset table, read `deriva://catalog/schema` and look for tables with `URL`, `Filename`, `Length`, and `MD5` columns.
+For the full structured list, read `deriva://catalog/asset-tables` or `deriva://catalog/assets` (includes record counts).
 
 ### Browsing assets in a table
 
