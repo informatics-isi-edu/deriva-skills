@@ -109,10 +109,13 @@ Adding values requires knowing what columns a feature has, which are required, a
 
 ### Step 1: Inspect the feature structure
 
-Before adding values, check what the feature expects:
-
+Before adding values, check what the feature expects. **Start with RAG search:**
 ```
-# Read the feature definition — shows columns, types, required/optional, vocabularies
+rag_search("Diagnosis feature columns types", doc_type="catalog-schema")
+```
+
+For the full structured definition, read the resource:
+```
 Read resource: deriva://feature/{table_name}/{feature_name}
 ```
 
@@ -124,9 +127,13 @@ The resource returns:
 
 ### Step 2: Determine valid values
 
-For **term columns**, valid values are the terms in the referenced vocabulary:
+For **term columns**, discover valid values with RAG search first:
 ```
-# See what values are valid for a term column
+rag_search("Diagnosis_Type vocabulary terms", doc_type="catalog-schema")
+```
+
+For the complete term list, read the resource:
+```
 Read resource: deriva://vocabulary/{vocabulary_table_name}
 ```
 
@@ -191,8 +198,8 @@ stop_execution()
 |---------|-------------|-----|
 | Adding values without an execution | Error — provenance required | `create_execution` + `start_execution` first |
 | Using MCP tools for production batch annotations | Works but no code provenance | Write and commit a script, run via `deriva-ml-run` |
-| Using wrong term name | Error — must match vocabulary exactly | Read `deriva://vocabulary/{vocab}` to check valid terms |
-| Missing required column | Error — required fields must be present | Read `deriva://feature/{table}/{feature}` for required fields |
+| Using wrong term name | Error — must match vocabulary exactly | `rag_search("{vocab} terms", doc_type="catalog-schema")` or read `deriva://vocabulary/{vocab}` |
+| Missing required column | Error — required fields must be present | `rag_search("{feature} columns", doc_type="catalog-schema")` or read `deriva://feature/{table}/{feature}` |
 | One execution per label | Works but clutters provenance | Batch labels from same source into one execution |
 | Passing boolean as true/false literal | Pydantic validation error | Pass as string: `"true"` / `"false"` |
 | Forgetting `stop_execution()` | Execution stays "running" | Always stop after adding values |
