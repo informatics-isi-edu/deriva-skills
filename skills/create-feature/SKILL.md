@@ -237,6 +237,30 @@ Read resource: deriva://feature/{table}/{feature}      # Specific feature struct
 
 When the user asks for feature values, use the Python API in a script. This applies regardless of how many values exist — the pattern is the same for 10 values or 10 million. Run a script, print a summary, cache the results.
 
+**Step 1: Before retrieving, check provenance and ask the user which values they want.**
+
+Multiple executions may have contributed values (different annotators, model runs, corrections). The user needs to choose a selection strategy before retrieval:
+
+```python
+# Quick check: how many executions contributed?
+all_values = list(ml.list_feature_values("Image", "Scouts_Pick"))
+executions = set(r.Execution for r in all_values)
+print(f"Total values: {len(all_values)}, from {len(executions)} execution(s): {executions}")
+```
+
+If there is more than one execution, **ask the user** which values they want:
+
+| Option | When to use |
+|--------|-------------|
+| All values (no dedup) | User wants the complete picture, including duplicates |
+| Newest per record | Default for most analysis — latest annotation wins |
+| From a specific execution | User knows which run they trust |
+| From a specific workflow type | e.g., only "Annotation" not "Prediction" |
+
+Only proceed to full retrieval after the user confirms their selection strategy.
+
+**Step 2: Retrieve with the chosen selector and cache the results.**
+
 ```python
 from deriva_ml.feature import FeatureRecord
 
