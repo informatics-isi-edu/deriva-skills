@@ -1,6 +1,6 @@
 ---
 name: create-feature
-description: "ALWAYS use this skill when creating features, adding labels or annotations to records, setting up classification categories, or working with feature values in DerivaML. Covers: deciding whether a feature is needed vs a column, discovering existing features, designing single vs multi-column features, creating vocabularies and features, adding feature values with provenance, querying and selecting among multiple annotations, and understanding how features integrate with datasets. Triggers on: 'create feature', 'add labels', 'annotate images', 'classification', 'ground truth', 'confidence score', 'feature values', 'what features exist', 'explore annotations'."
+description: "ALWAYS use this skill when creating features, adding labels or annotations to records, setting up classification categories, querying or exploring feature values, or working with feature values in DerivaML. Covers: deciding whether a feature is needed vs a column, discovering existing features, designing single vs multi-column features, creating vocabularies and features, adding feature values with provenance, querying and browsing feature values (preview via MCP for shape, full retrieval via Python API for analysis), selecting among multiple annotations (newest, by workflow, custom selectors), caching feature values for reuse, and understanding how features integrate with datasets. Triggers on: 'create feature', 'add labels', 'annotate images', 'classification', 'ground truth', 'confidence score', 'feature values', 'what features exist', 'explore annotations', 'show feature values', 'query features', 'what are the labels', 'list annotations', 'browse features', 'feature preview'."
 disable-model-invocation: false
 ---
 
@@ -199,57 +199,102 @@ stop_execution()
 
 For the complete MCP tool parameters and Python API examples, see `references/workflow.md`.
 
-## Phase 5: Query and Select
+## Phase 5: Query and Explore Feature Values
 
-### Browse feature values
+Feature queries range from quick previews to full data retrieval. Choose the right approach based on what you need.
+
+### Quick preview (MCP tools — small samples for understanding shape)
+
+Use MCP tools when you want to **spot-check** a few values or understand the data shape. These return limited rows and are safe for context windows:
 
 ```
-# All values with provenance
-Read resource: deriva://feature/{table}/{feature}/values
+# Quick look at raw feature values (up to 25 rows)
+preview_table(table_name="Execution_Image_Scouts_Pick", limit=25)
 
-# Deduplicated to newest per record
-Read resource: deriva://table/{table}/feature-values/newest
-
-# With selection/filtering
-resource deriva://table/{name}/features (table_name="Image", feature_name="Diagnosis", selector="newest")
+# Preview feature values joined with domain data (up to 25 rows)
+preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"])
 ```
 
-### Resolve multiple values
+**To discover the feature table name**, use RAG search — don't guess from naming conventions:
+```
+rag_search("Scouts_Pick feature", doc_type="catalog-schema")
+```
 
-When a record has values from multiple annotators or model runs, use one of the built-in selectors:
+MCP resources also provide structured feature metadata:
+```
+Read resource: deriva://catalog/features               # All features overview
+Read resource: deriva://feature/{table}/{feature}      # Specific feature structure
+```
 
-| I want... | MCP parameter |
-|-----------|---------------|
-| Latest value regardless of source | `selector="newest"` |
-| Earliest (original) annotation | `selector="first"` |
-| Consensus label (majority vote) | `selector="majority_vote"` (requires `feature_name`) |
-| Values from a specific workflow type | `workflow="Training"` |
-| Values from a specific workflow by RID | `workflow="2-ABC1"` |
-| Values from one specific execution | `execution="3-XYZ"` |
+### Full retrieval (DerivaML Python API — for scripts and analysis)
 
-These are mutually exclusive — pick one.
-
-Feature values are also available as pre-deduplicated MCP resources:
-
-| Resource | Deduplication |
-|----------|--------------|
-| `deriva://table/{table}/feature-values/newest` | Most recent per record |
-| `deriva://table/{table}/feature-values/first` | Earliest per record |
-| `deriva://table/{table}/feature-values/majority_vote` | Consensus per record |
-
-### Custom selection logic
-
-When built-in selectors don't fit (highest confidence, specific annotator, etc.), write a Python script. All selectors now use a single type — `FeatureRecord` — everywhere (catalog queries, bag queries, and Python API `bag.restructure_assets()`).
+For **production use** — analysis, filtering, dataset creation, or any case with potentially large result sets — use the DerivaML Python API in a script. This avoids blowing out context and supports caching, selectors, and DataFrames.
 
 ```python
 from deriva_ml.feature import FeatureRecord
 
-# Custom selector: pick the value with highest confidence
+# Get all values for a feature — returns typed Pydantic models
+features = ml.fetch_table_features("Image", feature_name="Diagnosis")
+diagnosis_records = features["Diagnosis"]
+
+# Deduplicate to newest value per record
+features = ml.fetch_table_features(
+    "Image", feature_name="Diagnosis",
+    selector=FeatureRecord.select_newest,
+)
+
+# Convert to DataFrame for analysis
+import pandas as pd
+df = pd.DataFrame([r.model_dump() for r in diagnosis_records])
+```
+
+**When to use full retrieval:**
+- Feature table has more than ~50 values
+- You need to filter, aggregate, or join values
+- Results feed into dataset creation or model training
+- You need selector logic (newest, by workflow, custom)
+
+**Caching:** When feature values will be reused (e.g., for dataset subsetting, repeated analysis), cache the DataFrame in the script rather than re-querying the catalog each time.
+
+### Resolve multiple values with selectors
+
+When a record has values from multiple annotators or model runs, use selectors to pick one:
+
+| I want... | Selector |
+|-----------|----------|
+| Latest value regardless of source | `FeatureRecord.select_newest` |
+| Values from a specific workflow type | `ml.select_by_workflow(records, "Training")` |
+| Values from a specific workflow by RID | `ml.select_by_workflow(records, "2-ABC1")` |
+| Custom logic (highest confidence, etc.) | Write a custom selector function |
+
+```python
+from deriva_ml.feature import FeatureRecord
+
+# Built-in: newest per record
+features = ml.fetch_table_features("Image", feature_name="Diagnosis",
+                                    selector=FeatureRecord.select_newest)
+
+# By workflow type
+from collections import defaultdict
+all_values = list(ml.list_feature_values("Image", "Diagnosis"))
+by_image = defaultdict(list)
+for v in all_values:
+    by_image[v.Image].append(v)
+selected = {rid: ml.select_by_workflow(recs, "Annotation") for rid, recs in by_image.items()}
+```
+
+### Custom selection logic
+
+When built-in selectors don't fit, write a custom function:
+
+```python
+from deriva_ml.feature import FeatureRecord
+
 def select_highest_confidence(records: list[FeatureRecord]) -> FeatureRecord:
     return max(records, key=lambda r: getattr(r, "Confidence", 0))
 
-# Works with catalog queries
-features = ml.resource deriva://table/{name}/features ("Image", selector=select_highest_confidence)
+features = ml.fetch_table_features("Image", feature_name="Diagnosis",
+                                    selector=select_highest_confidence)
 
 # Same selector works with bag restructuring
 bag.restructure_assets(output_dir="./data", group_by=["Diagnosis"],
