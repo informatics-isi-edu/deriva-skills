@@ -56,6 +56,61 @@ def register_filter(name: str):
     return decorator
 
 
+def get_filter(name: str) -> FilterFunction:
+    """Look up a registered filter by name with a helpful error message."""
+    if name not in FILTER_REGISTRY:
+        available = ", ".join(sorted(FILTER_REGISTRY.keys()))
+        raise ValueError(f"Unknown filter '{name}'. Available filters: {available}")
+    return FILTER_REGISTRY[name]
+
+
+# =============================================================================
+# Shared helpers
+# =============================================================================
+
+
+def _merge_dataframes(
+    dataframes: dict[str, pd.DataFrame],
+    element_table: str,
+) -> pd.DataFrame:
+    """Concatenate source DataFrames and validate the RID column exists.
+
+    Raises:
+        ValueError: If no source DataFrames are provided.
+        KeyError: If the expected RID column is missing.
+    """
+    if not dataframes:
+        raise ValueError("No source DataFrames provided — source_dataset_rids may be empty")
+    df = pd.concat(dataframes.values(), ignore_index=True)
+    rid_col = f"{element_table}.RID"
+    if rid_col not in df.columns:
+        available = sorted(c for c in df.columns if c.endswith(".RID"))
+        raise KeyError(
+            f"Column '{rid_col}' not found in DataFrame. "
+            f"RID columns available: {available}"
+        )
+    return df
+
+
+def _extract_rids(df: pd.DataFrame, element_table: str) -> list[str]:
+    """Extract unique RIDs from a DataFrame."""
+    return df[f"{element_table}.RID"].unique().tolist()
+
+
+def _validate_column(df: pd.DataFrame, column: str) -> None:
+    """Validate that a column exists in the DataFrame.
+
+    Raises:
+        KeyError: If the column is not present, with a list of available columns.
+    """
+    if column not in df.columns:
+        available = sorted(c for c in df.columns if not c.startswith("_"))
+        raise KeyError(
+            f"Column '{column}' not found in DataFrame. "
+            f"Available columns: {available}"
+        )
+
+
 # =============================================================================
 # Built-in filters
 # =============================================================================
@@ -73,8 +128,8 @@ def all_records(
     Use this to create a dataset containing every record in a table.
     The subset template treats this as a pass-through filter.
     """
-    df = pd.concat(dataframes.values(), ignore_index=True)
-    rids = df[f"{element_table}.RID"].unique().tolist()
+    df = _merge_dataframes(dataframes, element_table)
+    rids = _extract_rids(df, element_table)
 
     desc = f"Selected all {len(rids)} records from {element_table}"
     return rids, desc
@@ -94,9 +149,10 @@ def has_feature(
     may contain unlabeled data. For example, selecting all images that
     have an Image_Class label.
     """
-    df = pd.concat(dataframes.values(), ignore_index=True)
+    df = _merge_dataframes(dataframes, element_table)
+    _validate_column(df, column)
     selected = df[df[column].notna()]
-    rids = selected[f"{element_table}.RID"].unique().tolist()
+    rids = _extract_rids(selected, element_table)
 
     total = df[f"{element_table}.RID"].nunique()
     desc = f"Selected {len(rids)} of {total} records that have a value for {column}"
@@ -113,9 +169,10 @@ def feature_equals(
     **kwargs,
 ) -> tuple[list[str], str]:
     """Select records where a feature column matches a specific value."""
-    df = pd.concat(dataframes.values(), ignore_index=True)
+    df = _merge_dataframes(dataframes, element_table)
+    _validate_column(df, column)
     selected = df[df[column] == value]
-    rids = selected[f"{element_table}.RID"].unique().tolist()
+    rids = _extract_rids(selected, element_table)
 
     desc = f"Selected {len(rids)} records where {column} = '{value}'"
     return rids, desc
@@ -131,11 +188,16 @@ def feature_in(
     **kwargs,
 ) -> tuple[list[str], str]:
     """Select records where a feature column is in a list of values."""
-    df = pd.concat(dataframes.values(), ignore_index=True)
+    df = _merge_dataframes(dataframes, element_table)
+    _validate_column(df, column)
     selected = df[df[column].isin(values)]
-    rids = selected[f"{element_table}.RID"].unique().tolist()
+    rids = _extract_rids(selected, element_table)
 
-    desc = f"Selected {len(rids)} records where {column} in: {', '.join(values)}"
+    if len(values) > 10:
+        values_str = ", ".join(values[:10]) + f", ... ({len(values)} total)"
+    else:
+        values_str = ", ".join(values)
+    desc = f"Selected {len(rids)} records where {column} in: {values_str}"
     return rids, desc
 
 
@@ -149,15 +211,28 @@ def numeric_range(
     max_val: float | None = None,
     **kwargs,
 ) -> tuple[list[str], str]:
-    """Select records where a numeric column is within bounds."""
-    df = pd.concat(dataframes.values(), ignore_index=True)
+    """Select records where a numeric column is within bounds.
+
+    At least one of min_val or max_val must be specified.
+    """
+    if min_val is None and max_val is None:
+        raise ValueError(
+            "numeric_range requires at least one of min_val or max_val. "
+            "Use 'all_records' or 'has_feature' if no bounds are needed."
+        )
+    df = _merge_dataframes(dataframes, element_table)
+    _validate_column(df, column)
+    if not pd.api.types.is_numeric_dtype(df[column]):
+        raise TypeError(
+            f"Column '{column}' has dtype '{df[column].dtype}', expected a numeric type"
+        )
     mask = df[column].notna()
     if min_val is not None:
         mask = mask & (df[column] >= min_val)
     if max_val is not None:
         mask = mask & (df[column] <= max_val)
     selected = df[mask]
-    rids = selected[f"{element_table}.RID"].unique().tolist()
+    rids = _extract_rids(selected, element_table)
 
     bounds = []
     if min_val is not None:

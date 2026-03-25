@@ -5,9 +5,13 @@ requires-python = ">=3.12"
 
 [dependency-groups]
 dev = ["deriva-ml"]
+test = ["pytest>=8.0", "pandas>=2.0"]
 
 [tool.uv.sources]
 deriva-ml = { git = "https://github.com/informatics-isi-edu/deriva-ml.git" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.bumpversion]
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
