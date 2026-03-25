@@ -30,7 +30,8 @@ Analyze the user's intent and read the matching skill:
 - **Writing Python scripts for batch data loading, ETL, dataset creation pipelines, or any catalog operation needing code provenance** → Read and follow `../catalog-operations-workflow/SKILL.md`
 
 ### Querying and exploring data
-- **Querying tables, filtering records, looking up by RID, counting records, sampling data, pagination, listing tables** → Read and follow `../query-catalog-data/SKILL.md`
+- **Schema discovery questions** ("what tables exist", "describe the schema", "what features are available", "what datasets are there") → **Use `rag_search` with `doc_type="catalog-schema"` or `"catalog-data"` directly** — no need to route to a sub-skill for simple discovery
+- **Querying tables, filtering records, looking up by RID, counting records, sampling data, pagination** → Read and follow `../query-catalog-data/SKILL.md`
 
 ### Customizing display
 - **Setting visible columns, display names, row name patterns, column ordering, Chaise UI configuration using MCP tools** → Read and follow `../customize-display/SKILL.md`

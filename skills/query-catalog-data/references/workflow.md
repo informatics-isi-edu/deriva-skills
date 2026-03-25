@@ -6,18 +6,36 @@ This skill covers how to query, filter, and explore data stored in a Deriva cata
 
 Before querying, understand what tables and columns are available.
 
-### Catalog-Level Overview
+### Start with RAG Search (Preferred)
 
-Read these MCP resources to get oriented:
+**Always use `rag_search` first** for discovery and exploration. It indexes the catalog schema (tables, columns, FKs, features, vocabulary terms) and returns focused results:
+
+```
+# What tables and features exist?
+rag_search("Image tables and features", doc_type="catalog-schema")
+
+# What vocabulary terms are available?
+rag_search("classification categories", doc_type="catalog-schema")
+
+# What datasets exist?
+rag_search("training labeled dataset", doc_type="catalog-data")
+```
+
+RAG search avoids dumping large schema JSON into context and finds relevant results semantically.
+
+### Raw Resources (When You Need Complete Output)
+
+Only use these when RAG results are insufficient or you need the full machine-readable schema:
 
 - `deriva://catalog/tables` -- Lists all tables in the current schema with descriptions and row counts.
-- `deriva://catalog/schema` -- Full schema overview with table relationships.
+- `deriva://catalog/schema` -- Full schema overview with table relationships (can be very large).
 
 ### Table-Level Details
 
 For a specific table:
 
 - `deriva://table/{table_name}/schema` -- Column names, types, nullability, and descriptions.
+- Or use RAG: `rag_search("Image columns and types", doc_type="catalog-schema")`
 
 Use `get_table_sample_data(table_name="...")` to preview sample rows.
 
@@ -166,9 +184,16 @@ preview_table(table_name="Dataset_Type")
 
 Features in DerivaML represent measured or computed properties of entities.
 
-### List Features for a Table
+### Discover Features
 
-Read the MCP resource:
+Use RAG search first to find features by meaning:
+
+```
+rag_search("diagnosis labels and confidence", doc_type="catalog-schema")
+rag_search("what features exist on Image", doc_type="catalog-schema")
+```
+
+For the complete feature list on a specific table, read the MCP resource:
 
 - `deriva://table/{table_name}/features` -- Lists all features associated with a table.
 
@@ -257,9 +282,9 @@ These URLs are useful for sharing records with collaborators or viewing complex 
 
 Here is a typical workflow for exploring and extracting data from a catalog:
 
-1. **Orient yourself**: Read `deriva://catalog/tables` to see what is available.
+1. **Orient yourself**: Use `rag_search("what tables and features exist", doc_type="catalog-schema")` to discover the catalog structure. Only fall back to `deriva://catalog/tables` if RAG doesn't answer your question.
 
-2. **Explore a table**: Read `deriva://table/Subject/schema` to understand columns, then `get_table_sample_data(table_name="Subject")` for sample rows.
+2. **Explore a table**: Use `rag_search("Subject columns and relationships", doc_type="catalog-schema")` to understand columns, then `get_table_sample_data(table_name="Subject")` for sample rows.
 
 3. **Count records**: `preview_table(table_name="Subject")` and `preview_table(table_name="Subject", filters={"Species": "Mouse"})`.
 

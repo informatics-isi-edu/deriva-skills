@@ -20,15 +20,27 @@ connect_catalog(hostname="...", catalog_id="...")
 If already connected (check `deriva://catalog/connections`), skip this step.
 
 
-## Discovery Resources
+## Discovery: Start with RAG Search
+
+**Always use `rag_search` first** for discovery and exploration questions — "what tables exist", "what features are available", "how are images classified", "what datasets are there". RAG search indexes the catalog schema, vocabulary terms, feature definitions, datasets, and executions, and returns focused, relevant results without flooding context.
+
+| Query type | RAG call |
+|------------|----------|
+| Tables, columns, relationships | `rag_search("...", doc_type="catalog-schema")` |
+| Feature definitions and columns | `rag_search("...", doc_type="catalog-schema")` |
+| Vocabulary terms and meanings | `rag_search("...", doc_type="catalog-schema")` |
+| Datasets by purpose or type | `rag_search("...", doc_type="catalog-data")` |
+| Executions by workflow or status | `rag_search("...", doc_type="catalog-data")` |
+| DerivaML API how-to | `rag_search("...", include_schema=False, include_data=False)` |
+
+**Only use raw resources when you need the complete, machine-readable output** — e.g., for programmatic processing or when RAG results don't answer the question:
 
 | Resource | Purpose |
 |----------|---------|
-| `deriva://catalog/tables` | All tables with descriptions and row counts |
-| `deriva://catalog/schema` | Full schema with relationships |
-| `deriva://table/{name}/schema` | Column names, types, descriptions |
-| `deriva://table/{name}/features` | Features on a table |
-| `deriva://vocabulary/{name}` | Vocabulary terms |
+| `deriva://catalog/schema` | Full schema JSON (large — use only when needed) |
+| `deriva://table/{name}/schema` | One table's complete structure |
+| `deriva://catalog/tables` | All tables with row counts |
+| `deriva://vocabulary/{name}` | Complete vocabulary term list |
 | `deriva://dataset/{rid}` | Dataset details and versions |
 | `deriva://chaise-url/{table_or_rid}` | Web UI link (pass table name or RID) |
 
@@ -36,6 +48,7 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 | Tool | Purpose |
 |------|---------|
+| `rag_search` | **Primary discovery tool** — semantic search across schema, data, and docs |
 | `preview_table` | Query with filters, columns, limit/offset |
 | `get_table_sample_data` | Preview sample rows from a table |
 | `preview_table` (with limit=1) | Count matching records |
