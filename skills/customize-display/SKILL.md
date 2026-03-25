@@ -36,8 +36,12 @@ This sets up reasonable defaults for display names, visible columns, row name pa
 
 ## Step 1: Check Current Annotations
 
-Use catalog resources to see the current state:
+**Start with `rag_search`** to find the table and columns you want to customize:
+```
+rag_search("Image table columns", doc_type="catalog-schema")
+```
 
+Then use resources to see the current annotation state:
 ```
 # View table annotations and column details
 # Read the deriva://table/Image/annotations resource

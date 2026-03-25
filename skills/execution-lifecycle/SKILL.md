@@ -157,13 +157,17 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 
 ## Reference Resources
 
+**Discovery (use RAG first):**
+- `rag_search("training experiments", doc_type="catalog-data")` — find executions by workflow or status
+- `rag_search("workflow types", doc_type="catalog-schema")` — discover available workflow types
+
+**Structured resources (for complete output):**
 - `references/concepts.md` — Execution hierarchy, statuses, workflows, nested executions, dry run, working directory, data flow
 - `references/workflow.md` — Step-by-step MCP and Python API workflows with complete examples
 - `references/cli-reference.md` — deriva-ml-run CLI commands, Hydra overrides, multirun syntax
 - `deriva://execution/{execution_rid}` — Execution details and status
 - `deriva://catalog/executions` — Browse recent executions
 - `deriva://catalog/experiments` — Browse experiments (executions with Hydra config)
-- `deriva://execution/{execution_rid}` — Execution details and status
 - `deriva://experiment/{execution_rid}` — Rich view with Hydra config and parameters
 - `deriva://execution/{execution_rid}/inputs` — Input datasets and assets
 - `deriva://catalog/workflows` — Available workflows

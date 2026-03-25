@@ -33,10 +33,15 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 ### Discovering and inspecting assets
 
-1. Read `deriva://catalog/asset-tables` or `deriva://catalog/assets` — find asset tables and counts
-2. Read `deriva://table/{table_name}/assets` — browse assets in a table
-3. Read `deriva://asset/{asset_rid}` — inspect a specific asset (metadata, types, provenance, Chaise URL)
-4. `list_asset_executions` — find which execution created or used an asset
+1. **Start with `rag_search`** to discover asset tables and types by concept:
+   ```
+   rag_search("image assets", doc_type="catalog-schema")
+   rag_search("model weights files", doc_type="catalog-schema")
+   ```
+2. Read `deriva://catalog/asset-tables` or `deriva://catalog/assets` — full structured list of asset tables and counts
+3. Read `deriva://table/{table_name}/assets` — browse assets in a table
+4. Read `deriva://asset/{asset_rid}` — inspect a specific asset (metadata, types, provenance, Chaise URL)
+5. `list_asset_executions` — find which execution created or used an asset
 
 ### Downloading assets
 

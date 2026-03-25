@@ -27,13 +27,21 @@ When the user asks what's possible or needs orientation, present the following g
 
 **Just ask:** *"create a table for patient images"* or *"set up a vocabulary for diagnosis types"*
 
-### Explore Your Data
+### Explore Your Catalog
+- **Discover what's in your catalog** using natural language search — tables, features, vocabularies, datasets, and experiments are all indexed and searchable via `rag_search`
 - Query and filter catalog tables
 - Look up records by RID
 - Count records, sample data, browse vocabularies
-- Understand your catalog schema
 
-**Just ask:** *"show me the first 20 images where Diagnosis is Normal"* or *"what tables are in my catalog?"*
+| Question | How to find out |
+|----------|----------------|
+| "What tables exist?" | `rag_search("tables and their purpose", doc_type="catalog-schema")` |
+| "What features are defined?" | `rag_search("feature definitions", doc_type="catalog-schema")` |
+| "What datasets are available?" | `rag_search("datasets", doc_type="catalog-data")` |
+| "What vocabulary terms can I use?" | `rag_search("vocabulary terms", doc_type="catalog-schema")` |
+| "How do I create a dataset?" | `rag_search("how to create a dataset", include_schema=False, include_data=False)` |
+
+**Just ask:** *"what's in this catalog?"*, *"show me the first 20 images where Diagnosis is Normal"*, or *"what features exist on Image?"*
 
 ### Organize Data for ML
 - Create datasets and add members from catalog tables
@@ -72,6 +80,7 @@ When the user asks what's possible or needs orientation, present the following g
 
 ## Tips
 
+- **Start with `rag_search`** for any "what is" or "what exists" question — it searches schema, data, and docs in one call
 - **You don't need to know command names** — just describe what you want in plain language
 - **I'll guide you through the steps** — each capability includes best practices and common pitfalls
 - **Start with a connected catalog** — most operations need a catalog connection first. Just say *"connect to my catalog"*
