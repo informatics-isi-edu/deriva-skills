@@ -21,43 +21,89 @@ The foundation for all catalog operation scripts. Every script should follow thi
 """<Description of what this script does>."""
 
 import argparse
-from deriva_ml import DerivaML, ExecutionConfiguration
+import sys
+
+from deriva_ml import DerivaML
+from deriva_ml.execution import ExecutionConfiguration
+
+
+def ensure_workflow_type(ml: DerivaML, type_name: str, description: str) -> None:
+    """Create a workflow type if it doesn't already exist.
+
+    Catalog clones may not have all vocabulary terms from the source catalog.
+    """
+    existing = {t.name for t in ml.list_vocabulary_terms("Workflow_Type")}
+    if type_name not in existing:
+        print(f"  Creating workflow type: {type_name}")
+        ml.add_term("Workflow_Type", type_name, description)
+
 
 def main():
     parser = argparse.ArgumentParser(description="<Script description>")
-    parser.add_argument("--dry-run", action="store_true", help="Test without creating records")
-    # Add script-specific arguments
+    parser.add_argument("--hostname", required=True, help="Deriva server hostname")
+    parser.add_argument("--catalog-id", required=True, help="Catalog ID")
+    parser.add_argument("--schema", default=None,
+                        help="Domain schema name (auto-detected if single schema)")
+    parser.add_argument("--workflow-type", default="Data_Management",
+                        help="Workflow type (created if not in catalog)")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Test without creating records")
     args = parser.parse_args()
 
-    ml = DerivaML(hostname="...", catalog_id=...)
+    # Connect to catalog.
+    try:
+        ml = DerivaML(hostname=args.hostname, catalog_id=args.catalog_id)
+    except Exception as e:
+        print(f"ERROR: Failed to connect to {args.hostname} catalog {args.catalog_id}: {e}",
+              file=sys.stderr)
+        return 1
+
+    # Set default schema: use --schema if provided, auto-detect if single schema,
+    # error if multiple schemas and no --schema.
+    if args.schema:
+        ml.default_schema = args.schema
+    elif len(ml.domain_schemas) == 1:
+        ml.default_schema = next(iter(ml.domain_schemas))
+    else:
+        print(f"ERROR: Multiple domain schemas found: {ml.domain_schemas}. "
+              f"Use --schema to specify.", file=sys.stderr)
+        return 1
+
+    # Ensure the workflow type exists before creating a workflow.
+    ensure_workflow_type(ml, args.workflow_type,
+                         "Description of this workflow type")
 
     workflow = ml.create_workflow(
         name="My Operation",
-        url="https://github.com/org/repo",
-        workflow_type="ETL",
+        workflow_type=args.workflow_type,
         description="..."
     )
 
     config = ExecutionConfiguration(
-        workflow=workflow,
         description="...",
     )
 
-    with ml.create_execution(config, dry_run=args.dry_run) as execution:
+    # The workflow is passed to create_execution, not to ExecutionConfiguration.
+    with ml.create_execution(config, workflow=workflow, dry_run=args.dry_run) as execution:
         # Perform operations
         ...
 
     execution.upload_execution_outputs()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 ```
 
 Key elements:
-- `argparse` for CLI arguments
-- `--dry-run` flag for testing without side effects
-- `ExecutionConfiguration` with a `Workflow` object (not a string)
-- `execution.upload_execution_outputs()` called after the with block to record results
+- `argparse` with `--hostname`, `--catalog-id`, `--schema`, `--workflow-type`, and `--dry-run` as standard CLI arguments
+- **No hardcoded values** for workflow types, schema names, or table names — accept from CLI or auto-detect
+- Set `ml.default_schema` with auto-detection when there is exactly one domain schema
+- Ensure workflow types exist before use — catalog clones may not have all vocabulary terms
+- `ExecutionConfiguration` takes `description` (and optionally `datasets`, `assets`); the `workflow` goes to `create_execution()` separately
+- `ml.pathBuilder()` is a **method call** (not a property) — use `pb = ml.pathBuilder()`
+- `pb.schemas[schema].tables[table].entities()` returns a lazy iterator — wrap with `list()` to materialize
+- `execution.upload_execution_outputs()` is called **after** the `with` block — the execution object remains valid for upload after the context closes
+- Wrap `DerivaML()` in try/except for connection errors
 - **Do NOT add CLI entry points** in `pyproject.toml` for these scripts. They are one-time catalog operations, not reusable tools. Run with `uv run python src/scripts/<script>.py`.
 
 ---
@@ -67,13 +113,28 @@ Key elements:
 Create a new dataset and populate it with members.
 
 ```python
-with ml.create_execution(config, dry_run=args.dry_run) as execution:
+# Query records using pathBuilder (method call, not property).
+pb = ml.pathBuilder()
+table = pb.schemas[ml.default_schema].tables[args.table]
+entities = list(table.entities())  # list() to materialize the lazy iterator
+all_rids = [e["RID"] for e in entities]
+
+if not all_rids:
+    print(f"ERROR: No records found in {args.table}. Aborting.")
+    return 1
+
+if args.dry_run:
+    print(f"[DRY RUN] Would create dataset with {len(all_rids)} members")
+    return 0
+
+with ml.create_execution(config, workflow=workflow, dry_run=args.dry_run) as execution:
     dataset = execution.create_dataset(
-        dataset_types=["Training"],
-        description="Training dataset with 10,000 balanced images.",
+        dataset_types=["Complete"],
+        description=f"All {len(all_rids)} records from {args.table}.",
     )
-    dataset.add_dataset_members(member_rids)
-    # Outputs auto-uploaded on context exit
+    dataset.add_dataset_members(all_rids)
+
+execution.upload_execution_outputs()
 ```
 
 ---
@@ -109,7 +170,7 @@ splits = split_dataset(
 Create a new feature and populate it with values.
 
 ```python
-with ml.create_execution(config, dry_run=args.dry_run) as execution:
+with ml.create_execution(config, workflow=workflow, dry_run=args.dry_run) as execution:
     ml.create_feature(
         table_name="Image",
         feature_name="Severity",
@@ -135,13 +196,13 @@ execution.upload_execution_outputs()
 Load data from an external source, transform it, and insert into the catalog.
 
 ```python
-with ml.create_execution(config, dry_run=args.dry_run) as execution:
+with ml.create_execution(config, workflow=workflow, dry_run=args.dry_run) as execution:
     # Load data from external source
     data = load_external_data(args.source)
 
-    # Transform and insert using pathBuilder
+    # pathBuilder() is a method call — returns a path builder instance.
     pb = ml.pathBuilder()
-    table = pb.schemas[ml.domain_schema].tables["TargetTable"]
+    table = pb.schemas[ml.default_schema].tables["TargetTable"]
     table.insert(transform(data))
 
 execution.upload_execution_outputs()
