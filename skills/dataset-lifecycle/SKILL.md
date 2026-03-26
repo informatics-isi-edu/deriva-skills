@@ -70,18 +70,39 @@ For creating custom types, see `references/workflow.md` under "Managing Types."
 
 **Default: use the script-based workflow** for any dataset creation that adds more than a handful of members. This ensures code provenance — every execution record links to a committed git hash. The MCP tool path is only for trivial cases (creating an empty dataset, adding 2-3 members manually).
 
-### Script path (preferred)
+### Choosing the right script path
 
-All dataset creation — including "all records from a table" — uses the same template workflow as Phase 3b (curated subsets). "All records" is just a subset with the `all_records` pass-through filter.
+There are two script-based approaches. Choose based on whether a source dataset already exists:
+
+| Situation | Path | Template |
+|-----------|------|----------|
+| **No source dataset** — creating the first dataset from raw table data (bootstrap) | **Phase 3a: Bootstrap** | `catalog-operations-workflow` script patterns |
+| **Source dataset exists** — filtering, subsetting, or selecting from an existing dataset | **Phase 3b: Curated Subsets** | `generate_subset_template.py` with filter registry |
+
+The subset template (Phase 3b) requires downloading a bag from a source dataset. If no dataset exists yet (bootstrap case), use the standalone script pattern from Phase 3a instead.
+
+### Phase 3a: Bootstrap dataset (no source dataset)
+
+Use this when creating the **first dataset** from records already in the catalog — e.g., "create a dataset with all file records" or "create a dataset from all Image records." There is no existing dataset to filter from.
+
+**Use the script patterns from the `catalog-operations-workflow` skill** (`references/script-patterns.md`), specifically the **Base Script Template** + **Dataset Creation** pattern.
 
 1. **Register element types** (via MCP — idempotent, one-time setup):
    ```
    add_dataset_element_type(table_name="Image")
    ```
 
-2. **Follow the Phase 3b workflow** below with `filter_name="all_records"` and no `filter_params`. The template, scaffolding check, dry run, commit, and run steps all apply.
+2. **Generate a standalone script** in `src/scripts/` following the Base Script Template:
+   - Accept `--hostname`, `--catalog-id`, and `--dry-run` as CLI arguments
+   - Connect via `DerivaML(hostname=..., catalog_id=...)`
+   - Query all RIDs from the target table using `ml.pathBuilder.schemas[schema].tables[table].entities()`
+   - Create a workflow and execution for provenance
+   - Create the dataset with `execution.create_dataset()`
+   - Add all RIDs with `dataset.add_dataset_members()`
 
-3. **Split** (optional — use `dry_run=true` to preview first):
+3. **Test with `--dry-run`**, commit, then run for real.
+
+4. **Split** (optional — use `dry_run=true` to preview first):
    ```
    split_dataset(source_dataset_rid="...", test_size=0.2, seed=42, dry_run=true)
    ```
@@ -136,9 +157,11 @@ The recommended pattern:
 
 This is especially important for stratified splits — recomputing a stratified split each time may produce different partitions if the underlying data changes.
 
-## Phase 3b: Curated Subsets
+## Phase 3b: Curated Subsets (source dataset exists)
 
-When the user wants a dataset filtered by data values (e.g., "only labeled images", "just cats and dogs", "images with confidence > 0.8"), follow this workflow. Curated subsets run through `deriva-ml-run` using the `script_config` hydra group, giving them the same provenance tracking as model training.
+When the user wants a dataset filtered by data values from an **existing dataset** (e.g., "only labeled images", "just cats and dogs", "images with confidence > 0.8"), follow this workflow. This requires a source dataset to download a bag from — if no dataset exists yet, use **Phase 3a: Bootstrap** instead.
+
+Curated subsets run through `deriva-ml-run` using the `script_config` hydra group, giving them the same provenance tracking as model training.
 
 ### Scaffolding check
 
