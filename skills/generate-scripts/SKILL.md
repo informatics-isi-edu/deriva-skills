@@ -8,6 +8,10 @@ disable-model-invocation: true
 
 When MCP tools return truncated results (preview_table and preview_denormalized_dataset cap at 100 rows), or when operations need to modify the catalog (load data, create features, upload assets), Claude generates Python scripts that use the DerivaML Python API directly.
 
+> **RAG-first:** Before generating a script, use `rag_search()` to discover relevant catalog entities (tables, features, datasets, vocabulary terms) so the generated script references the correct names, RIDs, and column types.
+
+> **Note:** This skill generates Python scripts that use the DerivaML Python API directly, not MCP tools. Methods like `ml.cache_table()`, `ml.working_data`, `dataset.cache_denormalized()`, `ml.cache_features()`, `ml.create_workflow()`, `ml.create_execution()`, and `execution.asset_file_path()` are all Python API methods available in scripts and notebooks, not MCP tools.
+
 ## Two Categories of Scripts
 
 ### Category 1: Exploration Scripts (Ephemeral)
@@ -82,8 +86,8 @@ ml = DerivaML.from_context()
 
 # Create execution for provenance
 workflow = ml.create_workflow(name="Load Diagnoses", workflow_type="Data Import")
-config = ExecutionConfiguration()
-execution = ml.create_execution(workflow=workflow, configuration=config)
+config = ExecutionConfiguration(workflow=workflow)
+execution = ml.create_execution(config)
 
 with execution.execute() as exe:
     # Load source data

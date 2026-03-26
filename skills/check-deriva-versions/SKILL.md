@@ -48,7 +48,7 @@ This reads the plugin cache at `~/.claude/plugins/cache/deriva-plugins/` and com
 
 ### Step 3: Check MCP server version
 
-Read the `deriva://server/version` resource. This returns the running server's version directly — no Docker inspection or pip needed.
+Read the `deriva://server/version` resource. This returns the running server's version directly — no Docker inspection or pip needed. **Note:** This requires an active MCP connection to the Deriva MCP server. If the MCP server is not configured or not running, this resource will not be available.
 
 Compare the returned version against the latest release tag for `informatics-isi-edu/deriva-mcp` (the script can check this: `python3 <skill-dir>/scripts/check_versions.py --component mcp-server --json` only checks the GitHub tag).
 

@@ -21,6 +21,16 @@ connect_catalog(hostname="...", catalog_id="...")
 
 If already connected (check `deriva://catalog/connections`), skip this step.
 
+## Recommended First Step: Discover with rag_search
+
+Before diving into specific resources, use `rag_search` to understand the catalog's schema and data landscape. This provides context that makes subsequent debugging more effective:
+
+```
+rag_search("dataset element types and FK paths", doc_type="catalog-schema")
+rag_search("dataset bag export traversal", doc_type="user-guide")
+```
+
+This helps you understand which tables exist, how they relate via foreign keys, and what element types are registered -- all essential context for diagnosing missing bag data. After this initial discovery, use the specific resources listed below for targeted investigation.
 
 ## Step 1: Check Dataset Members
 

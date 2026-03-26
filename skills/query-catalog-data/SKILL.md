@@ -78,6 +78,22 @@ preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Sub
 preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
 ```
 
+## Re-querying Cached Results
+
+When you run `preview_table` or `preview_denormalized_dataset`, the results are cached server-side. You can re-query them with different sort, filter, or pagination without re-executing the original query:
+
+```
+# See what's cached
+list_cached_results()
+
+# Re-query with different sort/filter/pagination
+query_cached_result(cache_key="...", sort_by="Image.CDR", sort_desc=True, limit=50)
+query_cached_result(cache_key="...", filter_col="Subject.Species", filter_val="Mouse")
+query_cached_result(cache_key="...", limit=100, offset=200)
+```
+
+This is useful when exploring large result sets interactively — the first query fetches data from the catalog, and subsequent `query_cached_result` calls paginate/sort/filter locally.
+
 ## Tips
 
 - Always use `limit` for large tables to avoid timeouts

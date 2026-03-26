@@ -159,11 +159,7 @@ This uploads all files registered via `execution.asset_file_path()` to the catal
 **Saving output files** — use `asset_file_path()` to register files for upload:
 
 ```python
-from deriva_ml.core.enums import MLAsset, ExecAssetType
-
-plot_path = execution.asset_file_path(
-    MLAsset.execution_asset, "my_plot.jpg", ExecAssetType.output_file
-)
+plot_path = execution.asset_file_path("Execution_Asset", "my_plot.jpg")
 fig.savefig(plot_path)
 ```
 
@@ -237,9 +233,7 @@ for asset_path in execution.asset_paths.get('Execution_Asset', []):
 
 **Saving outputs**:
 ```python
-roc_path = execution.asset_file_path(
-    MLAsset.execution_asset, "roc_curves.jpg", ExecAssetType.output_file
-)
+roc_path = execution.asset_file_path("Execution_Asset", "roc_curves.jpg")
 fig.savefig(roc_path, format='jpeg', dpi=150)
 ```
 

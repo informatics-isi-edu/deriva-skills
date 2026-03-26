@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 DerivaML stores downloaded datasets, execution working directories, and cached assets on the local filesystem. This skill covers browsing, cleaning up, pre-fetching, and configuring that storage.
 
+> **RAG-first:** Start with `rag_search("storage cache dataset", doc_type="catalog-data")` to discover relevant datasets and executions before managing storage. This helps identify which cached items correspond to which catalog entities.
+
 ## Prerequisite: Connect to a Catalog
 
 Most storage operations require an active catalog connection to validate RIDs and versions.
@@ -95,6 +97,8 @@ Same as `bag_info` but does not require the bag to be cached — estimates from 
 
 ## Phase 2: Clean Up — Free Disk Space
 
+> **Note:** The cleanup methods below (`ml.clean_storage()`) are **Python API methods** on the `DerivaML` class, not MCP tools. They must be called from Python scripts or notebooks. For MCP-based storage inspection, use the resources `deriva://storage/summary`, `deriva://storage/cache`, and `deriva://storage/execution-dirs`.
+
 ### Preview what would be deleted (dry run)
 
 ```
@@ -115,7 +119,7 @@ Returns a preview of matching entries without deleting anything. A single RID ma
 - Completed execution directories — outputs already uploaded to catalog
 
 **What's NOT safe to delete:**
-- Execution directories where Python API `exe.# Python API: exe.upload_execution_outputs()` was never called — those outputs are **only** on local disk
+- Execution directories where `exe.upload_execution_outputs()` (Python API) was never called — those outputs are **only** on local disk
 
 ### Bulk cleanup workflow
 
@@ -126,7 +130,7 @@ Returns a preview of matching entries without deleting anything. A single RID ma
 
 ## Phase 2b: Find and Resume Incomplete Executions
 
-Execution working directories may contain outputs that were never uploaded — from interrupted runs, crashes, or forgotten Python API `exe.# Python API: exe.upload_execution_outputs()` calls. These are the **only** local data that can't be re-downloaded from the catalog.
+Execution working directories may contain outputs that were never uploaded — from interrupted runs, crashes, or forgotten `exe.upload_execution_outputs()` (Python API) calls. These are the **only** local data that can't be re-downloaded from the catalog.
 
 ### Find incomplete executions
 
@@ -156,15 +160,16 @@ restore_execution(execution_rid="<execution_rid>")
 
 This restores the execution context so you can:
 1. Inspect the working directory contents
-2. Register any output files with Python API `exe.asset_file_path()`
-3. Call `stop_execution()` then `# Python API: exe.upload_execution_outputs()` to save them to the catalog
+2. Register any output files with `exe.asset_file_path()` (Python API)
+3. Call `stop_execution()` then `exe.upload_execution_outputs()` (Python API) to save them to the catalog
 
 ### After successful upload, clean up
 
 Once outputs are safely in the catalog, the local execution directory can be deleted:
 
-```
-# Python API: ml.clean_storage(rids=["<execution_rid>"], confirm=true)
+```python
+# Python API — not an MCP tool
+ml.clean_storage(rids=["<execution_rid>"], confirm=True)
 ```
 
 ## Phase 3: Pre-fetch — Warm the Cache

@@ -165,14 +165,18 @@ The **cache directory** stores downloaded dataset bags and cached assets that pe
 Set these in your `configs/deriva.py`:
 
 ```python
-from deriva_ml.execution import deriva_config
+from hydra_zen import store
+from deriva_ml import DerivaMLConfig
 
-deriva_config(
+deriva_store = store(group="deriva_ml")
+
+deriva_store(
+    DerivaMLConfig,
+    name="production",
     hostname="ml.example.org",
     catalog_id="52",
     working_dir="/scratch/ml-work",     # Fast local SSD for computation
     cache_dir="/shared/ml-cache",       # Large shared NFS for cached data
-    name="production",
 )
 ```
 
@@ -190,12 +194,13 @@ deriva_config(
 **Shared cache example:**
 ```python
 # All team members point to the same shared cache
-deriva_config(
+deriva_store(
+    DerivaMLConfig,
+    name="production",
     hostname="ml.example.org",
     catalog_id="52",
     working_dir="/scratch/$USER/ml-work",    # Per-user fast local disk
     cache_dir="/shared/team-ml-cache",       # Shared across team
-    name="production",
 )
 ```
 When user A downloads dataset `28CT v0.9.0`, the bag lands in `/shared/team-ml-cache/`. When user B runs an experiment referencing the same dataset and version, it's already there — no download needed.

@@ -164,6 +164,10 @@ To inspect current annotations on a specific table or column:
 - `deriva://table/{table_name}/annotations` — Display-related annotations currently set on a table
 - `deriva://table/{table_name}/column/{column_name}/annotations` — Display-related annotations on a column
 
+## Related Skills
+
+- **`customize-display`** — For applying annotations using MCP tools (without Python scripts). Use the `customize-display` skill for quick interactive annotation changes and one-off tweaks. This skill covers the Python script-based annotation builder approach for complex bulk annotations.
+
 ## Tips
 
 - Builders produce the same JSON that MCP tools set -- they are two ways to do the same thing.

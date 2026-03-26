@@ -9,7 +9,11 @@ disable-model-invocation: true
 
 Consistent naming conventions for API methods ensure discoverability and predictable behavior. Use this reference when calling DerivaML tools or writing scripts.
 
-**Note**: This reference covers both MCP tools and Python API methods. Some methods listed here (e.g., `lookup_dataset`, `find_datasets`, `list_vocabulary_terms`, `list_tables`) exist only in the Python API, not as MCP tools. When working via MCP, use the corresponding resource or tool (e.g., `deriva://catalog/datasets` resource, `preview_table` tool).
+> **MCP tools vs Python API**: This reference covers both **MCP tools** (available directly in Claude conversations via the Deriva MCP server) and **Python API methods** (available only in Python scripts and notebooks via `from deriva_ml import DerivaML`). The distinction matters:
+>
+> - **MCP tools**: Can be called interactively during a Claude session. These appear in the tool tables below without any qualifier (e.g., `create_dataset`, `add_term`, `preview_table`).
+> - **Python API only**: Must be used in Python scripts or notebooks. These are marked with "Python API" in the tables below (e.g., `lookup_dataset`, `find_datasets`, `list_vocabulary_terms`, `list_tables`). When working via MCP, use the corresponding MCP resource or tool instead (e.g., `deriva://catalog/datasets` resource, `rag_search()`, `preview_table`).
+> - **MCP resources**: Read-only data accessed via `deriva://...` URIs. These provide catalog state without requiring a tool call (e.g., `deriva://dataset/{rid}/members`, `deriva://catalog/schema`).
 
 ## Method Prefixes
 
