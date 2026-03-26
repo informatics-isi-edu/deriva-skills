@@ -58,6 +58,7 @@ Key elements:
 - `--dry-run` flag for testing without side effects
 - `ExecutionConfiguration` with a `Workflow` object (not a string)
 - `execution.upload_execution_outputs()` called after the with block to record results
+- **Do NOT add CLI entry points** in `pyproject.toml` for these scripts. They are one-time catalog operations, not reusable tools. Run with `uv run python src/scripts/<script>.py`.
 
 ---
 

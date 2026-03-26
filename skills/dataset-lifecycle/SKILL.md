@@ -99,6 +99,7 @@ Use this when creating the **first dataset** from records already in the catalog
    - Create a workflow and execution for provenance
    - Create the dataset with `execution.create_dataset()`
    - Add all RIDs with `dataset.add_dataset_members()`
+   - **Do NOT add a CLI entry point** in `pyproject.toml`. These are one-time catalog operations, not reusable tools. Run with `uv run python src/scripts/<script>.py`.
 
 3. **Test with `--dry-run`**, commit, then run for real.
 
