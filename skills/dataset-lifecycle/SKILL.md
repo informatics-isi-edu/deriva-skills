@@ -15,6 +15,13 @@ All dataset operations require an active catalog connection. Before anything els
 connect_catalog(hostname="...", catalog_id="...")
 ```
 
+**Check project context first.** Before connecting, look for catalog references in the project:
+- `experiment-decisions.md` — records which catalog/hostname previous operations used
+- `src/configs/deriva.py` — hydra-zen connection configs with hostname and catalog_id
+- `CLAUDE.md` — may specify the working catalog
+
+Use the catalog the project is actively working with, NOT the original source catalog (e.g., use the clone on dev.facebase.org, not the source on www.facebase.org).
+
 If you don't know the catalog ID, read `deriva://registry/{hostname}` to see available catalogs and aliases. If you're already connected (check `deriva://catalog/connections`), skip this step.
 
 ## Phase 1: Assess
@@ -165,15 +172,23 @@ This is especially important for stratified splits — recomputing a stratified 
 
 ## Phase 3b: Curated Subsets (source dataset exists)
 
-When the user wants a dataset filtered by data values from an **existing dataset** (e.g., "only labeled images", "just cats and dogs", "images with confidence > 0.8"), follow this workflow. This requires a source dataset to download a bag from — if no dataset exists yet, use **Phase 3a: Bootstrap** instead.
+When the user wants a dataset derived from an **existing dataset** — whether filtered by data values (e.g., "only labeled images", "just cats and dogs"), by numeric thresholds (e.g., "confidence > 0.8"), or by random sampling (e.g., "100 random images for dev") — follow this workflow. This requires a source dataset to download a bag from — if no dataset exists yet, use **Phase 3a: Bootstrap** instead.
 
 Curated subsets run through `deriva-ml-run` using the `script_config` hydra group, giving them the same provenance tracking as model training.
+
+### REQUIRED: Read templates first
+
+**Before proposing any approach**, read the template files in this skill's `scripts/` directory:
+- `scripts/generate_subset_template.py` — the template for generation functions
+- `scripts/subset_filters.py` — the filter registry with built-in filters
+
+Do NOT propose standalone scripts, custom solutions, or MCP-tool-only approaches without first understanding what the template provides. The template workflow is the prescribed approach.
 
 ### Scaffolding check
 
 Before generating anything, verify the project has the required infrastructure. If any piece is missing, create it — this handles both first-time setup and subsequent subset scripts.
 
-1. **Filter registry** — Check if `src/models/subset_filters.py` exists. If not, copy it from this skill's `scripts/subset_filters.py`. This provides built-in filters: `has_feature`, `feature_equals`, `feature_in`, `numeric_range`.
+1. **Filter registry** — Check if `src/scripts/subset_filters.py` exists. If not, copy it from this skill's `scripts/subset_filters.py`. This provides built-in filters: `has_feature`, `feature_equals`, `feature_in`, `numeric_range`.
 
 2. **Config file** — Check if `src/configs/dataset_generation.py` exists. If not, create it with `script_store = store(group="script_config")` and an import for the generation function being created.
 
@@ -192,9 +207,10 @@ Before generating anything, verify the project has the required infrastructure. 
 - "Only cat images" → `feature_equals` with column + value
 - "Cats and dogs" → `feature_in` with column + value list
 - "High confidence predictions" → `numeric_range` on confidence column
+- "100 random images for dev" → `random_sample` with n and seed params (add to filter registry if not present)
 - Something complex → generate a custom filter function and register it
 
-**Step 3: Generate the model function.** Read `scripts/generate_subset_template.py` and fill in the placeholders (`{{FUNCTION_NAME}}`, `{{EXPERIMENT_NAME}}`). Write to `src/models/generate_<name>.py`. If the user needs a custom filter not in the built-in registry, write the filter function in the same file and register it with `@register_filter("custom_name")`.
+**Step 3: Generate the script function.** Read `scripts/generate_subset_template.py` and fill in the placeholders (`{{FUNCTION_NAME}}`, `{{EXPERIMENT_NAME}}`). Write to `src/scripts/generate_<name>.py`. If the user needs a custom filter not in the built-in registry, write the filter function in the same file and register it with `@register_filter("custom_name")`.
 
 **Step 4: Generate config + experiment.** Add a named config to `src/configs/dataset_generation.py` using `builds(generate_function, ...)` with the filter name, params, source dataset RIDs, include_tables, and output metadata. Add an experiment entry to `src/configs/experiments.py` wiring together the connection, script_config, workflow, and datasets.
 
@@ -373,8 +389,8 @@ restructure_assets(dataset_rid="...", asset_table="Image",
 
 ## Reference Resources
 
-- `scripts/subset_filters.py` — Filter registry with built-in filters (has_feature, feature_equals, feature_in, numeric_range). Copy to user's `src/models/` on first use.
-- `scripts/generate_subset_template.py` — Template for generation model functions. Fill in placeholders per use case.
+- `scripts/subset_filters.py` — Filter registry with built-in filters (has_feature, feature_equals, feature_in, numeric_range). Copy to user's `src/scripts/` on first use.
+- `scripts/generate_subset_template.py` — Template for generated dataset scripts. Fill in placeholders per use case.
 - `references/concepts.md` — Full background: what datasets are, types, element types, versioning, navigation, consumption, bag downloads
 - `references/workflow.md` — Step-by-step MCP and Python API examples for every operation
 - `references/bags.md` — BDBag contents, FK traversal, materialization, caching, timeouts

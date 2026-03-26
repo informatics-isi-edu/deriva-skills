@@ -3,7 +3,7 @@
 This template is used by the dataset-lifecycle skill to generate Python scripts
 that create DerivaML datasets from existing catalog data. The skill copies this
 file, replaces the ``{{PLACEHOLDER}}`` markers with concrete values, and writes
-it to ``src/models/generate_<name>.py`` in the user's project.
+it to ``src/scripts/generate_<name>.py`` in the user's project.
 
 **How it works:**
 
@@ -12,7 +12,7 @@ it to ``src/models/generate_<name>.py`` in the user's project.
 2. It downloads metadata-only bags (or caches feature values) for the source
    datasets and denormalizes them into pandas DataFrames.
 3. It applies the named filter from the filter registry
-   (``src/models/subset_filters.py``) to select a subset of record RIDs.
+   (``src/scripts/subset_filters.py``) to select a subset of record RIDs.
 4. In dry-run mode (``execution is None``), it prints what would be created.
 5. In real mode, it creates a new DerivaML dataset and adds the selected RIDs
    as members.
@@ -45,7 +45,7 @@ from deriva_ml import DerivaML
 from deriva_ml.execution import Execution
 from deriva_ml.feature import FeatureRecord
 
-from models.subset_filters import get_filter
+from scripts.subset_filters import get_filter
 
 
 def {{FUNCTION_NAME}}(
