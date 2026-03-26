@@ -9,7 +9,7 @@
       "name": "deriva",
       "source": "./",
       "description": "Dataset lifecycle, ML execution, feature engineering, vocabulary management, and experiment configuration for Deriva catalogs and DerivaML workflows. Includes 30+ skills covering the full ML development cycle from data curation through model training.",
-      "version": "0.19.0",
+      "version": "0.19.1",
       "author": {
         "name": "ISI Informatics"
       },
