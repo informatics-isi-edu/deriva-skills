@@ -39,6 +39,30 @@ Not everything needs a script. Use MCP tools directly for:
 - **Read-only operations**: Listing datasets, viewing features, checking versions
 - **Quick debugging**: Inspecting specific records, checking execution status
 
+## Branch Workflow and Code Provenance
+
+DerivaML execution records capture the **git commit hash** and **repository URL** at run time. This means the branch you run from matters:
+
+- **Worktrees and feature branches** are temporary — if deleted before merging, the commit hash in the execution record becomes unreachable, breaking the provenance link.
+- **Main branch commits** are permanent — anyone can trace the execution back to the exact code.
+
+**Recommended workflow:**
+
+1. **Develop** scripts in a branch or worktree (iterate freely, test with `--dry-run`)
+2. **Merge to main** once the script is working correctly
+3. **Run for real from main** so execution records reference permanent, reachable commits
+4. **Bump version** after merging, not before — the version tag should include all changes
+
+This is especially important for:
+- Dataset creation scripts that establish the foundation for downstream experiments
+- ETL/data loading scripts that others will need to audit
+- Any script whose execution record will be cited or shared
+
+**What to avoid:**
+- Running catalog-modifying scripts from unmerged branches — the provenance link may break
+- Bumping versions before merging feature work — the tag won't include the new code
+- Deleting branches that have execution records pointing to them
+
 ## When to Suggest Scripts
 
 When a user asks to perform a data-modifying operation interactively, suggest:
