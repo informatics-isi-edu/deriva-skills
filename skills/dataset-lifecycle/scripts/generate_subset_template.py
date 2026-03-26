@@ -156,8 +156,11 @@ def {{FUNCTION_NAME}}(
         dataset_types=output_types,
     )
 
+    # Use dict form {table: [rids]} with validate=False to avoid expensive
+    # per-RID table resolution which fails on large datasets.
     new_dataset.add_dataset_members(
-        members=rids,
+        {element_table: rids},
+        validate=False,
         description=selection_desc,
     )
 

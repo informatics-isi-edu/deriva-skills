@@ -93,12 +93,13 @@ Use this when creating the **first dataset** from records already in the catalog
    ```
 
 2. **Generate a standalone script** in `src/scripts/` following the Base Script Template:
-   - Accept `--hostname`, `--catalog-id`, and `--dry-run` as CLI arguments
+   - Accept `--hostname`, `--catalog-id`, `--schema`, `--workflow-type`, and `--dry-run` as CLI arguments
    - Connect via `DerivaML(hostname=..., catalog_id=...)`
-   - Query all RIDs from the target table using `ml.pathBuilder.schemas[schema].tables[table].entities()`
-   - Create a workflow and execution for provenance
+   - **Ensure all vocabulary terms exist** before use — call `ensure_vocab_terms` for `Workflow_Type`, `Dataset_Type`, and any other vocabularies the script references. Catalog clones often have empty vocabulary tables.
+   - Query all RIDs using `list(ml.pathBuilder().schemas[schema].tables[table].entities())` — note `pathBuilder()` is a **method call**, and `entities()` returns a lazy iterator needing `list()`
+   - Create a workflow and execution for provenance — pass `workflow` to `create_execution()`, not to `ExecutionConfiguration`
    - Create the dataset with `execution.create_dataset()`
-   - Add all RIDs with `dataset.add_dataset_members()`
+   - Add members with `dataset.add_dataset_members({table: rids}, validate=False)` — use **dict form** with `validate=False` for large datasets to avoid expensive per-RID table resolution
    - **Do NOT add a CLI entry point** in `pyproject.toml`. These are one-time catalog operations, not reusable tools. Run with `uv run python src/scripts/<script>.py`.
 
 3. **Test with `--dry-run`**, commit, then run for real.
@@ -114,7 +115,7 @@ For creating an empty dataset or adding a small number of known RIDs:
 
 1. **Start an execution** for provenance tracking:
    ```
-   create_execution(workflow_name="Dataset Curation", workflow_type="Data Management")
+   create_execution(workflow_name="Dataset Curation", workflow_type="Dataset_Management")
    start_execution()
    ```
 
@@ -125,9 +126,11 @@ For creating an empty dataset or adding a small number of known RIDs:
 
 3. **Add members and finalize:**
    ```
-   add_dataset_members(dataset_rid="...", member_rids=["2-IMG1", "2-IMG2"])
+   add_dataset_members(dataset_rid="...", members_by_table={"Image": ["2-IMG1", "2-IMG2"]})
    stop_execution()
    ```
+
+Note: For large member lists, always use `members_by_table` (dict form) instead of `member_rids` (flat list) to avoid expensive per-RID table resolution.
 
 For complete MCP tool parameters and Python API examples, see `references/workflow.md`.
 

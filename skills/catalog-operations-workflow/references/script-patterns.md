@@ -27,15 +27,22 @@ from deriva_ml import DerivaML
 from deriva_ml.execution import ExecutionConfiguration
 
 
-def ensure_workflow_type(ml: DerivaML, type_name: str, description: str) -> None:
-    """Create a workflow type if it doesn't already exist.
+def ensure_vocab_terms(ml: DerivaML, vocab_table: str, terms: dict[str, str]) -> None:
+    """Ensure vocabulary terms exist, creating any that are missing.
 
     Catalog clones may not have all vocabulary terms from the source catalog.
+    Always call this before using terms in create_dataset, create_workflow, etc.
+
+    Args:
+        ml: Connected DerivaML instance.
+        vocab_table: Vocabulary table name (e.g., "Workflow_Type", "Dataset_Type").
+        terms: Dict mapping term name to description for each required term.
     """
-    existing = {t.name for t in ml.list_vocabulary_terms("Workflow_Type")}
-    if type_name not in existing:
-        print(f"  Creating workflow type: {type_name}")
-        ml.add_term("Workflow_Type", type_name, description)
+    existing = {t.name for t in ml.list_vocabulary_terms(vocab_table)}
+    for name, description in terms.items():
+        if name not in existing:
+            print(f"  Creating {vocab_table} term: {name}")
+            ml.add_term(vocab_table, name, description)
 
 
 def main():
@@ -69,9 +76,15 @@ def main():
               f"Use --schema to specify.", file=sys.stderr)
         return 1
 
-    # Ensure the workflow type exists before creating a workflow.
-    ensure_workflow_type(ml, args.workflow_type,
-                         "Description of this workflow type")
+    # Ensure all required vocabulary terms exist before using them.
+    # Catalog clones often have empty vocabulary tables.
+    ensure_vocab_terms(ml, "Workflow_Type", {
+        args.workflow_type: "Description of this workflow type",
+    })
+    ensure_vocab_terms(ml, "Dataset_Type", {
+        "Complete": "A dataset containing all available records of a given type.",
+        # Add any other dataset types your script uses here.
+    })
 
     workflow = ml.create_workflow(
         name="My Operation",
@@ -98,7 +111,8 @@ Key elements:
 - `argparse` with `--hostname`, `--catalog-id`, `--schema`, `--workflow-type`, and `--dry-run` as standard CLI arguments
 - **No hardcoded values** for workflow types, schema names, or table names — accept from CLI or auto-detect
 - Set `ml.default_schema` with auto-detection when there is exactly one domain schema
-- Ensure workflow types exist before use — catalog clones may not have all vocabulary terms
+- **Ensure all vocabulary terms exist** before use — call `ensure_vocab_terms` for every vocabulary table you reference (Workflow_Type, Dataset_Type, etc.). Catalog clones often have empty vocabulary tables
+- When adding members, use `{table: [rids]}` dict form with `validate=False` for large datasets — the flat list form triggers expensive per-RID table resolution
 - `ExecutionConfiguration` takes `description` (and optionally `datasets`, `assets`); the `workflow` goes to `create_execution()` separately
 - `ml.pathBuilder()` is a **method call** (not a property) — use `pb = ml.pathBuilder()`
 - `pb.schemas[schema].tables[table].entities()` returns a lazy iterator — wrap with `list()` to materialize
@@ -132,7 +146,13 @@ with ml.create_execution(config, workflow=workflow, dry_run=args.dry_run) as exe
         dataset_types=["Complete"],
         description=f"All {len(all_rids)} records from {args.table}.",
     )
-    dataset.add_dataset_members(all_rids)
+
+    # Use dict form {table: [rids]} with validate=False for large datasets.
+    # The flat list form triggers per-RID table resolution which is slow and
+    # can fail if the RID resolver doesn't cover the target table.
+    dataset.add_dataset_members(
+        {args.table: all_rids}, validate=False
+    )
 
 execution.upload_execution_outputs()
 ```
