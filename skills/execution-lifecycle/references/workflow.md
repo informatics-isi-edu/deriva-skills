@@ -11,13 +11,14 @@ Step-by-step MCP tool and Python API examples for running executions. For backgr
 5. [CLI: deriva-ml-run](#cli-deriva-ml-run)
 6. [Downloading Input Data](#downloading-input-data)
 7. [Registering and Uploading Outputs](#registering-and-uploading-outputs)
-8. [Inspecting Executions](#inspecting-executions)
-9. [Updating Execution State](#updating-execution-state)
-10. [Nested Executions](#nested-executions)
-11. [Restoring a Previous Execution](#restoring-a-previous-execution)
-12. [Creating an Output Dataset](#creating-an-output-dataset)
-13. [Complete Example: MCP Workflow](#complete-example-mcp-workflow)
-14. [Complete Example: Python API](#complete-example-python-api)
+8. [Notebook Results as Execution Assets](#notebook-results-as-execution-assets)
+9. [Inspecting Executions](#inspecting-executions)
+10. [Updating Execution State](#updating-execution-state)
+11. [Nested Executions](#nested-executions)
+12. [Restoring a Previous Execution](#restoring-a-previous-execution)
+13. [Creating an Output Dataset](#creating-an-output-dataset)
+14. [Complete Example: MCP Workflow](#complete-example-mcp-workflow)
+15. [Complete Example: Python API](#complete-example-python-api)
 
 ---
 
@@ -249,6 +250,46 @@ An execution can also record **feature values** (e.g., per-image predictions, cl
 In MCP tools, call `add_feature_value` or `add_feature_value_record` during the execution. In Python, call `execution.add_features(records)`. Both write JSONL files to the execution's `feature/` directory on disk. The catalog is updated when `upload_execution_outputs()` processes these files.
 
 For creating features and populating values, see the `create-feature` skill.
+
+## Notebook Results as Execution Assets
+
+When a notebook is run via `deriva-ml-run-notebook` or `run_notebook()`, its outputs are automatically captured as execution assets. This happens without any extra registration steps beyond the normal notebook execution.
+
+### What gets uploaded automatically
+
+| Output | Asset Type | Description |
+|--------|-----------|-------------|
+| Executed `.ipynb` file | `Execution_Asset` | The fully executed notebook with all cell outputs (plots, tables, logs) preserved |
+| Converted `.md` file | `Execution_Asset` | A Markdown rendering of the executed notebook, viewable directly in Chaise |
+
+Both files are uploaded during `upload_execution_outputs()` after the notebook finishes.
+
+### Registering additional output files from notebooks
+
+During notebook execution, use `exe.asset_file_path()` to register output files (plots, CSVs, model artifacts) just like in script-based executions:
+
+```python
+# Inside a notebook running within an execution context
+output_path = execution.asset_file_path("Execution_Asset", "roc_curves.png", ["Plot"])
+plt.savefig(output_path)
+```
+
+All files registered via `asset_file_path()` are uploaded alongside the notebook `.ipynb` and `.md` files when the execution completes.
+
+### Notebook execution flow
+
+```
+run_notebook() / deriva-ml-run-notebook
+    → Create execution (with workflow from DERIVA_ML_WORKFLOW_URL or auto-detected)
+    → Download input datasets and assets
+    → Execute notebook cells (papermill)
+    → Save executed .ipynb
+    → Convert to .md
+    → Register .ipynb and .md as execution assets
+    → Upload all outputs (registered files + notebook artifacts)
+```
+
+For the full notebook development and running workflow, see the `run-notebook` skill.
 
 ## Inspecting Executions
 

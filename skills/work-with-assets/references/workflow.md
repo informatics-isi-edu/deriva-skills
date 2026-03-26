@@ -5,14 +5,15 @@ Step-by-step MCP tool and Python API examples for working with assets. For backg
 ## Table of Contents
 
 1. [Discovering Assets](#discovering-assets)
-2. [Inspecting an Asset](#inspecting-an-asset)
-3. [Downloading Assets](#downloading-assets)
-4. [Creating Asset Tables](#creating-asset-tables)
-5. [Registering and Uploading Assets](#registering-and-uploading-assets)
-6. [Asset Types](#asset-types)
-7. [Asset Provenance](#asset-provenance)
-8. [Complete Example: Asset Discovery](#complete-example-asset-discovery)
-9. [Complete Example: Python API Output](#complete-example-python-api-output)
+2. [Finding Assets by Type and Execution](#finding-assets-by-type-and-execution)
+3. [Inspecting an Asset](#inspecting-an-asset)
+4. [Downloading Assets](#downloading-assets)
+5. [Creating Asset Tables](#creating-asset-tables)
+6. [Registering and Uploading Assets](#registering-and-uploading-assets)
+7. [Asset Types](#asset-types)
+8. [Asset Provenance](#asset-provenance)
+9. [Complete Example: Asset Discovery](#complete-example-asset-discovery)
+10. [Complete Example: Python API Output](#complete-example-python-api-output)
 
 ---
 
@@ -41,6 +42,41 @@ To get a count, call `preview_table` (with limit=1) with `table_name` set to the
 Read the `deriva://asset/{asset_rid}` resource to get full details including filename, size, MD5, types, description, provenance (which executions created or used it), and a link to the Chaise web UI.
 
 Alternatively, call `get_record` with `table_name` set to the asset table and `rid` set to the asset's RID.
+
+## Finding Assets by Type and Execution
+
+### Discovering asset types
+
+Use `rag_search` to find asset type vocabulary terms by concept:
+```
+rag_search("model weights asset type", doc_type="catalog-schema")
+rag_search("prediction output types", doc_type="catalog-schema")
+```
+
+Read `deriva://catalog/vocabularies` and look for the `Asset_Type` vocabulary to see all available type terms.
+
+### Finding execution metadata
+
+Every execution automatically generates metadata files in the `Execution_Metadata` table (see `concepts.md` for the four metadata types). To find metadata for a specific execution:
+
+- Read `deriva://execution/{rid}/metadata` — returns the auto-generated metadata files for an execution (Deriva_Config, Hydra_Config, Execution_Config, Runtime_Env)
+- Call `preview_table("Execution_Metadata", filters={"Execution": "<execution_rid>"})` — query the metadata table directly with filters
+
+### Finding execution output assets
+
+To find the user-produced output assets for a specific execution:
+
+- Read `deriva://execution/{rid}/outputs` — returns the output assets (Execution_Asset entries) for an execution
+- Call `list_asset_executions(asset_rid, asset_role="Output")` — given an asset RID, find which execution created it (reverse lookup)
+
+### Tracing asset provenance
+
+To answer "where did this asset come from?":
+1. Call `list_asset_executions` with `asset_rid` and `asset_role`: `"Output"` — returns the execution that created the asset
+2. Read `deriva://experiment/{execution_rid}` — get full execution details including inputs, configuration, and other outputs
+
+To answer "what used this asset?":
+1. Call `list_asset_executions` with `asset_rid` and `asset_role`: `"Input"` — returns all executions that consumed the asset
 
 ## Inspecting an Asset
 

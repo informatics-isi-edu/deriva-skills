@@ -13,6 +13,8 @@ Background on assets in DerivaML. For the step-by-step guide, see `workflow.md`.
 - [Asset Caching](#asset-caching)
 - [Asset Provenance](#asset-provenance)
 - [Built-in Asset Tables](#built-in-asset-tables)
+  - [Execution Metadata vs Execution Assets](#execution-metadata-vs-execution-assets)
+  - [Notebook Output Assets](#notebook-output-assets)
 
 ---
 
@@ -186,3 +188,33 @@ DerivaML catalogs include two built-in asset tables in the `deriva-ml` schema:
 | `Execution_Metadata` | Auto-managed metadata files (configuration snapshots, logs). Written automatically by the execution framework — you typically don't interact with this directly. |
 
 Domain-specific asset tables (e.g., `Image`, `Model`, `Slide`) are created in the domain schema as needed for each project.
+
+### Execution Metadata vs Execution Assets
+
+The `Execution_Metadata` and `Execution_Asset` tables serve different roles:
+
+**Execution_Metadata** stores auto-generated files that the execution framework creates for every execution. You do not upload these yourself — they are written automatically. There are four metadata types:
+
+| Metadata Type | Contents |
+|---------------|----------|
+| `Deriva_Config` | The resolved DerivaML configuration as a JSON file (catalog connection, execution parameters) |
+| `Hydra_Config` | The Hydra/hydra-zen configuration snapshot as a YAML file (all resolved config values) |
+| `Execution_Config` | The `uv.lock` file capturing the exact Python dependency versions used |
+| `Runtime_Env` | A snapshot of the runtime environment (Python version, platform, environment variables) |
+
+These metadata files ensure full reproducibility — given the same code commit and metadata, an execution can be recreated exactly.
+
+**Execution_Asset** stores user output files — the artifacts your code explicitly produces. These are the files you register with `exe.asset_file_path()` and upload with `exe.upload_execution_outputs()`. Examples include model weights, prediction CSVs, plots, and evaluation metrics.
+
+**Key distinction:** Execution_Metadata is written by the framework (you never create these entries). Execution_Asset is written by your code (you explicitly register and upload these files).
+
+### Notebook Output Assets
+
+When running notebooks via `deriva-ml-run-notebook`, the framework automatically uploads two output files as `Execution_Asset` entries after the notebook completes:
+
+| Output | Description |
+|--------|-------------|
+| The executed `.ipynb` file | The full notebook with all cell outputs (plots, tables, printed values) |
+| A converted `.md` file | A Markdown version of the executed notebook, suitable for quick review without Jupyter |
+
+These are uploaded automatically — you do not need to call `exe.asset_file_path()` or `exe.upload_execution_outputs()` for them. They appear as `Execution_Asset` records linked to the notebook's execution with role "Output".

@@ -9,12 +9,14 @@ Background on executions, workflows, and provenance in DerivaML. For the step-by
 - [Execution Structure](#execution-structure)
 - [Execution Statuses](#execution-statuses)
 - [Workflows and Workflow Types](#workflows-and-workflow-types)
+- [Automatic Source Code Detection](#automatic-source-code-detection)
 - [Nested Executions](#nested-executions)
 - [Execution Data Flow](#execution-data-flow)
 - [Creating and Managing Executions](#creating-and-managing-executions)
 - [ExecutionConfiguration](#executionconfiguration)
 - [The Execution Context Manager](#the-execution-context-manager)
 - [Execution Working Directory](#execution-working-directory)
+- [Execution Metadata Auto-Generation](#execution-metadata-auto-generation)
 - [Dry Run Mode](#dry-run-mode)
 - [Restoring Executions](#restoring-executions)
 
@@ -83,15 +85,36 @@ print(record.workflow_rid)    # "1-WXYZ"
 
 | Status | Meaning |
 |--------|---------|
-| `Initializing` | Initial setup in progress |
-| `Created` | Record created in catalog |
-| `Pending` | Queued for execution |
-| `Running` | Work in progress |
+| `Created` | Record created in catalog, no work started |
+| `Initializing` | Downloading input datasets and assets |
+| `Pending` | Initialization complete, ready to run |
+| `Running` | Model/workflow work in progress |
 | `Completed` | Finished successfully |
 | `Failed` | Encountered an error |
 | `Aborted` | Manually stopped |
 
-The execution context manager automatically transitions through `Initializing` → `Running` → `Completed` (or `Failed` on exception). You can also update status manually with `update_execution_status` for finer-grained progress tracking during long-running work.
+### Status State Machine
+
+The execution lifecycle follows a defined state machine. Each transition occurs at a specific point:
+
+```
+Created → Initializing → Pending → Running → Completed
+                                      ↓
+                                    Failed
+```
+
+| Transition | When It Occurs |
+|-----------|----------------|
+| `Created` → `Initializing` | Context manager entered; begins downloading input datasets and assets specified in the configuration |
+| `Initializing` → `Pending` | All input downloads complete; execution is ready to begin work |
+| `Pending` → `Running` | `start_execution()` is called (automatic in the context manager); records the start timestamp |
+| `Running` → `Completed` | `stop_execution()` is called (automatic on context manager exit); records the stop timestamp |
+| `Running` → `Failed` | An unhandled exception occurs inside the context manager; the error is recorded |
+| Any → `Aborted` | Manual intervention via `update_execution_status(status="Aborted", message="...")` |
+
+The execution context manager automatically transitions through `Created` → `Initializing` → `Pending` → `Running` → `Completed` (or `Failed` on exception). You can also update status manually with `update_execution_status` for finer-grained progress tracking during long-running work.
+
+**Note:** In MCP tool workflows (without the context manager), you control transitions explicitly by calling `create_execution` (Created), `start_execution` (Running), and `stop_execution` (Completed). The `Initializing` and `Pending` transitions are managed by the Python API during input download.
 
 ## Workflows and Workflow Types
 
@@ -126,6 +149,42 @@ If no suitable workflow exists, create one:
 - If the workflow type doesn't exist yet, call `add_workflow_type` with `type_name` and `description` first
 
 When using MCP tools, `create_execution` can find or create the workflow for you — pass `workflow_name` and `workflow_type` and it handles the lookup/creation automatically.
+
+## Automatic Source Code Detection
+
+DerivaML automatically records the source code that produced each execution by detecting the workflow's origin and creating or reusing a workflow record with a source URL.
+
+### How source detection works
+
+| Workflow Source | How DerivaML Finds the URL | Example URL |
+|----------------|---------------------------|-------------|
+| **Python scripts** (`deriva-ml-run`) | Inspects the git repository — constructs a GitHub blob URL using the remote origin, current commit hash, and script file path | `https://github.com/org/repo/blob/abc1234/src/models/train.py` |
+| **Notebooks** (`deriva-ml-run-notebook`) | Reads the `DERIVA_ML_WORKFLOW_URL` environment variable, which must be set before running the notebook | Value of `$DERIVA_ML_WORKFLOW_URL` |
+| **MCP tools** (`create_execution`) | You provide `workflow_name` and `workflow_type`; the URL is not auto-detected | Set manually via `set_workflow_description` or `create_workflow` |
+
+For Python scripts, the URL includes the **exact commit hash** (not a branch name), ensuring the source reference is permanent and immutable. This means the URL always points to the specific code version that ran.
+
+### Workflow deduplication
+
+DerivaML avoids creating duplicate workflow records. When a new execution is created:
+
+1. The system computes the workflow's **source URL** (as described above)
+2. It calls `lookup_workflow_by_url` to check if a workflow with that URL already exists
+3. If a match is found **and** the checksum matches, the existing workflow is reused
+4. If no match is found, a new workflow record is created
+
+This means that running the same script from the same commit reuses the same workflow record, while a new commit creates a new workflow (since the URL contains the commit hash).
+
+### Setting notebook workflow URLs
+
+For notebooks, set the environment variable before running:
+
+```bash
+export DERIVA_ML_WORKFLOW_URL="https://github.com/org/repo/blob/main/notebooks/analysis.ipynb"
+uv run deriva-ml-run-notebook notebooks/analysis.ipynb
+```
+
+If `DERIVA_ML_WORKFLOW_URL` is not set, the notebook execution will still work but the workflow record will not have a source URL for provenance.
 
 ## Nested Executions
 
@@ -366,6 +425,25 @@ Execution/<execution_rid>/
 ```
 
 Access via Python API `exe.working_dir` (MCP) or `execution.working_dir` (Python).
+
+## Execution Metadata Auto-Generation
+
+Every execution automatically captures four types of metadata, uploaded to the `Execution_Metadata` table. These provide a complete record of the environment and configuration used, enabling reproducibility without any manual effort.
+
+| Metadata Type | What It Contains | When Created |
+|---------------|-----------------|--------------|
+| `Deriva_Config` | `configuration.json` — the fully resolved `ExecutionConfiguration` as JSON (workflow, datasets, assets, description, config choices) | On execution creation |
+| `Hydra_Config` | Hydra YAML files from runtime — the `.hydra/` directory contents including `config.yaml`, `overrides.yaml`, and `hydra.yaml` | After Hydra config resolution (CLI and notebook runs) |
+| `Execution_Config` | `uv.lock` — the environment lock file capturing exact dependency versions | On execution creation (when present in the project) |
+| `Runtime_Env` | Python and system environment snapshot — Python version, platform, installed packages, environment variables | On execution creation |
+
+These metadata files are uploaded automatically during `upload_execution_outputs()`. You do not need to register them manually — they are created and staged by the execution lifecycle.
+
+**Why this matters:** If a model produces unexpected results, the metadata lets you reconstruct the exact software environment (`uv.lock`), configuration (`Deriva_Config`, `Hydra_Config`), and runtime context (`Runtime_Env`) that produced them.
+
+**Querying metadata:**
+- Read `deriva://execution/{rid}/metadata` to see the auto-created metadata files for an execution
+- Use `preview_table("Execution_Metadata", filters={"Execution": execution_rid})` to query metadata records directly
 
 ## Dry Run Mode
 

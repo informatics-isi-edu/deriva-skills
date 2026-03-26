@@ -132,6 +132,10 @@ The execution lifecycle is always the same regardless of path:
 
 **Important:** Downloading inputs, registering output files, and uploading outputs are done via the **Python API** (not MCP tools). Use `exe.download_dataset_bag()`, `exe.asset_file_path()`, and `exe.upload_execution_outputs()`.
 
+**Automatic metadata:** Every execution automatically captures configuration (`Deriva_Config`, `Hydra_Config`), environment lock file (`Execution_Config`), and runtime environment (`Runtime_Env`) as `Execution_Metadata` records. See `references/concepts.md` for details.
+
+**Notebook outputs:** When running notebooks via `deriva-ml-run-notebook`, the executed `.ipynb` and converted `.md` are automatically uploaded as execution assets alongside any files registered via `asset_file_path()`. See `references/workflow.md` for the notebook output flow.
+
 For the complete tool call sequences, code examples, and CLI commands for each path, see `references/workflow.md`.
 
 ## Phase 3: Verify Results
@@ -162,14 +166,16 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 - `rag_search("workflow types", doc_type="catalog-schema")` — discover available workflow types
 
 **Structured resources (for complete output):**
-- `references/concepts.md` — Execution hierarchy, statuses, workflows, nested executions, dry run, working directory, data flow
-- `references/workflow.md` — Step-by-step MCP and Python API workflows with complete examples
+- `references/concepts.md` — Execution hierarchy, statuses (state machine), workflows, source code detection, nested executions, metadata auto-generation, dry run, working directory, data flow
+- `references/workflow.md` — Step-by-step MCP and Python API workflows, notebook output handling, complete examples
 - `references/cli-reference.md` — deriva-ml-run CLI commands, Hydra overrides, multirun syntax
 - `deriva://execution/{execution_rid}` — Execution details and status
 - `deriva://catalog/executions` — Browse recent executions
 - `deriva://catalog/experiments` — Browse experiments (executions with Hydra config)
 - `deriva://experiment/{execution_rid}` — Rich view with Hydra config and parameters
 - `deriva://execution/{execution_rid}/inputs` — Input datasets and assets
+- `deriva://execution/{execution_rid}/outputs` — Output assets produced by the execution
+- `deriva://execution/{execution_rid}/metadata` — Auto-created metadata files (config, environment, lock file)
 - `deriva://catalog/workflows` — Available workflows
 - `deriva://catalog/workflow-types` — Workflow type vocabulary terms
 
