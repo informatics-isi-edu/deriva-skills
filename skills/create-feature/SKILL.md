@@ -103,6 +103,8 @@ Every feature needs a description explaining what it measures, what values it ta
 
 Since features are multivalued, note whether it's intended for ground truth, model predictions, or computed metrics.
 
+For description templates and quality guidelines, see the `generate-descriptions` skill.
+
 ## Phase 4: Add Feature Values
 
 Adding values requires knowing what columns a feature has, which are required, and what values are valid.
@@ -190,7 +192,7 @@ stop_execution()
 - **Multiple annotators**: Each annotator gets their own execution (creates provenance trail)
 - **Model predictions**: Each model run gets its own execution
 - **Optional columns can be omitted**: Only required fields must be present in every entry. Optional fields can vary per entry
-- **Boolean values**: Pass as strings (`"true"`, `"false"`) — the MCP tools expect string values even for boolean columns
+- **Boolean values**: Pass as native booleans (`true`/`false` without quotes) — the MCP tools pass values to Pydantic which expects actual `bool` type for boolean columns
 
 ### Common mistakes
 
@@ -201,7 +203,7 @@ stop_execution()
 | Using wrong term name | Error — must match vocabulary exactly | `rag_search("{vocab} terms", doc_type="catalog-schema")` or read `deriva://vocabulary/{vocab}` |
 | Missing required column | Error — required fields must be present | `rag_search("{feature} columns", doc_type="catalog-schema")` or read `deriva://feature/{table}/{feature}` |
 | One execution per label | Works but clutters provenance | Batch labels from same source into one execution |
-| Passing boolean as true/false literal | Pydantic validation error | Pass as string: `"true"` / `"false"` |
+| Passing boolean as string `"true"`/`"false"` | Pydantic validation error | Pass as native bool: `true` / `false` (no quotes) |
 | Forgetting `stop_execution()` | Execution stays "running" | Always stop after adding values |
 
 For the complete MCP tool parameters and Python API examples, see `references/workflow.md`.
@@ -263,11 +265,11 @@ If there is more than one execution, **ask the user** which values they want. Pr
 |--------|---------------|-----|
 | All values (no dedup) | Always available | No selector |
 | Newest per record | Multiple values exist per record | `FeatureRecord.select_newest` |
-| From a specific execution | Multiple executions contributed | Filter by `r.Execution == rid` |
+| From a specific execution | Multiple executions contributed | `FeatureRecord.select_by_execution(execution_rid)` |
 | From a specific workflow type | Executions span different workflow types (e.g., Annotation vs Prediction) | `ml.select_by_workflow(records, "type_name")` |
 | From a specific workflow RID | Multiple workflows of the same type exist | `ml.select_by_workflow(records, "workflow_rid")` |
 | Highest confidence / custom | Feature has metadata columns like confidence scores | Custom selector function |
-| Majority vote | Multiple annotators, need consensus | Custom selector with Counter |
+| Majority vote | Multiple annotators, need consensus | `FeatureRecord.select_majority_vote()` |
 
 **Which options to present:** Check the provenance data and feature structure, then only show relevant options:
 - One execution, no duplicates → no need to ask, just retrieve all
@@ -298,6 +300,14 @@ Key points:
 - Pass `force=True` to re-fetch after catalog changes (new annotations added)
 - **Cache key warning**: Cache key is `features_{table}_{feature}` — does not include the selector. Always use the same selector for a given table/feature pair. Use `force=True` to re-fetch with a different selector.
 
+**Return type guide — choose the right retrieval method:**
+
+| Method | Returns | Use for |
+|--------|---------|---------|
+| `ml.cache_features(table, feature, ...)` | `pd.DataFrame` | Analysis, groupby, aggregation, joining with other DataFrames |
+| `ml.fetch_table_features(table, feature_name=..., ...)` | `dict[str, list[FeatureRecord]]` | Raw records grouped by feature name, when you need per-feature access |
+| `ml.list_feature_values(table, feature)` | Iterator of `FeatureRecord` | Streaming/custom processing, when you need lazy evaluation over large result sets |
+
 **When to use full retrieval:**
 - Feature table has more than ~50 values
 - You need to filter, aggregate, or join values
@@ -311,8 +321,10 @@ When a record has values from multiple annotators or model runs, use selectors t
 | I want... | Selector |
 |-----------|----------|
 | Latest value regardless of source | `FeatureRecord.select_newest` |
+| Values from a specific execution | `FeatureRecord.select_by_execution(execution_rid)` |
 | Values from a specific workflow type | `ml.select_by_workflow(records, "Training")` |
 | Values from a specific workflow by RID | `ml.select_by_workflow(records, "2-ABC1")` |
+| Majority vote across annotators | `FeatureRecord.select_majority_vote()` |
 | Custom logic (highest confidence, etc.) | Write a custom selector function |
 
 ```python
@@ -330,6 +342,8 @@ for v in all_values:
     by_image[v.Image].append(v)
 selected = {rid: ml.select_by_workflow(recs, "Annotation") for rid, recs in by_image.items()}
 ```
+
+**Majority vote auto-detection:** For features with a single term column, the `column` parameter can be omitted (auto-detected). For multi-term features, you must specify the column explicitly: `FeatureRecord.select_majority_vote(column='Image_Class')`
 
 ### Custom selection logic
 

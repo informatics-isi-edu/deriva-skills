@@ -67,6 +67,8 @@ The `comment` on a vocabulary table should explain the classification scheme, it
 **Bad vocabulary descriptions:**
 - "Types" or "Categories" or "A vocabulary"
 
+For description templates and quality guidelines, see the `generate-descriptions` skill.
+
 ### Vocabulary Terms
 
 Every term must have a description that defines its meaning in context — not just restating the name. Explain when to use the term, and how it relates to other terms.

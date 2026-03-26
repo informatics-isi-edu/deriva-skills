@@ -95,10 +95,10 @@ Use this when creating the **first dataset** from records already in the catalog
 2. **Generate a standalone script** in `src/scripts/` following the Base Script Template:
    - Accept `--hostname`, `--catalog-id`, `--schema`, `--workflow-type`, and `--dry-run` as CLI arguments
    - Connect via `DerivaML(hostname=..., catalog_id=...)`
-   - **Ensure all vocabulary terms exist** before use — call `ensure_vocab_terms` for `Workflow_Type`, `Dataset_Type`, and any other vocabularies the script references. Catalog clones often have empty vocabulary tables.
+   - **Ensure all vocabulary terms exist** before use — call `ml.add_term(vocab_table, term_name, description)` (Python API) or `add_term(vocabulary_name, term_name, description)` (MCP tool) for `Workflow_Type`, `Dataset_Type`, and any other vocabularies the script references. Catalog clones often have empty vocabulary tables.
    - Query all RIDs using `list(ml.pathBuilder().schemas[schema].tables[table].entities())` — note `pathBuilder()` is a **method call**, and `entities()` returns a lazy iterator needing `list()`
-   - Create a workflow and execution for provenance — pass `workflow` to `create_execution()`, not to `ExecutionConfiguration`
-   - Create the dataset with `execution.create_dataset()`
+   - Create a workflow and execution for provenance — create a workflow with `ml.create_workflow(name, workflow_type)`, then pass it via `ExecutionConfiguration(workflow=workflow)`, then call `ml.create_execution(config)` (or use the context manager `with ml.create_execution(config) as exe:`)
+   - Create the dataset with `exe.create_dataset()`
    - Add members with `dataset.add_dataset_members({table: rids}, validate=False)` — use **dict form** with `validate=False` for large datasets to avoid expensive per-RID table resolution
    - **Do NOT add a CLI entry point** in `pyproject.toml`. These are one-time catalog operations, not reusable tools. Run with `uv run python src/scripts/<script>.py`.
 
@@ -143,6 +143,8 @@ Every dataset needs a description that explains its composition, purpose, and ke
 **Bad:** "Training data" or "My dataset" or empty
 
 For split datasets, note the split strategy and rationale.
+
+For description templates and quality guidelines, see the `generate-descriptions` skill.
 
 ### Why render splits explicitly in the catalog
 
@@ -300,8 +302,9 @@ Read resource: deriva://dataset/{rid}
 
 **Step 2: See what's inside** — members are returned grouped by element type (table). This tells you which tables have data in this dataset:
 ```
-resource deriva://dataset/{rid}/members (dataset_rid="...", version="1.0.0")
+Read resource: deriva://dataset/{rid}/members
 ```
+Pass `version` and/or `recurse` as resource parameters when needed (e.g., `version="1.0.0"`, `recurse=true`).
 
 **Step 3: Preview columns** — before fetching data, use `limit=1` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
 ```
@@ -322,22 +325,23 @@ preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_
 
 Once you understand the shape and decide on your filter criteria, use the DerivaML Python API to access the full dataset for building subsets or ML pipelines.
 
-**Step 4: Check features and labels** — see what annotations exist on member records:
+**Step 5: Check features and labels** — see what annotations exist on member records:
 ```
-resource deriva://table/{name}/features (table_name="Image")
+Read resource: deriva://table/{name}/features
+```
+Replace `{name}` with the table name (e.g., `deriva://table/Image/features`).
+
+**Step 6: Navigate the hierarchy** — check for children (splits) and parents:
+```
+Read resource: deriva://dataset/{rid}              # includes children list
+list_dataset_parents(dataset_rid="...")             # MCP tool call
+Read resource: deriva://dataset/{rid}/members      # with recurse=true for full tree
 ```
 
-**Step 5: Navigate the hierarchy** — check for children (splits) and parents:
+**Step 7: Check provenance and validate:**
 ```
-# Resource: deriva://dataset/{rid} (dataset_rid="...")
-list_dataset_parents(dataset_rid="...")
-resource deriva://dataset/{rid}/members (dataset_rid="...", recurse=true)  # members across full tree
-```
-
-**Step 6: Check provenance and validate:**
-```
-# Resource: deriva://dataset/{rid} (dataset_rid="...")                 # which executions used this
-# Python API: bag inspection (dataset_rid="...", version="1.0.0")  # verify bag integrity
+Read resource: deriva://dataset/{rid}              # includes execution provenance
+# Python API: bag inspection for integrity checks
 ```
 
 For individual records, use `get_record(table_name="Image", rid="2-IMG1")`.

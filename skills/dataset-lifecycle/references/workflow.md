@@ -147,6 +147,25 @@ To maintain class distribution, add `stratify_by_column` with the denormalized c
 
 For example, if the feature table is `Execution_Image_Image_Classification` and the column is `Image_Class`, the stratify column is `Execution_Image_Image_Classification_Image_Class`.
 
+### Denormalized column naming convention
+
+When `preview_denormalized_dataset` or `split_dataset` flattens tables into a wide DataFrame, columns are prefixed with their source table name using underscores: `{TableName}_{ColumnName}`.
+
+**Simple columns** (from domain tables):
+- `Image` table, `Filename` column becomes `Image_Filename`
+- `Subject` table, `Age` column becomes `Subject_Age`
+- `Subject` table, `RID` column becomes `Subject_RID`
+
+**Feature columns** (from feature/annotation tables):
+- `Image_Classification` table, `Image_Class` column becomes `Image_Classification_Image_Class`
+- `Image_Classification` table, `Confidence` column becomes `Image_Classification_Confidence`
+- `Diagnosis_Feature` table, `Diagnosis_Type` column becomes `Diagnosis_Feature_Diagnosis_Type`
+
+**Key rules:**
+- The prefix is always the **table name** as it appears in the schema, not a shortened alias
+- Feature tables often have long names (e.g., `Execution_Image_Image_Classification`) -- the full name is used as the prefix
+- Use `preview_denormalized_dataset(..., limit=1)` to see the actual column names if unsure — this returns column headers without fetching data
+
 `include_tables` is required when using stratification — use the feature table name from the schema.
 
 **Handling missing values in the stratify column:** Not all members may have a value for the stratify column (e.g., unlabeled images in a labeled feature table). Use `stratify_missing` to control this:

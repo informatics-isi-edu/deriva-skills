@@ -226,6 +226,8 @@ Call Python API `exe.working_dir` to get the local path where downloads are stor
 
 ### Register files for upload
 
+**Note:** The target asset table must already exist in the catalog before you can register files for upload to it. The built-in `Execution_Asset` table is always available. If you need a new domain-specific asset table (e.g., `"Image"`, `"Model"`), use the `work-with-assets` skill to create it first with `create_asset_table`.
+
 Call Python API `exe.asset_file_path()` with:
 - `asset_name` (required): target asset table (e.g., `"Execution_Asset"`, `"Image"`, `"Model"`)
 - `file_name` (required): path to an existing file to stage, or a filename for a new file to create

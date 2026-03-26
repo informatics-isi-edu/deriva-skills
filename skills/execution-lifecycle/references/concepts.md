@@ -114,7 +114,12 @@ Created → Initializing → Pending → Running → Completed
 
 The execution context manager automatically transitions through `Created` → `Initializing` → `Pending` → `Running` → `Completed` (or `Failed` on exception). You can also update status manually with `update_execution_status` for finer-grained progress tracking during long-running work.
 
-**Note:** In MCP tool workflows (without the context manager), you control transitions explicitly by calling `create_execution` (Created), `start_execution` (Running), and `stop_execution` (Completed). The `Initializing` and `Pending` transitions are managed by the Python API during input download.
+**MCP tools vs Python API:** Both MCP tools and the Python API use the same underlying `Execution` class, so the status transitions work identically. The difference is only in how the lifecycle is driven:
+
+- **Python API (context manager):** The `with ml.create_execution(config) as exe:` block automatically transitions through all states — `Created` → `Initializing` → `Pending` → `Running` → `Completed` (or `Failed` on exception).
+- **MCP tools (explicit calls):** You call `create_execution` (sets `Created`), `start_execution` (sets `Running`), and `stop_execution` (sets `Completed`) individually. The `Initializing` and `Pending` transitions still occur — they happen internally when input datasets and assets are downloaded via the Python API (e.g., `exe.download_dataset_bag()`).
+
+In both cases, the same `Execution` object manages the state machine. The context manager simply automates the start/stop calls and error handling that you would otherwise do manually with MCP tools.
 
 ## Workflows and Workflow Types
 

@@ -32,6 +32,8 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 > The MCP server automatically checks for near-duplicate entities when creating tables or asset tables. If a similar table already exists, the tool response includes a `similar_existing` field with suggestions and a warning. Review these before proceeding — the existing table may already serve your purpose.
 
+For detailed guidance on interpreting duplicate suggestions and deciding whether to reuse, extend, or create a new table, see the `semantic-awareness` skill.
+
 ## Key Decisions
 
 ### Naming Conventions
@@ -62,6 +64,8 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 **Column descriptions** should explain what the value represents, units/format, and constraints:
 - Good: "Patient age at time of imaging in years. Integer 0-120. Used for demographic stratification in training splits."
 - Bad: "Age" or "The age column"
+
+For description templates and quality guidelines, see the `generate-descriptions` skill.
 
 ## Quick Reference
 

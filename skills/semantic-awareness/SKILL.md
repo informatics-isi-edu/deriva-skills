@@ -158,6 +158,15 @@ See the `generate-descriptions` skill for templates and detailed guidance.
 
 **Workflows**: Before creating "ResNet Training v2", check if "ResNet Training" already exists — you might just need different execution parameters. Check description and type.
 
+## Recommended Invocation Order
+
+When creating new catalog entities, multiple skills apply. Follow this order:
+
+1. **`semantic-awareness`** — Check for duplicates first. Search for existing entities that serve the same or similar purpose before designing anything new.
+2. **Domain skill** (e.g., `manage-vocabulary`, `create-feature`, `create-table`, `dataset-lifecycle`) — Design and create the entity using the appropriate skill's workflow.
+3. **`generate-descriptions`** — Auto-generate descriptions if the user didn't provide one. Good descriptions make entities discoverable in future searches.
+4. **`maintain-experiment-notes`** — Log the decision and rationale. Record what was created, why, and any alternatives that were considered.
+
 ## The Flow
 
 ```
