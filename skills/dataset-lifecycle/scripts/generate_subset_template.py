@@ -9,8 +9,13 @@ it to ``src/scripts/generate_<name>.py`` in the user's project.
 
 1. The generated function receives source dataset RIDs, a filter name, and
    filter parameters from its Hydra-zen configuration.
-2. It downloads metadata-only bags (or caches feature values) for the source
-   datasets and denormalizes them into pandas DataFrames.
+2. It looks up the filter from the registry and checks ``requires_data``:
+   - **requires_data=False** (fast path): Lists dataset members directly from
+     the catalog via ``list_dataset_members()``. No bag download needed.
+     Use for random sampling, all_records, or any filter on RIDs only.
+   - **requires_data=True** (data path): Downloads metadata-only bags (or
+     caches feature values) and denormalizes into pandas DataFrames.
+     Use for value-based filters (has_feature, feature_equals, etc.).
 3. It applies the named filter from the filter registry
    (``src/scripts/subset_filters.py``) to select a subset of record RIDs.
 4. In dry-run mode (``execution is None``), it prints what would be created.
@@ -24,13 +29,16 @@ it to ``src/scripts/generate_<name>.py`` in the user's project.
 - ``{{EXPERIMENT_NAME}}``: The Hydra experiment config name used to run this
   function via ``uv run deriva-ml-run +experiment={{EXPERIMENT_NAME}}``.
 
-**Data paths:**
+**DerivaML API reference (verified signatures):**
 
-- **Bag path** (default): Downloads metadata-only bags and denormalizes into
-  DataFrames. Use when you need columns from multiple joined tables.
-- **Catalog-query path** (when ``feature_name`` is set): Uses
-  ``cache_features()`` to fetch feature values directly from the catalog.
-  Faster when filtering by a single feature — no bag download needed.
+- ``dataset.list_dataset_members()`` → ``dict[str, list[dict]]`` keyed by table name
+- ``dataset.download_dataset_bag(version=..., materialize=False, exclude_tables=...)`` → BDBag
+- ``bag.denormalize_as_dataframe(include_tables)`` → pd.DataFrame
+- ``execution.create_dataset(description=..., dataset_types=...)`` → Dataset
+- ``dataset.add_dataset_members(members=..., description=...)`` → None
+- ``ml_instance.pathBuilder().schemas["deriva-ml"].tables[...]`` — note pathBuilder() is a method
+- ``ml_instance.lookup_dataset(rid)`` → Dataset
+- ``ml_instance.cache_features(table, feature, selector=...)`` → pd.DataFrame
 
 Run via:
     uv run deriva-ml-run +experiment={{EXPERIMENT_NAME}} dry_run=true
@@ -52,9 +60,10 @@ def {{FUNCTION_NAME}}(
     # Source datasets
     source_dataset_rids: list[str] | None = None,
     source_version: str | None = None,
-    # Denormalization
+    # Denormalization (only needed for requires_data=True filters)
     include_tables: list[str] | None = None,
     element_table: str = "Image",
+    exclude_tables: list[str] | None = None,
     # Feature caching (catalog-query path)
     feature_name: str | None = None,
     # Filter
@@ -63,6 +72,7 @@ def {{FUNCTION_NAME}}(
     # Output dataset
     output_description: str = "",
     output_types: list[str] | None = None,
+    parent_dataset_rid: str | None = None,
     # DerivaML integration (injected by framework)
     ml_instance: DerivaML | None = None,
     execution: Execution | None = None,
@@ -73,22 +83,9 @@ def {{FUNCTION_NAME}}(
     It is intended to be run via ``deriva-ml-run`` with a Hydra experiment
     config that supplies all parameters.
 
-    Args:
-        source_dataset_rids: RIDs of source datasets to draw members from.
-        source_version: Explicit version for source datasets. If None, uses
-            each dataset's current version.
-        include_tables: Tables to include when denormalizing bags. Required
-            for the bag path when joining across tables.
-        element_table: Table whose RIDs become dataset members (e.g. "Image").
-        feature_name: If set, uses the catalog-query path via
-            ``cache_features()`` instead of downloading bags.
-        filter_name: Name of a registered filter in the filter registry.
-            Defaults to "all_records" (no filtering).
-        filter_params: Keyword arguments passed to the filter function.
-        output_description: Description for the newly created dataset.
-        output_types: Dataset type tags (e.g. ["Complete", "Labeled"]).
-        ml_instance: DerivaML connection (injected by framework).
-        execution: Execution context (injected by framework). None = dry run.
+    The filter's requires_data flag determines the data path:
+    - requires_data=False: list_dataset_members() → filter on RIDs (fast)
+    - requires_data=True: download_dataset_bag() → denormalize → filter on values
     """
     if ml_instance is None:
         raise ValueError(
@@ -108,41 +105,62 @@ def {{FUNCTION_NAME}}(
             "Check your experiment config."
         )
 
-    # Validate the filter exists early, before any downloads.
-    filter_fn = get_filter(filter_name)
+    # Look up the filter and check its data requirements.
+    filter_entry = get_filter(filter_name)
 
-    dataframes: dict[str, pd.DataFrame] = {}
-
-    if feature_name:
-        # Catalog-query path: cache feature values directly (no bag download).
-        # First call fetches from catalog; subsequent calls return cached data.
-        feature_df = ml_instance.cache_features(
-            element_table,
-            feature_name,
-            selector=FeatureRecord.select_newest,
-        )
-        print(f"Cached features: {len(feature_df)} rows from {element_table}.{feature_name}")
+    if not filter_entry.requires_data:
+        # ---------------------------------------------------------------
+        # Fast path: list members directly from catalog (no bag download)
+        # ---------------------------------------------------------------
+        all_rids = []
         for rid in source_dataset_rids:
             dataset = ml_instance.lookup_dataset(rid)
             print(f"Source: {dataset.description} (RID: {rid})")
-            dataframes[rid] = feature_df
+            all_members = dataset.list_dataset_members()
+            members = all_members.get(element_table, [])
+            member_rids = [m["RID"] for m in members]
+            print(f"  Members ({element_table}): {len(member_rids)}")
+            all_rids.extend(member_rids)
+
+        rids, selection_desc = filter_entry.fn(all_rids, **filter_params)
+        print(f"\n{selection_desc}")
+
     else:
-        # Bag path: download and denormalize each source dataset.
-        for rid in source_dataset_rids:
-            dataset = ml_instance.lookup_dataset(rid)
-            version = source_version or dataset.current_version
-            print(f"Source: {dataset.description} (RID: {rid}, version: {version})")
+        # ---------------------------------------------------------------
+        # Data path: download bag or cache features, then filter
+        # ---------------------------------------------------------------
+        dataframes: dict[str, pd.DataFrame] = {}
 
-            bag = dataset.download_dataset_bag(version=version, materialize=False)
-            df = bag.denormalize_as_dataframe(include_tables)
-            print(f"  Denormalized: {len(df)} rows, {len(df.columns)} columns")
-            dataframes[rid] = df
+        if feature_name:
+            # Catalog-query path: cache feature values directly.
+            feature_df = ml_instance.cache_features(
+                element_table,
+                feature_name,
+                selector=FeatureRecord.select_newest,
+            )
+            print(f"Cached features: {len(feature_df)} rows from {element_table}.{feature_name}")
+            for rid in source_dataset_rids:
+                dataset = ml_instance.lookup_dataset(rid)
+                print(f"Source: {dataset.description} (RID: {rid})")
+                dataframes[rid] = feature_df
+        else:
+            # Bag path: download and denormalize each source dataset.
+            for rid in source_dataset_rids:
+                dataset = ml_instance.lookup_dataset(rid)
+                version = source_version or dataset.current_version
+                print(f"Source: {dataset.description} (RID: {rid}, version: {version})")
 
-    # Apply the filter
-    rids, selection_desc = filter_fn(
-        dataframes, element_table=element_table, **filter_params
-    )
-    print(f"\n{selection_desc}")
+                bag = dataset.download_dataset_bag(
+                    version=version, materialize=False, exclude_tables=exclude_tables
+                )
+                df = bag.denormalize_as_dataframe(include_tables)
+                print(f"  Denormalized: {len(df)} rows, {len(df.columns)} columns")
+                dataframes[rid] = df
+
+        rids, selection_desc = filter_entry.fn(
+            dataframes, element_table=element_table, **filter_params
+        )
+        print(f"\n{selection_desc}")
 
     if execution is None:
         print(f"\n[DRY RUN] Would create dataset with {len(rids)} members")
@@ -156,13 +174,19 @@ def {{FUNCTION_NAME}}(
         dataset_types=output_types,
     )
 
-    # Use dict form {table: [rids]} with validate=False to avoid expensive
-    # per-RID table resolution which fails on large datasets.
     new_dataset.add_dataset_members(
-        {element_table: rids},
-        validate=False,
+        members=rids,
         description=selection_desc,
     )
+
+    # Nest under parent if specified
+    if parent_dataset_rid:
+        dd_table = ml_instance.pathBuilder().schemas["deriva-ml"].tables["Dataset_Dataset"]
+        dd_table.insert([{
+            "Dataset": parent_dataset_rid,
+            "Nested_Dataset": new_dataset.dataset_rid,
+        }])
+        print(f"  Nested under parent: {parent_dataset_rid}")
 
     print(f"\nCreated dataset: {new_dataset.dataset_rid}")
     print(f"  Description: {output_description}")

@@ -122,9 +122,10 @@ If this is the project's first or primary model, also set it as `default_workflo
 Add to `src/configs/experiments.py`:
 
 ```python
-from hydra_zen import make_config, store
+from hydra_zen import make_config, store, MISSING
 from configs.base import DerivaModelConfig
 
+# IMPORTANT: group must be "experiment" (singular), package on constructor
 experiment_store = store(group="experiment", package="_global_")
 
 experiment_store(

@@ -51,6 +51,7 @@ DerivaModelConfig = create_model_config(
         {"assets": "default_asset"},
         {"workflow": "default_workflow"},
         {"model_config": "default_model"},
+        {"optional script_config": "none"},
     ],
 )
 
@@ -78,6 +79,7 @@ DerivaModelConfig = create_model_config(
         {"assets": "default_asset"},
         {"workflow": "default_workflow"},
         {"model_config": "default_model"},
+        {"optional script_config": "none"},
     ],
 )
 
@@ -495,10 +497,12 @@ model_store(
 
 ## Experiments (`experiments.py`)
 
+**IMPORTANT pitfall**: When `bases=(DerivaModelConfig,)` is used and the base has its own `hydra_defaults`, optional fields that default to `None` in the base will shadow Hydra's resolved value. Use `MISSING` for any optional field you override in the experiment's defaults list (e.g., `script_config=MISSING`).
+
 ### Example
 
 ```python
-from hydra_zen import make_config, store
+from hydra_zen import make_config, store, MISSING
 from configs.base import DerivaModelConfig
 
 # package="_global_" is set on the store, not on make_config
@@ -529,6 +533,23 @@ experiment_store(
     ),
     name="cifar10_extended",
 )
+
+# Script-only experiment (e.g., dataset generation via script_config)
+experiment_store(
+    make_config(
+        hydra_defaults=[
+            "_self_",
+            {"override /deriva_ml": "dev_facebase"},
+            {"override /datasets": "none"},
+            {"override /script_config": "my_generation_script"},
+            {"override /workflow": "dataset_generation"},
+        ],
+        description="Generate a curated subset from the source dataset",
+        script_config=MISSING,  # IMPORTANT: use MISSING, not None, so Hydra resolves the override
+        bases=(DerivaModelConfig,),
+    ),
+    name="generate_my_subset",
+)
 ```
 
 ### Template
@@ -539,7 +560,7 @@ experiment_store(
 Usage:
     uv run deriva-ml-run +experiment=my_experiment
 """
-from hydra_zen import make_config, store
+from hydra_zen import make_config, store, MISSING
 from configs.base import DerivaModelConfig
 
 experiment_store = store(group="experiment", package="_global_")

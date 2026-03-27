@@ -110,6 +110,7 @@ DerivaModelConfig = create_model_config(
         {"assets": "default_asset"},
         {"workflow": "default_workflow"},
         {"model_config": "default_model"},
+        {"optional script_config": "none"},
     ],
 )
 
@@ -117,6 +118,8 @@ store(DerivaModelConfig, name="deriva_model")
 ```
 
 Each default name must match a `name=` in its config group's store.
+
+**Optional groups and MISSING**: The `{"optional script_config": "none"}` entry makes `script_config` available but not required. When an experiment overrides `script_config` via its `hydra_defaults`, the base config's `None` default for that field can shadow Hydra's resolved value. Use `MISSING` from `hydra_zen` for any such optional field in the experiment's `make_config()` call (e.g., `script_config=MISSING`) so Hydra resolves the override correctly.
 
 ## Setting Up a New Project
 

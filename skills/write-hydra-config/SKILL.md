@@ -69,6 +69,8 @@ After any catalog-modifying action (create_dataset, split_dataset, create_workfl
 - `hydra_defaults` uses `{"override /group": "name"}` syntax
 - `"_self_"` must be first in the defaults list
 - `description` is a plain string on `make_config()` (not zen_meta)
+- Group must be `"experiment"` (singular), matching `+experiment=` CLI syntax
+- **PITFALL**: When the base config has optional fields that default to `None` (e.g., `script_config`), those `None` values shadow Hydra's resolved override. Use `MISSING` from `hydra_zen` for any optional field you override via the experiment's defaults list (e.g., `script_config=MISSING`)
 
 ### Multiruns
 - First arg is the multirun name (string), not a keyword
