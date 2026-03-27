@@ -169,6 +169,13 @@ DerivaML automatically records the source code that produced each execution by d
 
 For Python scripts, the URL includes the **exact commit hash** (not a branch name), ensuring the source reference is permanent and immutable. This means the URL always points to the specific code version that ran.
 
+### Git commit enforcement
+
+DerivaML enforces clean working trees by default. Both `deriva-ml-run` and `deriva-ml-run-notebook` check for uncommitted changes before creating an execution. If any are found, `DerivaMLDirtyWorkflowError` is raised and the run is aborted.
+
+- **`--allow-dirty` flag** overrides the check for debugging iterations. The execution still records a git hash, but it may not match the code that actually ran — this is **degraded provenance**.
+- Executions created with `--allow-dirty` should not be cited or used as production baselines.
+
 ### Workflow deduplication
 
 DerivaML avoids creating duplicate workflow records. When a new execution is created:

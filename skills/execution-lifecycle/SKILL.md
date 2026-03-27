@@ -20,6 +20,14 @@ connect_catalog(hostname="...", catalog_id="...")
 
 If already connected (check `deriva://catalog/connections`), skip this step.
 
+## Git Commit Enforcement
+
+DerivaML enforces that all code is committed before running catalog-mutating operations. If uncommitted changes are detected, `deriva-ml-run` and `deriva-ml-run-notebook` raise `DerivaMLDirtyWorkflowError` and refuse to proceed.
+
+- **`--allow-dirty`** overrides the check for debugging iterations, but the resulting execution has **degraded provenance** — the git hash in the execution record may not match the code that actually ran.
+- This applies to all `deriva-ml-run` and `deriva-ml-run-notebook` invocations.
+- Simple one-off MCP tool operations (adding a vocabulary term, updating a description) are not affected.
+
 ## Phase 1: Pre-Flight Validation
 
 Before running an experiment, validate that everything is in place. **Stop and fix any issues.**
@@ -101,7 +109,7 @@ These download into the local cache without creating execution records. Subseque
 
 For `deriva-ml-run` CLI experiments:
 
-1. **Git clean** — `git status` must show no uncommitted changes
+1. **Git clean** — `git status` must show no uncommitted changes. DerivaML enforces this: `DerivaMLDirtyWorkflowError` is raised if uncommitted changes exist. Use `--allow-dirty` only for debugging (degraded provenance).
 2. **Version current** — bump with `bump_version("patch")` MCP tool or `uv run bump-version patch|minor` CLI if needed
 3. **Lock file valid** — `uv lock --check` must pass
 
@@ -157,7 +165,7 @@ Verify: status is "Completed", correct inputs linked, output assets attached, gi
 3. **Every execution needs a workflow** — find with `lookup_workflow_by_url` or let `create_execution` create one
 4. **Upload AFTER the with block** — `exe.upload_execution_outputs()` goes after `with`, not inside
 5. **Use Python API `exe.asset_file_path()` for all outputs** — never manually place files in the working directory
-6. **Commit code before running** — git hash is recorded for provenance
+6. **Commit code before running** — DerivaML raises `DerivaMLDirtyWorkflowError` if uncommitted changes exist. Use `--allow-dirty` only for debugging.
 
 ## Reference Resources
 

@@ -236,7 +236,7 @@ If the user needs a custom filter not in the built-in registry, write the filter
 
 **Step 5: Dry run.** Run `uv run deriva-ml-run +experiment=<name> dry_run=true`. Show the user the output (selected count, filter description) and wait for approval.
 
-**Step 6: Commit.** The script creates a new data element in the catalog, so it must be committed before running for real. The execution record captures the git hash — uncommitted code means no code provenance link.
+**Step 6: Commit.** The script must be committed before running for real. DerivaML raises `DerivaMLDirtyWorkflowError` if uncommitted changes exist. Use `--allow-dirty` only for debugging iterations (degraded provenance).
 
 **Step 7: Run for real.** After approval: `uv run deriva-ml-run +experiment=<name>`
 

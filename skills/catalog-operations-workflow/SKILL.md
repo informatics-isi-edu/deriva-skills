@@ -25,7 +25,7 @@ The key distinction: DerivaML records the git commit hash with every execution. 
 
 1. **Generate** a Python script in the `scripts/` directory using the DerivaML Python API. Use the base script template and common patterns from `references/script-patterns.md`.
 2. **Test** with `--dry-run` to verify correctness without creating catalog records.
-3. **Commit** the script so the git commit hash in the execution record points to the actual code.
+3. **Commit** the script so the git commit hash in the execution record points to the actual code. DerivaML enforces this: `DerivaMLDirtyWorkflowError` is raised if uncommitted changes exist. Use `--allow-dirty` only for debugging (degraded provenance).
 4. **Run** for real. The execution record captures git commit hash, repository URL, input datasets and versions, output assets and datasets, and execution parameters.
 
 For detailed script templates (base template, dataset creation, splitting, feature population, ETL), see [Script Pattern Templates](references/script-patterns.md).

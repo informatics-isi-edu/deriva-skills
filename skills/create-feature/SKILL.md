@@ -154,7 +154,7 @@ Feature values modify catalog data, so the approach depends on scale and reprodu
 | Verifying a new feature works (1-5 test values) | MCP tools directly — quick and disposable |
 | Production annotations, batch labels, model predictions | Committed script — provides code provenance in the execution record |
 
-**For production data, always write a script first.** The execution record captures the git hash of the committed code. Without a committed script, the execution has provenance (who, when, what) but no code link (how). Use the `catalog-operations-workflow` skill or `dataset-lifecycle` skill's script templates to generate the script, commit it, then run via `deriva-ml-run`.
+**For production data, always write a script first.** The execution record captures the git hash of the committed code. Without a committed script, the execution has provenance (who, when, what) but no code link (how). Use the `catalog-operations-workflow` skill or `dataset-lifecycle` skill's script templates to generate the script, commit it, then run via `deriva-ml-run`. Running an uncommitted script raises `DerivaMLDirtyWorkflowError` — use `--allow-dirty` only for debugging iterations (degraded provenance).
 
 **For quick testing** (verifying the feature works, adding a few sample values), MCP tools are fine:
 
