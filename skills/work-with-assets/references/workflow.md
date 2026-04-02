@@ -146,14 +146,18 @@ Call Python API `exe.asset_file_path()` to register each file for upload:
 - `asset_name` (required): target asset table (e.g., `"Execution_Asset"`, `"Image"`, `"Model"`)
 - `file_name` (required): path to an existing file to stage, or a filename for a new file to create
 - `asset_types` (optional): list of Asset_Type vocabulary terms (defaults to `[asset_name]`)
+- `description` (optional): human-readable description of the asset — what it contains and how it was produced
 - `copy_file` (optional, default `false`): `true` to copy the file, `false` to symlink (saves disk space)
 - `rename_file` (optional): rename the file during staging
+- `metadata` (optional): dict of custom column values for asset tables with extra metadata columns
 
 Returns a `file_path` — if creating a new file, write your output to this path. If staging an existing file, the file is symlinked or copied to the staging area.
 
-**Example:** To register model weights for upload, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`. Then write or copy the weights file to the returned `file_path`.
+**Always provide a description** for execution assets. Descriptions are applied to the catalog record after upload and are visible in the Chaise UI. Built-in execution metadata files (Hydra configs, `configuration.json`, `uv.lock`, environment snapshots) receive automatic descriptions.
 
-**Example:** To stage an existing CSV, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"/path/to/predictions.csv"`, `asset_types`: `["Predictions"]`.
+**Example:** To register model weights for upload, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"model_weights.pt"`, `asset_types`: `["Model_Weights"]`, `description`: `"Trained CNN weights, optimizer state, and training log"`. Then write or copy the weights file to the returned `file_path`.
+
+**Example:** To stage an existing CSV, call Python API `exe.asset_file_path()` with `asset_name`: `"Execution_Asset"`, `file_name`: `"/path/to/predictions.csv"`, `asset_types`: `["Predictions"]`, `description`: `"Per-image class predictions and probability distributions"`.
 
 ### Step 3: Upload all staged files
 

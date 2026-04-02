@@ -232,10 +232,14 @@ Call Python API `exe.asset_file_path()` with:
 - `asset_name` (required): target asset table (e.g., `"Execution_Asset"`, `"Image"`, `"Model"`)
 - `file_name` (required): path to an existing file to stage, or a filename for a new file to create
 - `asset_types` (optional): list of `Asset_Type` vocabulary terms (defaults to `[asset_name]`)
+- `description` (optional): human-readable description of the asset (applied to catalog record after upload)
 - `copy_file` (optional, default `false`): `true` to copy, `false` to symlink
 - `rename_file` (optional): rename the file during staging
+- `metadata` (optional): dict of custom column values for tables with extra metadata columns
 
 Returns a `file_path`. If `file_name` is a path to an existing file, it's symlinked (or copied) to the staging area. If it's just a filename, write your output to the returned path.
+
+**Always provide a description** for execution assets so they are identifiable in the catalog.
 
 ### Upload all registered files
 

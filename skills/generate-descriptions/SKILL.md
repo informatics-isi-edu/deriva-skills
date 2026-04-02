@@ -30,7 +30,7 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 - **Vocabularies**: `create_vocabulary` -- comment parameter
 - **Vocabulary Terms**: `add_term` -- description parameter
 - **Tables and Columns**: `create_table` (uses `comment` parameter), `set_table_description`, `set_column_description`
-- **Assets**: asset metadata descriptions
+- **Assets**: `exe.asset_file_path()` -- `description` parameter. Execution metadata files get automatic descriptions.
 
 For hydra-zen configuration descriptions (`with_description()` and `zen_meta`), see the `write-hydra-config` skill.
 
@@ -140,6 +140,20 @@ Example: "Individual chest X-ray images with associated metadata. Links to Subje
 ```
 
 Example: "Patient age at time of imaging in years. Integer value, range 0-120. Required for demographic stratification in training splits."
+
+### Assets (Execution Outputs)
+
+Asset descriptions explain what the file contains and how it was produced. Pass via the `description` parameter of `exe.asset_file_path()`. Built-in execution metadata files (Hydra configs, `configuration.json`, `uv.lock`, environment snapshots) receive automatic descriptions — only user-created assets need descriptions.
+
+```
+<What the file contains>. <How it was produced or key parameters>.
+```
+
+Examples:
+- "Trained CNN model weights, optimizer state, and training log"
+- "Per-image predicted class and probability distributions over all CIFAR-10 classes"
+- "Per-epoch training log: loss, accuracy, and architecture details"
+- "Test set evaluation summary: loss, accuracy, and configuration"
 
 ## Formatting with Markdown
 
