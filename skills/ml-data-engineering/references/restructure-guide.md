@@ -350,11 +350,17 @@ The `preview_denormalized_dataset` MCP tool and `bag.denormalize_as_dataframe()`
 ### MCP tool
 
 ```
+# Explore schema shape (no dataset needed)
 preview_denormalized_dataset(
-    dataset_rid="2-XXXX",
+    include_tables=["Image", "Subject", "Diagnosis"]
+)
+
+# With dataset-scoped data
+preview_denormalized_dataset(
     include_tables=["Image", "Subject", "Diagnosis"],
+    dataset_rid="2-XXXX",
     version="1.0.0",
-    limit=5000
+    limit=50
 )
 ```
 
@@ -424,7 +430,7 @@ bag.restructure_assets(
 |-----------------|---------|
 | Python API `dataset.download_dataset_bag(version)` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
 | Python API `bag.restructure_assets()` | Organize assets into ML-ready directory layouts |
-| `preview_denormalized_dataset` | Flatten dataset tables for ML (without full bag download) |
+| `preview_denormalized_dataset` | Schema shape + size estimates (no dataset needed), or flatten dataset tables with `dataset_rid` + `limit` |
 | `estimate_bag_size` | Preview row counts and asset sizes per table |
 | resource `deriva://table/{name}/features` | Access feature values within a bag |
 | `deriva://dataset/{rid}` | Dataset details including version and element types |

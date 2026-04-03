@@ -348,7 +348,7 @@ DatasetSpecConfig(rid="28EA", version="0.4.0", exclude_tables=["Study", "Institu
 | Python API `dataset.download_dataset_bag(version)` | Download bag (supports `exclude_tables`, `timeout`, `materialize`) |
 | `estimate_bag_size` | Preview row counts and asset sizes per table |
 | Python API bag inspection | Cross-validate bag contents against live catalog |
-| `preview_denormalized_dataset` | Flatten dataset tables for ML (without full bag download) |
+| `preview_denormalized_dataset` | Schema shape + size estimates (no dataset needed), or flatten dataset tables with `dataset_rid` + `limit` |
 | `deriva://dataset/{rid}/bag-preview` | Preview FK paths and tables before downloading |
 | `deriva://catalog/dataset-element-types` | Check registered element types |
 | `deriva://storage/cache` | View cached bags |

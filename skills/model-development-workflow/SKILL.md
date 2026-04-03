@@ -78,8 +78,8 @@ create_dataset(
 
 # 3. Add a representative sample of members
 # Query to find records spanning all classes:
-preview_denormalized_dataset(dataset_rid="<source>",
-                    include_tables=["Image", "Image_Diagnosis"],
+preview_denormalized_dataset(include_tables=["Image", "Image_Diagnosis"],
+                    dataset_rid="<source>",
                     limit=200)
 # Pick records that cover all classes, then:
 add_dataset_members(dataset_rid="<dev_dataset>",
@@ -129,8 +129,8 @@ stop_execution()
 
 **Verify the full pipeline** by denormalizing:
 ```
-preview_denormalized_dataset(dataset_rid="<dev_dataset>",
-                    include_tables=["Image", "Image_Diagnosis"],
+preview_denormalized_dataset(include_tables=["Image", "Image_Diagnosis"],
+                    dataset_rid="<dev_dataset>",
                     limit=20)
 ```
 This shows you exactly what the training pipeline will see.

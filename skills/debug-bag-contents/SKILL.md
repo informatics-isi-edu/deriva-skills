@@ -289,6 +289,6 @@ Use this checklist when data is missing from a bag:
 | `get_dataset_spec` | View dataset specification |
 | `estimate_bag_size` | Preview row counts and asset sizes before downloading |
 | Python API `dataset.download_dataset_bag(version)` | Download the dataset bag (supports `exclude_tables` and `timeout`) |
-| `preview_denormalized_dataset` | Flatten dataset for analysis |
+| `preview_denormalized_dataset` | Schema shape + size estimates (no dataset needed), or flatten dataset for analysis |
 | `preview_table` | Inspect FK column values |
 | `preview_table` | Check table schema and FK relationships (or read `deriva://table/{name}/schema` resource) |

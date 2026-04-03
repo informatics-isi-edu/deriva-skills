@@ -524,7 +524,8 @@ Note: `select_by_workflow` is not available on bags since it requires live catal
 Feature tables can be included in denormalization. Column names follow the pattern `{FeatureTableName}_{ColumnName}`:
 
 ```
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"])
+# Schema exploration (no dataset needed)
+preview_denormalized_dataset(include_tables=["Image", "Image_Classification"])
 # Produces columns like: Image_RID, Image_Filename, Image_Classification_Image_Class
 ```
 

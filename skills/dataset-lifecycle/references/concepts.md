@@ -424,7 +424,7 @@ for table_name, rids in members.items():
 members_v1 = dataset.resource deriva://dataset/{rid}/members (version="1.0.0")
 ```
 
-Note that resource `deriva://dataset/{rid}/members` returns only RIDs, not actual record data. To see the data values (demographics, labels, metadata), use `preview_denormalized_dataset` with the table names discovered here — see [Using Datasets](#using-datasets).
+Note that resource `deriva://dataset/{rid}/members` returns only RIDs, not actual record data. To see the data values (demographics, labels, metadata), use `preview_denormalized_dataset` with the table names discovered here (no dataset RID needed for schema exploration; add `dataset_rid` and `limit` for actual data) — see [Using Datasets](#using-datasets).
 
 ### Navigating hierarchies
 
@@ -531,8 +531,11 @@ Use the `get_dataset_spec` MCP tool to generate the correct config string includ
 For interactive exploration without downloading:
 
 ```
-# Denormalize into a flat table (joins across FK relationships)
-preview_denormalized_dataset(dataset_rid="1-ABC4", include_tables=["Image", "Subject"])
+# Explore schema shape (no dataset needed)
+preview_denormalized_dataset(include_tables=["Image", "Subject"])
+
+# Denormalize with dataset-scoped info + row data
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="1-ABC4", limit=50)
 
 # Query individual tables
 preview_table(table_name="Image", filters={"Subject": "2-SUB1"})
@@ -709,4 +712,5 @@ Deletion removes the dataset container and member associations, not the member r
 | Download in execution | Python API `exe.download_dataset_bag()` | `exe.download_dataset_bag()` | Records provenance |
 | Restructure assets | Python API `bag.restructure_assets()` | `bag.restructure_assets()` | ML-ready directory layout |
 | Validate bag | Python API bag inspection | — | Cross-check bag vs catalog |
-| Denormalize | `preview_denormalized_dataset` | — | Flat DataFrame for analysis |
+| Schema shape + size | `preview_denormalized_dataset(include_tables=[...])` | `ml.denormalize_info()` / `dataset.denormalize_info()` | No dataset needed for schema-only |
+| Denormalize with data | `preview_denormalized_dataset(..., dataset_rid=..., limit=N)` | `dataset.denormalize_as_dataframe()` | Flat DataFrame for analysis |

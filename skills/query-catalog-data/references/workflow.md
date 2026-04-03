@@ -125,26 +125,34 @@ To resolve an unknown RID to its table, read the `deriva://rid/{rid}` resource i
 
 ### Denormalize for ML
 
-Use the `preview_denormalized_dataset` MCP tool to get ML-ready joined data from a dataset:
+Use the `preview_denormalized_dataset` MCP tool to explore denormalized table shapes and get ML-ready joined data. The `dataset_rid` is optional — omit it to explore the schema without needing a dataset:
 
 ```
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
+# Schema shape + global row counts (no dataset needed)
+preview_denormalized_dataset(include_tables=["Image", "Subject"])
+
+# Dataset-scoped info (no rows)
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8")
+
+# Dataset-scoped info + actual rows
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8", limit=50)
 ```
 
-This joins the dataset's member tables, resolving foreign keys into human-readable values. The result is a flat table suitable for loading into a DataFrame. Denormalize follows multi-hop FK chains automatically — tables don't need to be explicit dataset members. If ambiguous FK paths exist between tables, add intermediate tables to `include_tables` to disambiguate.
+The tool always returns column names/types, the join path, and per-table row counts and asset size estimates. When `limit > 0` and a dataset RID is provided, it also returns actual row data. Denormalize follows multi-hop FK chains automatically — tables don't need to be explicit dataset members. If ambiguous FK paths exist between tables, add intermediate tables to `include_tables` to disambiguate.
 
-### Preview Columns Before Denormalizing
+### Exploring Schema Shape Before Denormalizing
 
-Use `limit=1` to see the column schema without fetching data — useful for debugging FK paths or finding column names for stratification:
+Call `preview_denormalized_dataset` with just `include_tables` (no dataset RID) to see the schema shape — useful for debugging FK paths, finding column names for stratification, or estimating data sizes:
 
 ```
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], limit=1)
+preview_denormalized_dataset(include_tables=["Image", "Subject"])
 ```
 
-Returns column names and types instantly. Use this when:
+Returns columns, join path, per-table row counts, and asset size estimates. Use this when:
 - You need the correct column name for `stratify_by_column` in `split_dataset`
 - You want to verify FK paths resolve before running an expensive query
 - You hit an ambiguous FK path error and want to iterate quickly
+- You want to estimate how much data a denormalization would produce
 
 ### Query a Single Table
 
@@ -253,7 +261,7 @@ To get data ready for ML training:
 
 1. **Identify the dataset**: `get_record(table_name="Dataset", rid="2-B4C8")`
 2. **Get the members**: `resource deriva://dataset/{rid}/members (dataset_rid="2-B4C8")`
-3. **Denormalize**: `preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])`
+3. **Explore shape**: `preview_denormalized_dataset(include_tables=["Image", "Subject"])`, then add `dataset_rid="2-B4C8", limit=50` for data
 4. **Download assets**: `download_dataset(dataset_rid="2-B4C8", version="3")`
 
 ## Historical Queries with Versions
@@ -296,7 +304,7 @@ Here is a typical workflow for exploring and extracting data from a catalog:
 
 7. **Check features**: Read `deriva://table/Image/features`, then `preview_table(table_name="Image_Cell_Count", filters={"Image": "2-C3D4"})`.
 
-8. **Get dataset for ML**: `preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])` for a flat view, or `download_dataset(dataset_rid="2-B4C8", version="3")` for a full local copy.
+8. **Get dataset for ML**: `preview_denormalized_dataset(include_tables=["Image", "Subject"])` to explore the schema shape, then add `dataset_rid="2-B4C8", limit=50` for actual data. Or `download_dataset(dataset_rid="2-B4C8", version="3")` for a full local copy.
 
 9. **Share with a colleague**: Read `deriva://chaise-url/2-A1B2` to get a shareable URL for a specific record, or `deriva://chaise-url/Subject` for the table view.
 
@@ -321,7 +329,7 @@ download_asset(asset_rid="2-IMG1")
 - **Large tables**: Always use `limit` and `offset` for tables with more than a few hundred rows. Fetching the entire table can be slow and may time out.
 - **Column names are case-sensitive**: Use the exact column names from the schema. `"Species"` is not the same as `"species"`.
 - **RID format**: RIDs look like `2-B4C8` (a number, a dash, and an alphanumeric string). They are unique within a catalog.
-- **Foreign keys**: Many columns contain RIDs referencing other tables. Use `preview_denormalized_dataset` to resolve these into readable values, or `get_record` to look up individual references.
+- **Foreign keys**: Many columns contain RIDs referencing other tables. Use `preview_denormalized_dataset(include_tables=[...])` to resolve these into readable values (no dataset RID needed for schema exploration), or `get_record` to look up individual references.
 - **Empty results**: If a query returns no rows, double-check the filter values. Use `preview_table` without filters first to verify the table has data, then add filters incrementally.
 - **Schema mismatch**: If a table is not found, verify you are connected to the correct schema. Use `set_default_schema` if needed.
 - **Stale data**: Catalog data can change. If you need a stable snapshot, use versioned datasets.

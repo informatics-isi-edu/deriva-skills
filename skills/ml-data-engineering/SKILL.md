@@ -85,23 +85,21 @@ For the full restructuring guide — `group_by` options, value selectors, file t
 
 Best for tabular ML, feature engineering, or interactive exploration.
 
-**Step 1 — Preview columns (no data fetched):**
+**Step 1 — Explore the schema shape (no dataset needed):**
 ```
 preview_denormalized_dataset(
-    dataset_rid="2-XXXX",
-    include_tables=["Image", "Subject", "Diagnosis"],
-    limit=1
+    include_tables=["Image", "Subject", "Diagnosis"]
 )
 ```
-This returns column names and types instantly. Use it to verify FK paths, discover available columns, or find the right column name for `stratify_by_column`.
+Returns column names/types, join path, and per-table row counts and asset sizes. No dataset RID required — use this to explore what a denormalized join would look like before you have a dataset, or to verify FK paths and discover column names for `stratify_by_column`.
 
-**Step 2 — Fetch the data:**
+**Step 2 — Fetch actual rows from a dataset:**
 ```
 preview_denormalized_dataset(
-    dataset_rid="2-XXXX",
     include_tables=["Image", "Subject", "Diagnosis"],
+    dataset_rid="2-XXXX",
     version="1.0.0",
-    limit=5000
+    limit=50
 )
 ```
 

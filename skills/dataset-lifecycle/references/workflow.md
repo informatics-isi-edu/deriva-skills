@@ -138,7 +138,7 @@ To **create a three-way split**, also include `val_size` (e.g., `0.1` for 10% Va
 
 ### Stratified and labeled splits
 
-To maintain class distribution, add `stratify_by_column` with the denormalized column name. Derive this from the table schema — do **not** call `preview_denormalized_dataset` just to discover column names.
+To maintain class distribution, add `stratify_by_column` with the denormalized column name. Use `preview_denormalized_dataset(include_tables=[...])` (no dataset RID needed) to discover the exact column names, or derive them from the table schema.
 
 **Finding the stratify column name:**
 
@@ -164,7 +164,7 @@ When `preview_denormalized_dataset` or `split_dataset` flattens tables into a wi
 **Key rules:**
 - The prefix is always the **table name** as it appears in the schema, not a shortened alias
 - Feature tables often have long names (e.g., `Execution_Image_Image_Classification`) -- the full name is used as the prefix
-- Use `preview_denormalized_dataset(..., limit=1)` to see the actual column names if unsure — this returns column headers without fetching data
+- Use `preview_denormalized_dataset(include_tables=[...])` to see the actual column names if unsure — no dataset RID needed, returns column headers and size estimates without fetching data
 
 `include_tables` is required when using stratification — use the feature table name from the schema.
 

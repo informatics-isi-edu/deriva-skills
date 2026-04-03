@@ -54,7 +54,7 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 | `preview_table` (with limit=1) | Count matching records |
 | `get_record` | Fetch a single record by RID |
 | `validate_rids` | Check if RIDs exist |
-| `preview_denormalized_dataset` | Join dataset tables into flat DataFrame |
+| `preview_denormalized_dataset` | Schema shape + size estimates (no dataset needed), or join dataset tables into flat DataFrame |
 | Python API `dataset.download_dataset_bag(version)` | Download full dataset as BDBag |
 | resource `deriva://dataset/{rid}/members` | List records in a dataset |
 | `list_asset_executions` | Find executions that created/used an asset |
@@ -71,11 +71,14 @@ preview_table(table_name="Image", limit=100, offset=200)
 # Get specific record
 get_record(table_name="Subject", rid="2-B4C8")
 
-# Preview wide table columns (no data fetched — fast)
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"], limit=1)
+# Explore schema shape + size estimates (no dataset needed)
+preview_denormalized_dataset(include_tables=["Image", "Subject"])
 
-# ML-ready flat data
-preview_denormalized_dataset(dataset_rid="2-B4C8", include_tables=["Image", "Subject"])
+# Dataset-scoped info (no rows)
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8")
+
+# ML-ready flat data with row preview
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8", limit=50)
 ```
 
 ## Re-querying Cached Results
@@ -98,7 +101,7 @@ This is useful when exploring large result sets interactively — the first quer
 
 - Always use `limit` for large tables to avoid timeouts
 - Column names are case-sensitive — check schema first
-- Use `preview_denormalized_dataset` to resolve FK RIDs into readable values
+- Use `preview_denormalized_dataset` to resolve FK RIDs into readable values — works without a dataset RID for schema exploration
 - Pin to specific dataset versions for reproducibility
 - If a table or column name is misspelled, the MCP server will suggest similar entities in the error response — check for a `suggestions` field with "did you mean?" candidates
 

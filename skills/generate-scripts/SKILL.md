@@ -10,7 +10,7 @@ When MCP tools return truncated results (preview_table and preview_denormalized_
 
 > **RAG-first:** Before generating a script, use `rag_search()` to discover relevant catalog entities (tables, features, datasets, vocabulary terms) so the generated script references the correct names, RIDs, and column types.
 
-> **Note:** This skill generates Python scripts that use the DerivaML Python API directly, not MCP tools. Methods like `ml.cache_table()`, `ml.working_data`, `dataset.cache_denormalized()`, `ml.cache_features()`, `ml.create_workflow()`, `ml.create_execution()`, and `execution.asset_file_path()` are all Python API methods available in scripts and notebooks, not MCP tools.
+> **Note:** This skill generates Python scripts that use the DerivaML Python API directly, not MCP tools. Methods like `ml.cache_table()`, `ml.working_data`, `dataset.cache_denormalized()`, `ml.cache_features()`, `ml.denormalize_info()`, `dataset.denormalize_info()`, `ml.create_workflow()`, `ml.create_execution()`, and `execution.asset_file_path()` are all Python API methods available in scripts and notebooks, not MCP tools.
 
 ## Two Categories of Scripts
 

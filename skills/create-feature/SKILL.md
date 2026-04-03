@@ -227,8 +227,11 @@ Use MCP tools only for speculative, exploratory questions — understanding what
 # Spot-check: what do a few values look like? (keep limit small)
 preview_table(table_name="Execution_Image_Scouts_Pick", limit=5)
 
-# What features are joined with this data?
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=5)
+# What columns would a join produce? (no dataset needed)
+preview_denormalized_dataset(include_tables=["Image", "Image_Classification"])
+
+# Preview actual data from a dataset
+preview_denormalized_dataset(include_tables=["Image", "Image_Classification"], dataset_rid="...", limit=5)
 ```
 
 **To discover the feature table name**, use RAG search — don't guess from naming conventions:
@@ -370,7 +373,7 @@ See `references/concepts.md` under "Feature Selection" for the full Python API a
 Features are tightly coupled with datasets:
 
 - **In dataset bags** — feature values for dataset members are automatically included in BDBag exports
-- **In preview_denormalized_dataset** — include feature tables to see labels alongside data. Column names: `{FeatureTableName}_{ColumnName}`
+- **In preview_denormalized_dataset** — include feature tables to see labels alongside data (no dataset RID needed for schema exploration). Column names: `{FeatureTableName}_{ColumnName}`
 - **Dataset versioning** — adding feature values does NOT update existing versions. Call `increment_dataset_version` after adding features to make them visible in new versions
 - **In split_dataset** — the `stratify_by_column` parameter references feature columns in denormalized format
 

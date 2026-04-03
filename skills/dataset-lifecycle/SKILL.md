@@ -211,7 +211,7 @@ Before generating anything, verify the project has the required infrastructure. 
 
 ### Subset workflow
 
-**Step 1: Identify the filter type.** Determine what the user wants: Random sample/all records → `requires_data=False` (no preview needed). Filter by data values → `requires_data=True` (preview data shape first). For `requires_data=True` only, use `preview_denormalized_dataset` with `limit=10` to understand the columns, table joins, and value distributions.
+**Step 1: Identify the filter type.** Determine what the user wants: Random sample/all records → `requires_data=False` (no preview needed). Filter by data values → `requires_data=True` (preview data shape first). For `requires_data=True` only, use `preview_denormalized_dataset(include_tables=[...])` to see the schema shape (columns, join path, row counts), then add `dataset_rid` and `limit=10` to preview actual data values and distributions.
 
 **Step 2: Discuss criteria with the user.** Based on the preview, confirm what filter they want. Common patterns:
 - "100 random images for dev" → `random_sample` with n and seed params (`requires_data=False`)
@@ -342,19 +342,19 @@ Read resource: deriva://dataset/{rid}/members
 ```
 Pass `version` and/or `recurse` as resource parameters when needed (e.g., `version="1.0.0"`, `recurse=true`).
 
-**Step 3: Preview columns** — before fetching data, use `limit=1` to see what columns the wide table would have. This is fast (no data fetched) and helps verify the FK paths are correct:
+**Step 3: Explore schema shape** — see what columns a denormalized join would produce, plus row counts and asset sizes. No dataset RID needed:
 ```
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=1)
+preview_denormalized_dataset(include_tables=["Image", "Subject"])
 ```
-Returns column names and types without any data. Use this to debug FK path errors or find the right column name for stratification.
+Returns columns, join path, and per-table row counts/asset sizes. Use this to debug FK path errors or find the right column name for stratification.
 
-**Step 4: Browse actual data** — denormalize to see real values. Include related tables to see joined data (e.g., an Image's Subject metadata, or feature annotations):
+**Step 4: Browse actual data** — add `dataset_rid` and `limit` to see real values. Include related tables to see joined data (e.g., an Image's Subject metadata, or feature annotations):
 ```
 # See Image data joined with Subject metadata
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Subject"], limit=10)
+preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="...", limit=10)
 
 # See Images with their classification labels
-preview_denormalized_dataset(dataset_rid="...", include_tables=["Image", "Image_Classification"], limit=10)
+preview_denormalized_dataset(include_tables=["Image", "Image_Classification"], dataset_rid="...", limit=10)
 ```
 
 **Important:** `preview_denormalized_dataset` is a preview only — results are not cached or stored. It returns a small sample (max 100 rows) to help you understand the data shape, column names, and relationships. Do NOT attempt to use `list_cached_results` or `query_cached_result` on preview results — they are not cached.

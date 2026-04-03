@@ -4,15 +4,34 @@ Denormalization joins related tables into a single flat table (a "wide table") s
 
 ## Quick Reference
 
-**MCP tool (catalog-side):**
+**MCP tool — schema exploration (no dataset needed):**
 ```
 preview_denormalized_dataset(
-    dataset_rid="2-XXXX",
-    include_tables=["Image", "Subject", "Diagnosis"],
-    version="1.0.0",
-    limit=5000
+    include_tables=["Image", "Subject", "Diagnosis"]
 )
 ```
+Returns column names/types, join path, and global row counts per table — no dataset required.
+
+**MCP tool — dataset-scoped info:**
+```
+preview_denormalized_dataset(
+    include_tables=["Image", "Subject", "Diagnosis"],
+    dataset_rid="2-XXXX",
+    version="1.0.0"
+)
+```
+Same shape info but with dataset-scoped row counts. Add `limit=50` to also fetch actual rows.
+
+**MCP tool — with row preview:**
+```
+preview_denormalized_dataset(
+    include_tables=["Image", "Subject", "Diagnosis"],
+    dataset_rid="2-XXXX",
+    version="1.0.0",
+    limit=50
+)
+```
+Returns shape info + actual row data (capped at 100).
 
 **Python API (bag-side):**
 ```python
@@ -23,6 +42,16 @@ for row in bag.denormalize_as_dict(include_tables=["Image", "Subject"]):
     process(row)
 ```
 
+**Python API — schema shape and size estimates (no bag needed):**
+```python
+# Dataset-scoped
+info = dataset.denormalize_info(include_tables=["Image", "Subject"])
+
+# Catalog-wide (no dataset required)
+info = ml.denormalize_info(include_tables=["Image", "Subject"])
+```
+Returns `columns`, `join_path`, `tables` (with `row_count`, `is_asset`, `asset_bytes`), `total_rows`, `total_asset_bytes`, `total_asset_size`.
+
 **Column naming:**
 
 | Source | Pattern | Example |
@@ -32,44 +61,55 @@ for row in bag.denormalize_as_dict(include_tables=["Image", "Subject"]):
 
 ## Discovering Columns Before Denormalizing
 
-Use `limit=1` to preview the column schema without fetching any data. This is fast and helps you:
+Call `preview_denormalized_dataset` with just `include_tables` (no dataset RID, no limit) to preview the schema shape without fetching any data. This is fast and helps you:
 - See what columns a denormalization would produce
 - Verify FK paths resolve correctly before running expensive queries
 - Find the correct column name for `stratify_by_column` in `split_dataset`
 - Debug ambiguous FK path errors without waiting for data
+- Estimate total data size before committing to a download
 
-**MCP tool:**
+**MCP tool (no dataset needed):**
 ```
 preview_denormalized_dataset(
-    dataset_rid="2-XXXX",
-    include_tables=["Image", "Subject", "Diagnosis"],
-    limit=1
+    include_tables=["Image", "Subject", "Diagnosis"]
 )
 ```
 
 Returns:
 ```json
 {
-  "columns": [
-    {"name": "Image.RID", "type": "ermrest_rid"},
-    {"name": "Image.Filename", "type": "text"},
-    {"name": "Subject.Gender", "type": "text"},
-    {"name": "Diagnosis.Label", "type": "text"}
-  ],
-  "column_names": ["Image.RID", "Image.Filename", "Subject.Gender", "Diagnosis.Label"],
-  "rows": [],
-  "limit": 1
+  "status": "success",
+  "columns": [["Image_RID", "ermrest_rid"], ["Image_Filename", "text"],
+              ["Subject_Gender", "text"], ["Diagnosis_Label", "text"]],
+  "join_path": ["Image", "Subject", "Diagnosis"],
+  "tables": {
+    "Image": {"row_count": 3200, "is_asset": true, "asset_bytes": 45000000},
+    "Subject": {"row_count": 1500, "is_asset": false, "asset_bytes": 0},
+    "Diagnosis": {"row_count": 2800, "is_asset": false, "asset_bytes": 0}
+  },
+  "total_rows": 7500,
+  "total_asset_bytes": 45000000,
+  "total_asset_size": "45.0 MB"
 }
 ```
 
-**Python API:**
+**Python API (from a bag):**
 ```python
 # Returns list of (column_name, column_type) tuples
 columns = bag.denormalize_columns(include_tables=["Image", "Subject"])
 # [("Image.RID", "ermrest_rid"), ("Image.Filename", "text"), ...]
 ```
 
-This calls the same FK path analysis as the full denormalization but skips the data fetch entirely.
+**Python API (from SDK — no bag needed):**
+```python
+# Dataset-scoped shape + size estimates
+info = dataset.denormalize_info(include_tables=["Image", "Subject"])
+
+# Catalog-wide (no dataset required)
+info = ml.denormalize_info(include_tables=["Image", "Subject"])
+```
+
+These call the same FK path analysis as the full denormalization but skip the data fetch entirely.
 
 ## How FK Traversal Works
 
