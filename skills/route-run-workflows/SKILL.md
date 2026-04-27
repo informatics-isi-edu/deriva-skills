@@ -37,7 +37,8 @@ Analyze the user's intent and read the matching skill:
 - **Creating a new model function, scaffolding model code, wiring a model into configs/workflows/experiments** → Read and follow `../new-model/SKILL.md`
 
 ### Troubleshooting
-- **Any execution failure, error, stuck status, authentication issue, upload timeout, missing files, version mismatch, permission denied** → Read and follow `../troubleshoot-execution/SKILL.md`
+- **DerivaML execution failure, stuck `Running` status, `asset_file_path()` / `upload_execution_outputs()` problems, upload timeout, missing output files, dataset version mismatch, missing feature, ML vocabulary term not found** → Read and follow `../troubleshoot-execution/SKILL.md` (tier-2)
+- **Generic catalog errors (auth / permission denied, invalid RID, record not found, generic vocabulary term not found, cannot connect to catalog)** → Read and follow `../troubleshoot-deriva-errors/SKILL.md` (tier-1). When it's not obvious which troubleshoot skill applies, start with the tier-1 one — many "execution failures" are actually catalog-state issues.
 
 ## Important
 

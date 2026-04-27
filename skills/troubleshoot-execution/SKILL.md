@@ -1,19 +1,21 @@
 ---
 name: troubleshoot-execution
-description: "ALWAYS use when any DerivaML execution fails, errors, gets stuck, or produces unexpected results. Covers authentication errors, missing files, stuck 'Running' status, version mismatches, permission denied, upload timeouts, and dataset download failures."
+description: "ALWAYS use when a DerivaML execution fails, errors, gets stuck, or produces unexpected results. Tier-2: covers errors specific to the deriva-ml execution lifecycle (asset_file_path, upload_execution_outputs, stuck Running status, dataset version mismatch, missing features). For generic catalog errors (auth, permissions, invalid RID, missing record), see the tier-1 troubleshoot-deriva-errors skill."
 user-invocable: false
 disable-model-invocation: true
 ---
 
 # Troubleshooting DerivaML Executions
 
-This guide covers common problems encountered when running DerivaML executions and their solutions.
+This guide covers errors specific to the **DerivaML execution lifecycle** — the things that can only break when you're using `deriva-ml` and `deriva-ml-mcp` (Python API patterns like `ml.create_execution()`, `exe.asset_file_path()`, `exe.upload_execution_outputs()`; MCP execution-status tools; dataset versioning; feature value uploads).
+
+> **Generic catalog errors** (auth, permissions, invalid RID, missing record, vocabulary term not found, connect failures) are NOT covered here. See the **`troubleshoot-deriva-errors`** skill in `deriva-skills` for those — those errors surface in any Deriva catalog operation and don't require the execution machinery to reproduce.
 
 ---
 
 ## Problem: "No Active Execution"
 
-**Symptom**: Tools that require an execution context (like Python API `exe.asset_file_path()`, Python API `exe.upload_execution_outputs()`) fail with an error about no active execution.
+**Symptom**: Tools that require an execution context (Python API `exe.asset_file_path()`, `exe.upload_execution_outputs()`) fail with an error about no active execution.
 
 **Cause**: The execution was not properly started, or you are outside the execution context.
 
@@ -61,35 +63,7 @@ This guide covers common problems encountered when running DerivaML executions a
 - Check the dataset resources to list available datasets.
 - Use `validate_rids` to confirm the RID is valid and belongs to a dataset table.
 - If the dataset was recently created, it should be visible immediately -- there is no propagation delay.
-
----
-
-## Problem: "Invalid RID"
-
-**Symptom**: A tool rejects a RID value or returns "not found".
-
-**Cause**: The RID is malformed, belongs to a different table than expected, or refers to a deleted record.
-
-**Solution**:
-- **Tool**: `validate_rids` to check whether the RID exists and what table it belongs to.
-- RIDs are case-sensitive alphanumeric strings (e.g., `1-A2B3`). Ensure there are no extra spaces or characters.
-- If the RID comes from a different catalog, it will not resolve in the current catalog. Verify you are connected to the right catalog.
-
----
-
-## Problem: "Permission Denied"
-
-**Symptom**: Operations fail with authentication or authorization errors.
-
-**Cause**: Your credentials have expired or you lack the required role.
-
-**Solution**:
-- Re-authenticate using `deriva-globus-auth-utils`:
-  ```bash
-  deriva-globus-auth-utils login --host <hostname>
-  ```
-- Check that your user account has the necessary group membership for the operation (read, write, or admin).
-- Some operations (like creating tables or modifying schemas) require elevated permissions.
+- If the RID resolves to a non-dataset table, that's a generic record-not-found case — see the tier-1 `troubleshoot-deriva-errors` skill.
 
 ---
 
@@ -152,18 +126,19 @@ This guide covers common problems encountered when running DerivaML executions a
 
 ---
 
-## Problem: "Vocabulary Term Not Found"
+## Problem: "ML Vocabulary Term Not Found"
 
-**Symptom**: An operation fails because a required vocabulary term does not exist.
+**Symptom**: An execution-related operation fails because a required vocabulary term does not exist (e.g., a missing `Workflow_Type`, `Dataset_Type`, or `Asset_Type` term).
 
-**Cause**: The term was not added to the vocabulary, or the name does not match exactly.
+**Cause**: The DerivaML built-in vocabulary needs to be extended with a domain-specific term.
 
 **Solution**:
-- **Search first with `rag_search`**: Use `rag_search("your term description", doc_type="catalog-schema")` to find vocabulary terms by meaning, synonyms, or name. Vocabulary terms (with their descriptions and synonyms) are indexed and searchable. This is the best way to discover exact term names before calling tools.
-- Check the relevant vocabulary resource to list existing terms.
-- Vocabulary term names are case-sensitive.
-- **Tool**: `add_term` to add the missing term to the appropriate vocabulary.
-- Common vocabularies: `Dataset_Type`, `Asset_Type`, `Workflow_Type`.
+- For DerivaML built-in vocabularies, use the dedicated extender tools rather than generic `add_term`:
+  - `Dataset_Type` → `create_dataset_type_term`
+  - `Workflow_Type` → `add_workflow_type`
+  - `Asset_Type` → `add_asset_type`
+- For other vocabularies (custom domain vocabs), use `add_term`.
+- For the generic "vocabulary term not found" troubleshooting flow (search-first via `rag_search`, synonym-aware lookup), see the tier-1 `troubleshoot-deriva-errors` skill.
 
 ---
 
@@ -172,31 +147,22 @@ This guide covers common problems encountered when running DerivaML executions a
 - `references/execution-lifecycle.md` — Full execution lifecycle reference: workflow creation, execution configuration, upload tuning (timeouts, chunk sizes, retries), source code detection, nested executions, restoring executions, and dry run debugging. Read this for the complete execution workflow and parameter details.
 - `deriva://execution/{rid}` — Inspect execution state, status, and metadata
 - `deriva://storage/execution-dirs` — Check execution working directories
-- `deriva://catalog/vocabularies` — Verify vocabulary terms exist (e.g., status types, workflow types)
 
-## General Debugging Tips
-
-### Enable Verbose Logging
-When using the Python API, enable verbose logging to see detailed request/response information:
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
+## General Debugging Tips (Execution-Specific)
 
 ### Inspect Execution State
+
 - **Tool**: resource `deriva://execution/{rid}` with the execution RID to see full execution metadata, status, inputs, and outputs.
 - **Tool**: Python API `exe.working_dir` to find the local working directory and inspect files directly. (No params -- operates on the active execution.)
 
-### Check Catalog State
-- Use the catalog resources to review the current catalog schema, tables, and vocabularies.
-- **Tool**: `preview_table` (with limit=1) to quickly verify data exists in expected tables.
-
 ### Review Recent Executions
+
 - Check the recent executions resource to see the latest execution activity, statuses, and any patterns of failure.
 - **Tool**: `list_nested_executions` if the execution is part of a larger workflow to see the full execution tree.
 - **Tool**: resource `deriva://execution/{rid}` to find the parent execution if this is a nested step.
 
 ### Verify Working Directory
+
 - **Tool**: Python API `exe.working_dir` returns the local filesystem path for the active execution.
 - Inspect this directory to verify:
   - Input files were downloaded correctly.
@@ -204,4 +170,11 @@ logging.basicConfig(level=logging.DEBUG)
   - No unexpected files or directory structures.
 
 ### Clean Up
+
 - **Resource**: Read `deriva://storage/execution-dirs` to list local execution working directories. Remove unneeded directories manually to free disk space.
+
+## Related Skills
+
+- **`troubleshoot-deriva-errors`** *(tier-1, deriva-skills)* — Generic catalog errors (auth, permissions, invalid RID, missing record, vocabulary term not found, connect failures). Always check this first if the error doesn't smell execution-specific — many "execution failures" are actually catalog-state issues.
+- **`execution-lifecycle`** *(tier-2)* — The forward path: how to start, monitor, and complete executions correctly.
+- **`dataset-lifecycle`** *(tier-2)* — Dataset versioning context for the "Version Mismatch" problem.
