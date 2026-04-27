@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 This guide covers errors that surface in **any** Deriva catalog operation — they don't require the DerivaML execution / dataset / feature machinery to reproduce. If the error is specific to a DerivaML execution lifecycle (stuck `Running` status, `asset_file_path()` failing, `upload_execution_outputs()` timing out, dataset version mismatch), see the `troubleshoot-execution` skill in `deriva-ml-skills`.
 
-> **Steering principle (deriva-ml environments):** Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts that happen to be stored as Deriva tables underneath. **If you're working in a catalog where the deriva-ml-mcp plugin is loaded, you must use the DerivaML abstractions** (`/deriva-ml:dataset-lifecycle`, `/deriva-ml:execution-lifecycle`, `/deriva-ml:create-feature`, the deriva-ml Python API) for those concepts — not the raw `insert_records` / `update_record` / `get_record` core tools. The raw tools bypass DerivaML's business logic, FK validation, provenance tracking, and version management. Reach for the raw catalog surface only for catalog objects that are NOT one of the DerivaML domain concepts (custom domain tables, generic vocabularies, schema introspection). The same principle applies in reverse: in a non-deriva-ml catalog, the DerivaML tools / skills won't apply, so you fall back to the generic surface this skill documents.
+> **Steering principle (deriva-ml environments):** Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts that happen to be stored as Deriva tables underneath. **If you're working in a catalog where the deriva-ml-mcp plugin is loaded, you must use the DerivaML abstractions** (`/deriva-ml:dataset-lifecycle`, `/deriva-ml:execution-lifecycle`, `/deriva-ml:create-feature`, the `deriva_ml_*` MCP tools, the deriva-ml Python API) for those concepts — not the raw `insert_entities` / `update_entities` / `get_entities` core tools. The raw tools bypass DerivaML's business logic, FK validation, provenance tracking, and version management. Reach for the raw catalog surface only for catalog objects that are NOT one of the DerivaML domain concepts (custom domain tables, generic vocabularies, schema introspection). The same principle applies in reverse: in a non-deriva-ml catalog, the DerivaML tools / skills won't apply, so you fall back to the generic surface this skill documents.
 
 ---
 
@@ -26,7 +26,7 @@ This guide covers errors that surface in **any** Deriva catalog operation — th
   ```
 - Check that your user account has the necessary group membership for the operation (read, write, or admin).
 - Some operations (like creating tables, modifying schemas, or applying annotations) require elevated permissions. Confirm with your catalog administrator.
-- Re-running `connect_catalog` after a fresh `login` picks up the new credential.
+- After a fresh `login`, the next MCP tool call automatically picks up the new credential — the new MCP server is stateless, so there is no `connect_catalog` step to re-run.
 
 ---
 
@@ -37,9 +37,9 @@ This guide covers errors that surface in **any** Deriva catalog operation — th
 **Cause**: The RID is malformed, belongs to a different table than expected, or refers to a deleted record.
 
 **Solution**:
-- **Tool**: `validate_rids` to check whether the RID exists and what table it belongs to.
+- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filter={"RID": "..."})` to check whether the RID exists in the expected table. An empty result means the RID does not exist there. (The legacy `validate_rids` tool was not ported to `deriva-mcp-core` — there is no single-tool cross-table RID lookup; query each candidate table.)
 - RIDs are case-sensitive alphanumeric strings (e.g., `1-A2B3`). Ensure there are no extra spaces or characters.
-- If the RID comes from a different catalog, it will not resolve in the current catalog. Verify you are connected to the right catalog with `connect_catalog` (or check the active catalog via the registry resource).
+- If the RID comes from a different catalog, it will not resolve in the current catalog. Pass the correct `hostname=` and `catalog_id=` to your tool call (the new MCP server is stateless — there is no implicit "current catalog").
 - If the RID was recently created, it should be visible immediately — there is no propagation delay for catalog reads.
 
 ---
@@ -53,8 +53,8 @@ This guide covers errors that surface in **any** Deriva catalog operation — th
 **Solution**:
 - **Search first with `rag_search`**: Use `rag_search("description of what you want", doc_type="catalog-data")` to find records by description. This is the best way to discover the correct RID when you are unsure.
 - Verify you are connected to the correct catalog. List active catalog connections via the registry resource.
-- Use `validate_rids` to confirm the RID exists and belongs to the table you expect.
-- Use `get_record` (or `preview_table` with a filter) to verify the row is reachable.
+- Use `get_entities(..., filter={"RID": "..."})` to confirm the RID exists and belongs to the table you expect.
+- Use `query_attribute(..., filter={"RID": "..."})` if you want to project specific columns instead of all columns.
 
 ---
 
@@ -66,7 +66,7 @@ This guide covers errors that surface in **any** Deriva catalog operation — th
 
 **Solution**:
 - **Search first with `rag_search`**: Use `rag_search("term meaning or synonyms", doc_type="catalog-schema")` to find vocabulary terms. The RAG index includes term descriptions and synonyms, so fuzzy matching works (e.g., searching for "X-ray" will surface a term named `Xray` if it has the synonym set).
-- Read the relevant vocabulary resource to list existing terms. Vocabulary URIs follow the pattern `deriva://vocabulary/{vocab_name}` (or `deriva://vocabulary/{vocab_name}/{term_name}` for a specific term, which is synonym-aware).
+- Use `list_vocabulary_terms(hostname=..., catalog_id=..., schema=..., table=...)` to list existing terms; or `lookup_term(hostname=..., catalog_id=..., schema=..., table=..., name=...)` for synonym-aware lookup of a specific term.
 - Vocabulary term names are case-sensitive.
 - **Tool**: `add_term` to add the missing term to the appropriate vocabulary. See the `manage-vocabulary` skill for the full vocabulary surface.
 
@@ -74,23 +74,23 @@ This guide covers errors that surface in **any** Deriva catalog operation — th
 
 ## Problem: "Cannot Connect to Catalog"
 
-**Symptom**: `connect_catalog` fails with a network error, "host not found", "connection refused", or an SSL/certificate error.
+**Symptom**: A tool call fails with a network error, "host not found", "connection refused", or an SSL/certificate error.
 
 **Cause**: Network unreachable, hostname typo, server down, or your local CA store is missing the issuing CA for the host's certificate.
 
 **Solution**:
-- Verify the hostname spelling. Read the registry resource (`deriva://registry/{hostname}`) to confirm the catalog ID resolves.
+- Verify the hostname spelling. Use `get_catalog_info(hostname=..., catalog_id=...)` to confirm the catalog ID resolves and your credential reaches it.
 - Check basic connectivity: `curl -I https://<hostname>/ermrest/` should return `200 OK`.
 - For SSL/cert errors, verify your system CA bundle is current. On macOS, run `Install Certificates.command` for your Python install. For self-signed dev hosts, the host admin must give you the CA cert to add to your trust store.
-- If multiple hosts are in play (e.g., a staging vs production catalog), confirm you used the right one — `connect_catalog` does not warn about ambiguity.
+- If multiple hosts are in play (e.g., a staging vs production catalog), double-check the `hostname=` argument on the failing call — the stateless server has no implicit "active host" to fall back to.
 
 ---
 
 ## Reference Resources
 
-- `deriva://registry/{hostname}` — List available catalogs and aliases on a host
-- `deriva://catalog/connections` — List active catalog connections in this session
-- `deriva://catalog/vocabularies` — Browse vocabularies in the connected catalog (verify term existence here)
+- `get_catalog_info(hostname, catalog_id)` — Verify the catalog exists and your credential reaches it
+- `server_status(hostname=None)` — MCP server health + loaded plugins (returns the new `deriva-mcp-core` framework version + the list of loaded plugins like `deriva-ml-mcp`)
+- `catalog_tables(hostname, catalog_id)` — List all tables in the catalog (filter for vocabulary tables to verify term existence)
 
 ## General Debugging Tips
 
@@ -104,13 +104,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 ### Verify the Catalog Connection
 
-Before debugging anything else, confirm the active catalog matches what you expect. The registry resource (`deriva://registry/{hostname}`) and connections resource (`deriva://catalog/connections`) are the source of truth.
+The new MCP server is stateless — there is no "active catalog". Every tool call takes `hostname=` and `catalog_id=` arguments, so confirm the values you're passing match what you expect. Use `get_catalog_info(hostname=..., catalog_id=...)` to verify the target catalog exists and your credential reaches it.
 
 ### Inspect Catalog State
 
 - Use the catalog schema resources to review the current schemas, tables, and vocabularies.
-- **Tool**: `preview_table` (with `limit=1`) to quickly verify data exists in expected tables.
-- **Tool**: `get_record` to fetch a known RID and confirm the row is accessible to your credential.
+- **Tool**: `get_table_sample_data(hostname=..., catalog_id=..., schema=..., table=...)` to quickly verify data exists in expected tables.
+- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filter={"RID": "..."})` to fetch a known RID and confirm the row is accessible to your credential.
 
 ### Re-authenticate If Anything Smells Like Auth
 

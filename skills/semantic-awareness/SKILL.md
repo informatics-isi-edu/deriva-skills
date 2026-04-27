@@ -13,15 +13,9 @@ Before creating ANY new catalog entity (table, vocabulary term, feature, dataset
 This skill also applies when looking up any entity by name — catalog entities are created by different people at different times, so the same concept often appears under different names, spellings, or structures.
 
 
-## Prerequisite: Connect to a Catalog
+## Stateless model
 
-All operations in this skill require an active catalog connection. Before anything else:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
+The new MCP server is stateless — every tool below takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
 
 
 ## Why This Matters
@@ -62,14 +56,14 @@ rag_search("training split labeled images", doc_type="catalog-data")
 rag_search("ResNet training workflow", doc_type="catalog-data")
 ```
 
-**Fall back to MCP resources** only when you need full structured details of a specific entity already identified via RAG:
-```
-deriva://table/{table_name}/schema            # Full table structure
-deriva://vocabulary/{vocab_name}/{term_name}  # Confirm exact term match
-deriva://dataset/{rid}                        # Full dataset details
+**Fall back to dedicated tools** only when you need full structured details of a specific entity already identified via RAG:
+```python
+get_table(hostname=..., catalog_id=..., schema=..., table=...)        # Full table structure
+lookup_term(hostname=..., catalog_id=..., schema=..., table=..., name=...)  # Synonym-aware term lookup
+deriva_ml_get_dataset(hostname=..., catalog_id=..., dataset_rid=...)  # Tier-2: full dataset details (deriva-ml-skills)
 ```
 
-For queries that need actual data (counts, specific records, filtering), use the `preview_table` MCP tool.
+For queries that need actual data, use `query_attribute(...)` for filtered queries with column projection, `count_table(...)` for fast counts, or `get_entities(..., filter={"RID": "..."})` for a specific record by RID.
 
 ### 4. Score Closeness Across Multiple Signals
 
@@ -150,7 +144,7 @@ See the `generate-descriptions` skill for templates and detailed guidance.
 
 **Tables**: "Subject" vs "Patient" vs "Participant" — these are often the same concept. Check column structure and record count, not just names. A table with 500 records and 5 FK relationships is worth extending, not duplicating.
 
-**Vocabulary terms**: Always search synonyms. "X-ray" might have synonym "Xray" or "radiograph". The right action is usually `add_synonym`, not `add_term`. Use the `deriva://vocabulary/{vocab_name}/{term_name}` resource which matches against synonyms automatically.
+**Vocabulary terms**: Always search synonyms. "X-ray" might have synonym "Xray" or "radiograph". The right action is usually `add_synonym`, not `add_term`. Use `lookup_term(hostname=..., catalog_id=..., schema=..., table=..., name=...)` which matches against synonyms automatically.
 
 **Features**: A feature named "Quality" and one named "Image_Quality" on the same table are almost certainly duplicates. The combination of target table + vocabulary is the strongest duplicate signal. Check how many values already exist — a feature with thousands of values is definitely established.
 

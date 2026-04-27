@@ -8,15 +8,9 @@ description: "Use this skill for Deriva catalog structure and data exploration. 
 You are a router skill. Based on the user's request, load the appropriate specialized skill.
 
 
-## Prerequisite: Connect to a Catalog
+## Stateless model
 
-Most skills routed from here require an active catalog connection:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
+The new MCP server is stateless — every tool routed-to from this skill takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID in every tool call.
 
 
 ## Routing Rules

@@ -1,19 +1,23 @@
 # Creating Domain Tables in Deriva
 
-This guide covers creating standard domain tables and asset tables in a Deriva catalog, including column types, foreign keys, and documentation best practices.
+This guide covers creating standard domain tables and vocabulary tables in a Deriva catalog using the `deriva-mcp-core` MCP tools, including column types, foreign keys, and documentation best practices.
+
+> **Stateless model:** every tool below takes `hostname=` and `catalog_id=` arguments — there is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show them.
 
 ## Table Types
 
 | Type | Tool | Description |
 |------|------|-------------|
 | Standard table | `create_table` | Regular data table with columns and foreign keys |
-| Asset table | `create_asset_table` | Table with built-in file upload/download support (URL, Filename, Length, MD5, etc.) |
 | Vocabulary table | `create_vocabulary` | Controlled vocabulary with Name, Description, Synonyms, ID, URI |
+
+> **Asset tables (gap):** the legacy `deriva-mcp` server had a `create_asset_table` convenience tool that auto-added URL/Filename/Length/MD5/Description columns + an Asset_Type FK. The new `deriva-mcp-core` does not have this — create asset tables via `create_table` with the standard hatrac column shape (see "Creating an Asset Table" below) and add the `Asset_Type` FK column separately. This is a known regression vs the legacy convenience tool. For ML asset workflows, see the `work-with-assets` skill in `deriva-ml-skills` (tier-2) — that skill documents the standard hatrac column shape and the upload/download flow.
 
 ## Planning Your Table Structure
 
 ### Naming Conventions
 
+- **Schemas**: short, lowercase, no underscores (`myproject`, `medical`, `genomics`). Pass to every tool as `schema=`.
 - **Table names**: Singular nouns with underscores (e.g., `Subject`, `Image_Annotation`, `Blood_Sample`)
 - **Column names**: Descriptive with underscores (e.g., `Age_At_Enrollment`, `Sample_Date`, `Cell_Count`)
 - **Foreign key columns**: Match the referenced table name (e.g., `Subject` column references `Subject` table)
@@ -38,9 +42,10 @@ This guide covers creating standard domain tables and asset tables in a Deriva c
 
 ## Creating a Simple Table
 
-```
+```python
 create_table(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Full name of the subject"},
         {"name": "Age", "type": "int4", "nullok": true, "comment": "Age in years at time of enrollment"},
@@ -49,7 +54,7 @@ create_table(
         {"name": "Date_Of_Birth", "type": "date", "nullok": true, "comment": "Date of birth"},
         {"name": "Notes", "type": "markdown", "nullok": true, "comment": "Additional notes in Markdown format"}
     ],
-    comment="Research subjects enrolled in the study"
+    comment="Research subjects enrolled in the study",
 )
 ```
 
@@ -63,9 +68,10 @@ create_table(
 
 Foreign keys link tables together, establishing relationships.
 
-```
+```python
 create_table(
-    table_name="Sample",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
     columns=[
         {"name": "Sample_ID", "type": "text", "nullok": false, "comment": "Unique sample identifier"},
         {"name": "Collection_Date", "type": "date", "nullok": false, "comment": "Date sample was collected"},
@@ -76,17 +82,19 @@ create_table(
     foreign_keys=[
         {
             "column": "Subject",
+            "referenced_schema": "myproject",
             "referenced_table": "Subject",
             "on_delete": "CASCADE",
-            "comment": "The subject this sample was collected from"
+            "comment": "The subject this sample was collected from",
         }
     ],
-    comment="Biological samples collected from subjects"
+    comment="Biological samples collected from subjects",
 )
 ```
 
 **Foreign key specification fields:**
 - `column` (required): Name of the FK column to create in this table (auto-created if not in columns list)
+- `referenced_schema` (required): Schema of the table being referenced
 - `referenced_table` (required): Name of the table being referenced
 - `on_delete` (optional): What happens when the referenced record is deleted
   - `CASCADE`: Delete this record too (use for strong ownership)
@@ -95,44 +103,59 @@ create_table(
   - `RESTRICT`: Same as NO ACTION but checked immediately
 - `comment` (optional): Description of the relationship
 
-## Creating an Asset Table
+## Creating an Asset Table (manual hatrac column setup)
 
-Asset tables have built-in file management columns (URL, Filename, Length, MD5, Description).
+In the new MCP architecture, there is no dedicated `create_asset_table` tool. Build an asset table by combining `create_table` with the standard hatrac column shape:
 
-```
-create_asset_table(
-    asset_name="Slide_Image",
+```python
+create_table(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Slide_Image",
     columns=[
+        # Standard hatrac asset columns (required for asset tables)
+        {"name": "URL", "type": "text", "nullok": false, "comment": "Hatrac object store URL"},
+        {"name": "Filename", "type": "text", "nullok": false, "comment": "Original filename"},
+        {"name": "Length", "type": "int8", "nullok": false, "comment": "File size in bytes"},
+        {"name": "MD5", "type": "text", "nullok": false, "comment": "MD5 checksum for integrity verification"},
+        {"name": "Description", "type": "markdown", "nullok": true, "comment": "Text description of the asset"},
+        # Domain-specific columns
         {"name": "Magnification", "type": "text", "nullok": true, "comment": "Microscope magnification (e.g., 10x, 40x)"},
         {"name": "Stain", "type": "text", "nullok": true, "comment": "Staining protocol used"},
         {"name": "Width", "type": "int4", "nullok": true, "comment": "Image width in pixels"},
         {"name": "Height", "type": "int4", "nullok": true, "comment": "Image height in pixels"}
     ],
-    referenced_tables=["Sample"],
-    comment="Microscopy slide images of biological samples"
+    foreign_keys=[
+        {"column": "Sample", "referenced_schema": "myproject", "referenced_table": "Sample",
+         "on_delete": "CASCADE", "comment": "The sample this image was taken from"}
+    ],
+    comment="Microscopy slide images of biological samples",
 )
 ```
 
-Asset tables automatically include these columns:
-- `URL` -- Object store URL for the file
-- `Filename` -- Original filename
-- `Length` -- File size in bytes
-- `MD5` -- MD5 checksum for integrity verification
-- `Description` -- Text description of the asset
+For ML workflows that link assets to executions, the tier-2 `work-with-assets` skill (in `deriva-ml-skills`) shows how to add the `Asset_Type` FK and integrate with `deriva_ml_*` upload/download tools.
 
 ## Verifying Your Table
 
 After creation, verify the table was created correctly:
 
-```
+```python
 # View the full table schema
-get_table(table_name="Sample")
+get_table(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
+)
 
 # View sample data (will be empty for new tables)
-get_table_sample_data(table_name="Sample", limit=5)
+get_table_sample_data(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
+)
 
 # Count records
-preview_table(table_name="Sample")
+count_table(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
+)
 ```
 
 ## Common Patterns
@@ -141,54 +164,58 @@ preview_table(table_name="Sample")
 
 A typical biomedical data model:
 
-```
+```python
 # Level 1: Research subjects
 create_table(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Subject identifier"},
         {"name": "Species", "type": "text", "nullok": false, "comment": "Species"}
     ],
-    comment="Research subjects"
+    comment="Research subjects",
 )
 
 # Level 2: Samples from subjects
 create_table(
-    table_name="Sample",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
     columns=[
         {"name": "Sample_ID", "type": "text", "nullok": false, "comment": "Sample identifier"},
         {"name": "Collection_Date", "type": "date", "nullok": false, "comment": "Collection date"}
     ],
     foreign_keys=[
-        {"column": "Subject", "referenced_table": "Subject", "on_delete": "CASCADE",
-         "comment": "Subject this sample was collected from"}
+        {"column": "Subject", "referenced_schema": "myproject", "referenced_table": "Subject",
+         "on_delete": "CASCADE", "comment": "Subject this sample was collected from"}
     ],
-    comment="Samples collected from subjects"
+    comment="Samples collected from subjects",
 )
 
 # Level 3: Measurements on samples
 create_table(
-    table_name="Measurement",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Measurement",
     columns=[
         {"name": "Value", "type": "float8", "nullok": false, "comment": "Measured value"},
         {"name": "Units", "type": "text", "nullok": false, "comment": "Unit of measurement"},
         {"name": "Measurement_Date", "type": "timestamptz", "nullok": false, "comment": "When measured"}
     ],
     foreign_keys=[
-        {"column": "Sample", "referenced_table": "Sample", "on_delete": "CASCADE",
-         "comment": "Sample this measurement was taken from"},
-        {"column": "Measurement_Type", "referenced_table": "Measurement_Type", "on_delete": "NO ACTION",
-         "comment": "Type of measurement (vocabulary)"}
+        {"column": "Sample", "referenced_schema": "myproject", "referenced_table": "Sample",
+         "on_delete": "CASCADE", "comment": "Sample this measurement was taken from"},
+        {"column": "Measurement_Type", "referenced_schema": "myproject", "referenced_table": "Measurement_Type",
+         "on_delete": "NO ACTION", "comment": "Type of measurement (vocabulary)"}
     ],
-    comment="Quantitative measurements on samples"
+    comment="Quantitative measurements on samples",
 )
 ```
 
 ### Protocol with Versioning
 
-```
+```python
 create_table(
-    table_name="Protocol",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Protocol",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Protocol name"},
         {"name": "Version", "type": "text", "nullok": false, "comment": "Protocol version string"},
@@ -196,35 +223,47 @@ create_table(
         {"name": "Effective_Date", "type": "date", "nullok": false, "comment": "Date this version became effective"},
         {"name": "Is_Active", "type": "boolean", "nullok": false, "comment": "Whether this protocol version is currently active"}
     ],
-    comment="Experimental protocols with version tracking"
+    comment="Experimental protocols with version tracking",
 )
 ```
 
 ## Adding Columns to Existing Tables
 
-If you need to add a column after table creation:
-
-```
+```python
 add_column(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     column_name="Weight_kg",
     column_type="float8",
     nullok=true,
-    comment="Subject weight in kilograms"
+    comment="Subject weight in kilograms",
 )
 ```
 
 ## Modifying Column Properties
 
-```
+```python
 # Make a column required or optional
-set_column_nullok(table_name="Subject", column_name="Notes", nullok=true)
+set_column_nullok(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    column_name="Notes", nullok=true,
+)
 
 # Update column description
-set_column_description(table_name="Subject", column_name="Age", description="Age in years at enrollment, rounded down")
+set_column_description(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    column_name="Age",
+    description="Age in years at enrollment, rounded down",
+)
 
 # Set column display name
-set_column_display_name(table_name="Subject", column_name="Age_At_Enrollment", display_name="Enrollment Age")
+set_column_display_name(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    column_name="Age_At_Enrollment", display_name="Enrollment Age",
+)
 ```
 
 ## Documentation Best Practices
@@ -233,9 +272,17 @@ set_column_display_name(table_name="Subject", column_name="Age_At_Enrollment", d
 2. **Always comment columns**: Column comments appear as tooltips in Chaise and serve as documentation.
 3. **Set display names**: Use `set_table_display_name` and `set_column_display_name` for user-friendly names that differ from the technical names.
 4. **Set row name patterns**: After creating a table, set a row name pattern so records are identifiable:
-   ```
-   set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
-   set_row_name_pattern(table_name="Sample", pattern="{{{Sample_ID}}} ({{{Subject}}})")
+   ```python
+   set_row_name_pattern(
+       hostname="data.example.org", catalog_id="1",
+       schema="myproject", table="Subject",
+       pattern="{{{Name}}}",
+   )
+   set_row_name_pattern(
+       hostname="data.example.org", catalog_id="1",
+       schema="myproject", table="Sample",
+       pattern="{{{Sample_ID}}} ({{{Subject}}})",
+   )
    ```
 5. **Set table descriptions**: Use `set_table_description` for longer descriptions beyond the initial comment.
 

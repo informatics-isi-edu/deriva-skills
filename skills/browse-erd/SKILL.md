@@ -9,7 +9,7 @@ Launch the Schema Workbench — an interactive visual ERD for the connected cata
 
 ## Prerequisites
 
-- An active catalog connection (call `connect_catalog` first if needed)
+- A reachable Deriva catalog (the workbench app fetches the schema via the catalog's hostname + ID — pass these to the `--backend` and `#catalog=` URL params shown below)
 - The `deriva-ml-apps` package installed (`cd ~/GitHub/deriva-ml-apps && uv sync`). This is a **separate** package from `deriva-ml`; the apps package ships visualization tools (Schema Workbench, Storage Manager, etc.) and works on any Deriva catalog regardless of whether the deriva-ml-mcp plugin is loaded.
 - The Schema Workbench built (`cd ~/GitHub/deriva-ml-apps/schema-workbench && pnpm install && pnpm build`)
 
@@ -57,5 +57,5 @@ uv run python -m deriva_ml_apps.proxy --backend <hostname> --port 8080
 ## Troubleshooting
 
 - **CORS errors**: The browser must have valid cookies for the Deriva server. Log in via Chaise first.
-- **Empty graph**: Check that the catalog has tables. Try `preview_table` (with limit=1) on a known table.
+- **Empty graph**: Check that the catalog has tables. Try `catalog_tables(hostname=..., catalog_id=...)` to list them, or `get_table_sample_data(hostname=..., catalog_id=..., schema=..., table=...)` on a known table.
 - **Auth failure**: For `localhost` catalogs, ensure the local server is running and you're logged in.

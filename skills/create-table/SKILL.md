@@ -9,15 +9,9 @@ disable-model-invocation: true
 Tables are the foundation of a Deriva catalog schema. Choose the right table type, follow naming conventions, and document everything.
 
 
-## Prerequisite: Connect to a Catalog
+## Stateless model
 
-All operations in this skill require an active catalog connection. Before anything else:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
+The new MCP server is stateless — every tool below takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show them.
 
 
 ## Table Types
@@ -25,8 +19,9 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 | Type | Tool | When to Use |
 |------|------|-------------|
 | Standard table | `create_table` | Regular data with columns and foreign keys |
-| Asset table | `create_asset_table` | Files with auto URL/Filename/Length/MD5 columns |
 | Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data |
+
+> **Asset tables:** the legacy `deriva-mcp` server had a dedicated `create_asset_table` tool. The new `deriva-mcp-core` does not — asset tables are created via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) and then the `Asset_Type` FK column added separately. This is a **known gap** vs the legacy convenience tool; tracked as upstream issue (TODO: file). For ML asset workflows, see the `work-with-assets` skill in `deriva-ml-skills` (tier-2) — it documents the standard hatrac column shape.
 
 ## Automatic Safeguards
 
@@ -69,22 +64,29 @@ For description templates and quality guidelines, see the `generate-descriptions
 
 ## Quick Reference
 
-```
+```python
 # Standard table with FK
-create_table(table_name="Sample", columns=[...], foreign_keys=[...], comment="...")
-
-# Asset table
-create_asset_table(asset_name="Slide_Image", columns=[...], comment="...")
+create_table(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Sample",
+    columns=[...], foreign_keys=[...],
+    comment="...",
+)
 
 # Add column to existing table
-add_column(table_name="Subject", column_name="Weight_kg", column_type="float8", comment="...")
+add_column(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    column_name="Weight_kg", column_type="float8",
+    comment="...",
+)
 ```
 
-## Reference Resources
+## Reference Tools
 
 - `rag_search("your concept", doc_type="catalog-schema")` — **Search first** to find existing tables, columns, and relationships by concept
-- `deriva://catalog/schema` — Full catalog schema as structured JSON (large; use when you need the complete output)
-- `deriva://table/{table_name}/schema` — Table details including columns and foreign keys
-- `deriva://docs/ermrest/naming` — ERMrest naming conventions
+- `get_schema(hostname, catalog_id)` — Full catalog schema as structured JSON (large; use when you need the complete output)
+- `get_table(hostname, catalog_id, schema, table)` — Table details including columns and foreign keys
+- `catalog_tables(hostname, catalog_id)` — All tables with row counts
 
 For the full guide with column types table, FK specification, common patterns, and examples, read `references/workflow.md`.

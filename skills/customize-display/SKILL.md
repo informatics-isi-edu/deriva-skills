@@ -10,44 +10,39 @@ Deriva catalogs are browsed through the Chaise web application. The display is c
 
 **This skill covers the interactive MCP tool approach.** For production Python code using type-safe builder classes (better for scripts, notebooks, and version-controlled configurations), see the `use-annotation-builders` skill instead.
 
+## Stateless model + immediate apply
 
-## Prerequisite: Connect to a Catalog
+Two architectural notes about the new MCP server:
 
-All operations in this skill require an active catalog connection. Before anything else:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
-
-
-## Quick Start
-
-Apply sensible default annotations to the entire catalog:
-
-```
-apply_catalog_annotations()
-```
-
-This sets up reasonable defaults for display names, visible columns, row name patterns, and foreign key display across all tables. It is safe to run multiple times -- it will update existing annotations.
-
-**Important:** After making any annotation changes, you must call `apply_annotations()` to persist them to the catalog.
+1. **Stateless** — every tool below takes `hostname=` and `catalog_id=` arguments. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
+2. **Immediate apply** — the legacy `deriva-mcp` server staged annotation edits locally and required a final `apply_annotations()` call to commit them. The new `deriva-mcp-core` applies every annotation change immediately. There is no staging; there is no `apply_annotations` or `apply_catalog_annotations` tool.
 
 ## Step 1: Check Current Annotations
 
 **Start with `rag_search`** to find the table and columns you want to customize:
-```
+```python
 rag_search("Image table columns", doc_type="catalog-schema")
 ```
 
-Then use resources to see the current annotation state:
-```
-# View table annotations and column details
-# Read the deriva://table/Image/annotations resource
+Then inspect the current state with the dedicated annotation-read tools:
+```python
+# Inspect table-level annotations
+get_table_annotations(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+)
+
+# Inspect column-level annotations
+get_column_annotations(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image", column="URL",
+)
 
 # View sample data to understand what users see
-get_table_sample_data(table_name="Image", limit=5)
+get_table_sample_data(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+)
 ```
 
 ## Step 2: Understand Display Contexts
@@ -72,70 +67,93 @@ Annotations can be set per-context, controlling how data appears in different Ch
 ## Step 3: Customize Display Names
 
 ### Table display name
-```
-set_table_display_name(table_name="Image", display_name="Images")
+```python
+set_table_display_name(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    display_name="Images",
+)
 ```
 
 ### Column display name
-```
-set_column_display_name(table_name="Image", column_name="URL", display_name="Image File")
-set_column_display_name(table_name="Subject", column_name="Age_At_Enrollment", display_name="Age at Enrollment")
+```python
+set_column_display_name(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image", column="URL",
+    display_name="Image File",
+)
+set_column_display_name(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject", column="Age_At_Enrollment",
+    display_name="Age at Enrollment",
+)
 ```
 
 ### Column description (tooltip)
-```
-set_column_description(table_name="Image", column_name="URL", description="Direct download link for the image file")
+```python
+set_column_description(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image", column="URL",
+    description="Direct download link for the image file",
+)
 ```
 
 ## Step 4: Configure Visible Columns
 
 Control which columns appear and in what order for each context.
 
-### View current visible columns
-```
-# Read the deriva://table/Image/annotations resource
-# Check the visible_columns annotation in the response
-```
-
 ### Add a column to a context
-```
-add_visible_column(table_name="Image", context="compact", column="Filename")
-add_visible_column(table_name="Image", context="compact", column="Subject")
-add_visible_column(table_name="Image", context="compact", column="Diagnosis")
+```python
+add_visible_column(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    context="compact", column="Filename",
+)
+add_visible_column(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    context="compact", column="Subject",
+)
 ```
 
 ### Remove a column from a context
-```
-remove_visible_column(table_name="Image", context="compact", column="RCT")
-remove_visible_column(table_name="Image", context="compact", column="RMT")
+```python
+remove_visible_column(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    context="compact", column="RCT",
+)
 ```
 
 ### Reorder columns
-```
+```python
 reorder_visible_columns(
-    table_name="Image",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
     context="compact",
-    new_order=["Filename", "Subject", "Diagnosis", "Image_Type", "URL"]
+    new_order=["Filename", "Subject", "Diagnosis", "Image_Type", "URL"],
 )
 ```
 
 ### Set all visible columns at once
-```
+```python
 set_visible_columns(
-    table_name="Image",
-    annotation={"compact": ["Filename", "Subject", "Diagnosis", "Image_Type", "URL"]}
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    annotation={"compact": ["Filename", "Subject", "Diagnosis", "Image_Type", "URL"]},
 )
 ```
 
 ### Different columns per context
-```
+```python
 set_visible_columns(
-    table_name="Image",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
     annotation={
         "compact": ["Filename", "Subject", "Diagnosis"],
         "detailed": ["Filename", "Subject", "Diagnosis", "Image_Type", "URL", "File_Size", "Description"],
-        "entry": ["Filename", "Subject", "Diagnosis", "Image_Type", "Description"]
-    }
+        "entry": ["Filename", "Subject", "Diagnosis", "Image_Type", "Description"],
+    },
 )
 ```
 
@@ -144,30 +162,43 @@ set_visible_columns(
 Row names determine how a record is identified when referenced from other tables (e.g., in foreign key links, breadcrumbs, and search results).
 
 ### Simple row name from a column
-```
-set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
+```python
+set_row_name_pattern(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    pattern="{{{Name}}}",
+)
 ```
 
 ### Composite row name with multiple columns
-```
-set_row_name_pattern(table_name="Subject", pattern="{{{Last_Name}}}, {{{First_Name}}}")
+```python
+set_row_name_pattern(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    pattern="{{{Last_Name}}}, {{{First_Name}}}",
+)
 ```
 
 ### Row name with related data using Handlebars
-```
-set_row_name_pattern(table_name="Image", pattern="{{{Filename}}} ({{{Diagnosis}}})")
+```python
+set_row_name_pattern(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    pattern="{{{Filename}}} ({{{Diagnosis}}})",
+)
 ```
 
 ### Table display with row ordering
-```
+```python
 set_table_display(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     annotation={
         "compact": {
             "row_markdown_pattern": "{{{Name}}} (Age: {{{Age}}})",
-            "row_order": [{"column": "Name", "descending": false}]
-        }
-    }
+            "row_order": [{"column": "Name", "descending": false}],
+        },
+    },
 )
 ```
 
@@ -176,67 +207,75 @@ set_table_display(
 Control which related tables are shown as sections on the detail page of a record.
 
 ### Add a related table section
-```
-add_visible_foreign_key(table_name="Subject", context="detailed", foreign_key=["deriva-ml", "Image_Subject_fkey"])
+```python
+add_visible_foreign_key(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    context="detailed",
+    foreign_key=["myproject", "Image_Subject_fkey"],
+)
 ```
 
 ### Remove a related table section
-```
-remove_visible_foreign_key(table_name="Subject", context="detailed", foreign_key=["deriva-ml", "Image_Subject_fkey"])
+```python
+remove_visible_foreign_key(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    context="detailed",
+    foreign_key=["myproject", "Image_Subject_fkey"],
+)
 ```
 
 ### Reorder related table sections
-```
+```python
 reorder_visible_foreign_keys(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     context="detailed",
-    new_order=[["deriva-ml", "Image_Subject_fkey"], ["deriva-ml", "Sample_Subject_fkey"], ["deriva-ml", "Diagnosis_Subject_fkey"]]
+    new_order=[
+        ["myproject", "Image_Subject_fkey"],
+        ["myproject", "Sample_Subject_fkey"],
+        ["myproject", "Diagnosis_Subject_fkey"],
+    ],
 )
 ```
 
 ### Set all visible foreign keys at once
-```
+```python
 set_visible_foreign_keys(
-    table_name="Subject",
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
     annotation={
         "detailed": [
-            {"source": [{"inbound": ["deriva-ml", "Image_Subject_fkey"]}, "RID"]},
-            {"source": [{"inbound": ["deriva-ml", "Sample_Subject_fkey"]}, "RID"]}
-        ]
-    }
+            {"source": [{"inbound": ["myproject", "Image_Subject_fkey"]}, "RID"]},
+            {"source": [{"inbound": ["myproject", "Sample_Subject_fkey"]}, "RID"]},
+        ],
+    },
 )
 ```
 
-## Step 7: Apply Annotations
+## That's it — no apply step
 
-**This step is required.** After making changes, persist them to the catalog:
-
-```
-apply_annotations()
-```
-
-This writes all pending annotation changes to the catalog server. If you skip this step, your changes will be lost.
+Every tool above persists the change immediately. There is no `apply_annotations()` step in the new MCP architecture. Verify your changes by re-running `get_table_annotations(...)` and viewing the table in Chaise.
 
 For the full annotation reference — all contexts, pseudo-columns, faceted search, Handlebars patterns, and Python annotation builders — see `references/annotation-reference.md`. For quick recipes, see `references/common-recipes.md`.
 
-## Reference Resources
+## Reference Tools
 
-For detailed reference material beyond what this skill covers, read these MCP resources:
+For a complete picture of what's set on a table or column:
 
-- `deriva://docs/annotation-contexts` — Complete JSON reference of all valid Chaise annotation contexts and their usage. Read this when you need to know which contexts are available or what a specific context controls.
-- `deriva://docs/annotations` — Full guide to the annotation builder classes and annotation JSON structure. Read this for details on pseudo-column source syntax, facet configuration options, or advanced Handlebars patterns.
-- `deriva://docs/chaise/config` — Chaise web UI configuration options. Read this when customizing Chaise behavior beyond annotations (e.g., default page sizes, navbar, login config).
+- `get_table_annotations(hostname, catalog_id, schema, table)` — All annotations on a table
+- `get_column_annotations(hostname, catalog_id, schema, table, column)` — All annotations on a column
+- `apply_navbar_annotations(hostname, catalog_id, ...)` — Catalog-level navbar configuration
 
-To inspect current annotations on a specific table or column:
-- `deriva://table/{table_name}/annotations` — Display-related annotations currently set on a table
-- `deriva://table/{table_name}/column/{column_name}/annotations` — Display-related annotations on a column
+The legacy `apply_catalog_annotations()` "apply sensible defaults to all tables" tool was not ported to `deriva-mcp-core` — set defaults per-table using the tools above. (If a bulk-defaults convenience is needed, file an upstream issue against `deriva-mcp-core`.)
 
 ## Tips
 
-- Always call `apply_annotations()` as the final step after making changes.
-- Use `apply_catalog_annotations()` first to get reasonable defaults, then customize specific tables.
+- All annotation changes apply immediately — no separate commit step.
 - The `compact` context is the most commonly customized -- it controls the table listing view.
 - Row name patterns use Handlebars syntax: `{{{column_name}}}` for column values.
 - Foreign key columns are automatically rendered as links to the related record in Chaise.
-- Test your changes by viewing the table in Chaise after applying annotations.
-- If something looks wrong, use `get_table(table_name=...)` to inspect the current annotations.
+- Test your changes by viewing the table in Chaise after each call.
+- If something looks wrong, use `get_table_annotations(...)` and `get_column_annotations(...)` to inspect the current state.
+- The `["myproject", "Image_Subject_fkey"]` two-element form for foreign keys is `[schema_name, fkey_constraint_name]`. Replace `myproject` with your actual schema name.
