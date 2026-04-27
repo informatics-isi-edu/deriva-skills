@@ -5,8 +5,8 @@
 **Goal:** Split the monolithic `deriva-skills` repo into two plugin packages aligned with the `deriva-mcp-core` / `deriva-ml-mcp` boundary, refactor four gray-zone skills along the way, and bring all surviving skills current with the deriva-ml-mcp v1.4.0 surface.
 
 **Architecture:**
-- **`deriva-skills`** (existing repo, preserved) hosts the **`deriva`** plugin: skills that work with `deriva-mcp-core` alone. ~14 skills (12 originally tier-1 + 2 promoted).
-- **`deriva-ml-skills`** (new repo) hosts the **`deriva-ml`** plugin: skills that require `deriva-ml-mcp`. ~22 skills (24 originally tier-2 - 2 promoted out + 2 from splits).
+- **`deriva-skills`** (existing repo, preserved) hosts the **`deriva`** plugin: skills that work with `deriva-mcp-core` alone. ~13 skills (10 originally tier-1 + 1 substantive promotion + 2 from splits' tier-1 halves).
+- **`deriva-ml-skills`** (new repo) hosts the **`deriva-ml`** plugin: skills that require `deriva-ml-mcp`. ~23 skills (24 originally tier-2 - 1 promoted out + 2 from splits' tier-2 halves).
 - The `deriva-ml` plugin **depends on** `deriva` (declared in plugin.json description + README; users install both marketplaces).
 - Each repo has its own marketplace (`deriva-plugins` and `deriva-ml-plugins`), version, CI, release cadence.
 - Workspaces (`*-workspace/` eval-harness directories) move to `evals/` in their owning plugin.
@@ -22,13 +22,13 @@
 - Marketplace names: `deriva-plugins` (existing) + `deriva-ml-plugins` (new)
 - Repo URLs: `https://github.com/informatics-isi-edu/deriva-skills` (existing) + `https://github.com/informatics-isi-edu/deriva-ml-skills` (new)
 - Tier-2 git history: do not preserve. Start fresh.
-- Refactorings: all 4 Category A/B items (2 splits + 2 promotions)
+- Refactorings: 3 items (2 splits + 1 substantive promotion). Original plan was 2 promotions; revised to 1 after a wider-grep audit showed `generate-scripts` is fundamentally about the deriva-ml execution-provenance Python pattern (Workflow + Execution + commit) — stripping that out leaves a thin "use ERMrest from Python" skill that doesn't justify a tier-1 slot. `manage-vocabulary` is the only honest promotion candidate (vocab CRUD genuinely works on any Deriva catalog; ML-flavored examples can be replaced with generic-domain examples).
 - Workspaces: follow their skills (B1); also relocate to `evals/` during the restructure
 - The user's pre-existing CLAUDE.md edit + untracked `.claude/` directory in `deriva-skills`: leave alone
 
 ## Skill classification (final)
 
-### Tier 1 (`deriva` plugin in `deriva-skills` repo) — 14 skills
+### Tier 1 (`deriva` plugin in `deriva-skills` repo) — 13 skills
 
 | Skill | Source |
 |---|---|
@@ -42,12 +42,13 @@
 | use-annotation-builders | original tier-1 |
 | semantic-awareness | pattern utility (auto-invoked) |
 | generate-descriptions | pattern utility (auto-invoked) |
-| generate-scripts | promoted (Category B) |
-| manage-vocabulary | promoted (Category B) |
+| manage-vocabulary | promoted (Category B; substantive rewrite to drop ML-flavored examples) |
 | check-deriva-versions | tier-1 half of split (Category A) |
 | troubleshoot-deriva-errors | tier-1 half of split (Category A) |
 
-### Tier 2 (`deriva-ml` plugin in `deriva-ml-skills` repo) — 22 skills
+(`generate-scripts` was originally proposed for promotion but stays in tier-2 — see Inputs section above for rationale.)
+
+### Tier 2 (`deriva-ml` plugin in `deriva-ml-skills` repo) — 23 skills
 
 | Skill | Source |
 |---|---|
@@ -58,6 +59,7 @@
 | dataset-lifecycle | original tier-2 |
 | debug-bag-contents | original tier-2 |
 | execution-lifecycle | original tier-2 |
+| generate-scripts | original tier-2 (was proposed promotion; reverted — content is fundamentally about deriva-ml execution-provenance Python pattern) |
 | help | original tier-2 |
 | maintain-experiment-notes | original tier-2 |
 | manage-storage | original tier-2 |
@@ -102,51 +104,13 @@ Path change for all: `skills/<skill>-workspace/` → `evals/<skill>/` in the app
 
 ## Phase 1: In-place refactorings (still on existing repo, both tiers mixed)
 
-Goal: apply the 2 splits + 2 promotions as small atomic commits before the physical split. This way each refactor is reviewable independently and the tier-split phase is a pure file-move with no behavior change.
+Goal: apply the 2 splits + 1 promotion as small atomic commits before the physical split. This way each refactor is reviewable independently and the tier-split phase is a pure file-move with no behavior change.
 
-Branch: `feature/restructure-prep` off `main`. Single PR at the end of phase 1 lands all 4 refactorings as separate commits.
+Branch: `feature/restructure-prep` off `main`. Single PR at the end of phase 1 lands all 3 refactorings as separate commits.
 
-### Task 1.1: Promote `generate-scripts` to tier-1
+(`generate-scripts` was originally Task 1.1 in this plan but was reverted to tier-2 after a wider-grep audit during Phase 1 prep — see Inputs section above for rationale.)
 
-**Files:**
-- Modify: `skills/generate-scripts/SKILL.md`
-- Modify: `skills/generate-scripts/references/*.md` (if any)
-
-- [ ] **Step 1: Audit current `deriva_ml_*` references**
-
-```bash
-cd /Users/carl/GitHub/DerivaML/deriva-skills
-grep -rnE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/|MLVocab|deriva-ml-run" skills/generate-scripts/
-```
-
-Expected: 1 reference (per the prior survey). Confirm what it is.
-
-- [ ] **Step 2: Rewrite the body to be MCP-tool-name-agnostic**
-
-The skill teaches "when MCP tools return ≤100 rows and you need more, write a Python script." The 100-row threshold is a deriva-mcp-core constraint. Examples should reference core tools (`get_entities`, `query_attribute`, `count_table`) instead of `deriva_ml_*` tools. Where deriva-ml examples are illustrative, replace with deriva-py-only examples.
-
-If a deriva-ml example genuinely cannot be removed (e.g., the script-generation pattern for execution provenance), wrap it in:
-
-```markdown
-> **Tier-2 only:** if you have `deriva-ml-skills` installed, see `dataset-lifecycle` for ML-domain script examples (datasets, executions, features).
-```
-
-- [ ] **Step 3: Run validation gate 5 (no `deriva_ml_*` refs)**
-
-```bash
-grep -rE "deriva_ml_" skills/generate-scripts/
-```
-
-Expected: empty (or only inside the `> Tier-2 only:` callout).
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add skills/generate-scripts/
-git commit -m "refactor(generate-scripts): promote to tier-1 (deriva-py only)"
-```
-
-### Task 1.2: Promote `manage-vocabulary` to tier-1
+### Task 1.1: Promote `manage-vocabulary` to tier-1
 
 **Files:**
 - Modify: `skills/manage-vocabulary/SKILL.md`
@@ -182,7 +146,7 @@ git add skills/manage-vocabulary/
 git commit -m "refactor(manage-vocabulary): promote to tier-1; ML-domain vocabs cross-referenced"
 ```
 
-### Task 1.3: Split `check-deriva-versions` into tier-1 + tier-2 sibling
+### Task 1.2: Split `check-deriva-versions` into tier-1 + tier-2 sibling
 
 **Files:**
 - Modify: `skills/check-deriva-versions/SKILL.md` (becomes tier-1 only: deriva-py + deriva-mcp-core + deriva-skills plugin self)
@@ -230,7 +194,7 @@ git add skills/check-deriva-versions/ skills/check-deriva-ml-versions/
 git commit -m "refactor(versions): split check-deriva-versions into tier-1 + tier-2 siblings"
 ```
 
-### Task 1.4: Split `troubleshoot-execution` into tier-1 + tier-2 sibling
+### Task 1.3: Split `troubleshoot-execution` into tier-1 + tier-2 sibling
 
 **Files:**
 - Create: `skills/troubleshoot-deriva-errors/SKILL.md` (tier-1: auth, permissions, missing files, generic catalog errors)
@@ -271,13 +235,13 @@ git add skills/troubleshoot-deriva-errors/ skills/troubleshoot-execution/
 git commit -m "refactor(troubleshoot): split troubleshoot-execution into tier-1 + tier-2 siblings"
 ```
 
-### Task 1.5: PR + merge phase 1
+### Task 1.4: PR + merge phase 1
 
 - [ ] **Step 1: Push branch + open PR**
 
 ```bash
 git push -u origin feature/restructure-prep
-gh pr create --title "Restructure prep: 2 promotions + 2 splits" --body "Phase 1 of the two-plugin restructure (see docs/superpowers/plans/2026-04-27-skills-restructure.md). Each refactoring is its own commit so they can be reviewed independently before the physical split."
+gh pr create --title "Restructure prep: 2 splits + 1 promotion" --body "Phase 1 of the two-plugin restructure (see docs/superpowers/plans/2026-04-27-skills-restructure.md). Each refactoring is its own commit so they can be reviewed independently before the physical split."
 ```
 
 - [ ] **Step 2: Self-review checklist**
@@ -295,7 +259,7 @@ gh pr merge --merge --delete-branch
 
 ## Phase 2: Carve out tier-1 in `deriva-skills` repo
 
-Goal: remove all 22 tier-2 skills from `deriva-skills` so it contains only the 14 tier-1 skills + 1 tier-1 workspace. After this phase, `deriva-skills` is the tier-1 repo only; tier-2 content is preserved on a branch for the phase 3 import.
+Goal: remove all 23 tier-2 skills from `deriva-skills` so it contains only the 13 tier-1 skills + 1 tier-1 workspace. After this phase, `deriva-skills` is the tier-1 repo only; tier-2 content is preserved on a branch for the phase 3 import.
 
 Branch: `feature/extract-tier-2` off `main` (post phase 1 merge).
 
@@ -319,7 +283,7 @@ This branch will be the source of the tier-2 import in phase 3. Don't touch it a
 git checkout -b feature/extract-tier-2
 ```
 
-- [ ] **Step 2: Delete all 22 tier-2 skill directories**
+- [ ] **Step 2: Delete all 23 tier-2 skill directories**
 
 ```bash
 git rm -r skills/api-naming-conventions
@@ -329,6 +293,7 @@ git rm -r skills/create-feature
 git rm -r skills/dataset-lifecycle
 git rm -r skills/debug-bag-contents
 git rm -r skills/execution-lifecycle
+git rm -r skills/generate-scripts
 git rm -r skills/help
 git rm -r skills/maintain-experiment-notes
 git rm -r skills/manage-storage
@@ -346,7 +311,7 @@ git rm -r skills/write-hydra-config
 git rm -r skills/check-deriva-ml-versions
 ```
 
-(22 deletions; verify the count.)
+(23 deletions; verify the count.)
 
 - [ ] **Step 3: Delete tier-2 workspaces**
 
@@ -391,7 +356,7 @@ Note: removes `derivaml` and `ml` from keywords; updates description to clarify 
 
 - [ ] **Step 2: Edit `.claude-plugin/marketplace.json`**
 
-Update the `skills` array to enumerate only the 14 tier-1 skills:
+Update the `skills` array to enumerate only the 13 tier-1 skills:
 
 ```json
 {
@@ -412,7 +377,6 @@ Update the `skills` array to enumerate only the 14 tier-1 skills:
         "./skills/create-web-app",
         "./skills/customize-display",
         "./skills/generate-descriptions",
-        "./skills/generate-scripts",
         "./skills/manage-vocabulary",
         "./skills/query-catalog-data",
         "./skills/route-catalog-schema",
@@ -431,7 +395,7 @@ Update the `skills` array to enumerate only the 14 tier-1 skills:
 
 Update:
 - Title and intro: clarify this is the "tier-1" deriva-py / deriva-mcp-core skills plugin
-- Available Skills table: list only the 14 tier-1 skills
+- Available Skills table: list only the 13 tier-1 skills
 - Add a section pointing to `deriva-ml-skills` for ML workflows
 - Update the install snippet to clarify it installs the `deriva` plugin only
 
@@ -454,7 +418,7 @@ Be careful: the user's working-tree changes should land in the same commit as th
 claude --plugin-dir .
 ```
 
-Should load with 14 skills registered, no errors.
+Should load with 13 skills registered, no errors.
 
 - [ ] **Step 2: No tier-2 references in tier-1 skill bodies**
 
@@ -479,7 +443,7 @@ For each `/deriva:X` reference, confirm `skills/X/` exists. For each `/deriva-ml
 
 ```bash
 git push -u origin feature/extract-tier-2
-gh pr create --title "Carve out tier-2 (extract for new repo)" --body "Phase 2 of the restructure: removes all 22 tier-2 skills + 7 workspaces from deriva-skills. They land in the new deriva-ml-skills repo in phase 3 (sourced from the tier-2-snapshot-2026-04-27 branch). After this PR merges, deriva-skills contains only the 14 tier-1 skills + 1 tier-1 workspace. Major version bump to 1.0.0 signals the surface change."
+gh pr create --title "Carve out tier-2 (extract for new repo)" --body "Phase 2 of the restructure: removes all 23 tier-2 skills + 7 workspaces from deriva-skills. They land in the new deriva-ml-skills repo in phase 3 (sourced from the tier-2-snapshot-2026-04-27 branch). After this PR merges, deriva-skills contains only the 13 tier-1 skills + 1 tier-1 workspace. Major version bump to 1.0.0 signals the surface change."
 ```
 
 - [ ] **Step 2: Merge**
@@ -500,7 +464,7 @@ uv run bump-version major
 
 ## Phase 3: Create `deriva-ml-skills` repo + populate
 
-Goal: stand up the new repo with the 22 tier-2 skills + 7 tier-2 workspaces, fresh history, with plugin metadata pointing at `deriva` as a documented dependency.
+Goal: stand up the new repo with the 23 tier-2 skills + 7 tier-2 workspaces, fresh history, with plugin metadata pointing at `deriva` as a documented dependency.
 
 ### Task 3.1: Create the new GitHub repo
 
@@ -529,16 +493,17 @@ git init
 cd /Users/carl/GitHub/DerivaML/deriva-skills
 git checkout tier-2-snapshot-2026-04-27
 
-# Copy the 22 tier-2 skills + their workspaces to the new repo
+# Copy the 23 tier-2 skills + their workspaces to the new repo
 mkdir -p ../deriva-ml-skills/skills ../deriva-ml-skills/evals
 
-# Skills (22)
+# Skills (23)
 for s in api-naming-conventions catalog-operations-workflow check-deriva-ml-versions \
          configure-experiment create-feature dataset-lifecycle debug-bag-contents \
-         execution-lifecycle help maintain-experiment-notes manage-storage \
-         ml-data-engineering model-development-workflow new-model optimization \
-         route-project-setup route-run-workflows run-notebook setup-notebook-environment \
-         troubleshoot-execution work-with-assets write-hydra-config; do
+         execution-lifecycle generate-scripts help maintain-experiment-notes \
+         manage-storage ml-data-engineering model-development-workflow new-model \
+         optimization route-project-setup route-run-workflows run-notebook \
+         setup-notebook-environment troubleshoot-execution work-with-assets \
+         write-hydra-config; do
   cp -r "skills/$s" "../deriva-ml-skills/skills/$s"
 done
 
@@ -555,7 +520,7 @@ git checkout main  # back to current state in the deriva-skills working tree
 
 ```bash
 cd /Users/carl/GitHub/DerivaML/deriva-ml-skills
-ls skills/ | wc -l   # expect 22
+ls skills/ | wc -l   # expect 23
 ls evals/ | wc -l    # expect 7
 ```
 
@@ -619,7 +584,7 @@ ls evals/ | wc -l    # expect 7
 
 ### Task 3.4: Create supporting docs
 
-- [ ] **Step 1: README.md** — explain the plugin, the dependency on `deriva-skills`, the install instructions for both marketplaces, the 22 skills.
+- [ ] **Step 1: README.md** — explain the plugin, the dependency on `deriva-skills`, the install instructions for both marketplaces, the 23 skills.
 - [ ] **Step 2: CLAUDE.md** — reference the workspace top-level CLAUDE.md, document repo conventions (mirror tier-1 pattern), explain the dependency on `deriva-mcp-core` + `deriva-ml-mcp`.
 - [ ] **Step 3: pyproject.toml** — minimal, for `bump-version` + `uv` tooling. Mirror `deriva-skills`'s pyproject if it has one.
 - [ ] **Step 4: .gitignore** — copy from `deriva-skills`.
@@ -648,7 +613,7 @@ Some descriptions say "this plugin's other skills..."; update to be specific abo
 claude --plugin-dir .
 ```
 
-Should load with 22 skills, no errors.
+Should load with 23 skills, no errors.
 
 - [ ] **Step 2: Tier-2 surface validates against MCP**
 
@@ -665,7 +630,7 @@ Expect substantial output — these are the references the phase 4 sweep will va
 
 ```bash
 git add -A
-git commit -m "Initial commit: deriva-ml-skills v1.0.0 (22 skills + 7 evals)
+git commit -m "Initial commit: deriva-ml-skills v1.0.0 (23 skills + 7 evals)
 
 Imported from deriva-skills tier-2-snapshot-2026-04-27 (no history
 preserved per migration plan). Pairs with the deriva-skills tier-1
@@ -733,7 +698,7 @@ uv run bump-version patch  # if any drift was fixed
 
 ### Task 4.2: Sweep `deriva-ml` (tier-2) for v1.4 MCP surface — the big sweep
 
-This is the load-bearing sweep. ~22 SKILL.md files; ~299 tool-name occurrences from the prior survey.
+This is the load-bearing sweep. ~23 SKILL.md files; ~299 tool-name occurrences from the prior survey.
 
 - [ ] **Step 1: Branch**
 
@@ -830,7 +795,7 @@ claude --plugin-dir .
 
 ```bash
 git push -u origin feature/v1.4-mcp-surface-sweep
-gh pr create --title "v1.4 MCP surface sweep" --body "Brings all 22 tier-2 skills current with deriva-ml-mcp v1.4.0: URI namespacing, deriva_ml_* tool prefix, update_dataset_types -> update_dataset rename, new v1.2 asset surface + update_execution + v1.4 resync_indexes references."
+gh pr create --title "v1.4 MCP surface sweep" --body "Brings all 23 tier-2 skills current with deriva-ml-mcp v1.4.0: URI namespacing, deriva_ml_* tool prefix, update_dataset_types -> update_dataset rename, new v1.2 asset surface + update_execution + v1.4 resync_indexes references."
 gh pr merge --merge --delete-branch
 ```
 
@@ -858,7 +823,7 @@ The READMEs should now describe:
 
 After writing the plan, look at the spec with fresh eyes:
 
-**Spec coverage:** Each numbered decision (locked above) maps to a specific phase task. All 14 tier-1 + 22 tier-2 skills accounted for; all 8 workspaces accounted for; all 4 refactorings have task entries; both repos have plugin/marketplace/README/CLAUDE work.
+**Spec coverage:** Each numbered decision (locked above) maps to a specific phase task. All 13 tier-1 + 23 tier-2 skills accounted for; all 8 workspaces accounted for; all 3 refactorings have task entries; both repos have plugin/marketplace/README/CLAUDE work.
 
 **Placeholder scan:** No TBDs. Each task has an exact command or file edit. The one place that's intentionally hand-wavy is task 4.2 step 6 ("Commit incrementally per skill or logical group") — the granularity is the implementer's call but the requirement is "incremental, not single big commit" so partial progress survives.
 
