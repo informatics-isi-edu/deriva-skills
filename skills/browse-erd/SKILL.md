@@ -10,7 +10,7 @@ Launch the Schema Workbench — an interactive visual ERD for the connected cata
 ## Prerequisites
 
 - An active catalog connection (call `connect_catalog` first if needed)
-- The `deriva-ml-apps` package installed (`cd ~/GitHub/deriva-ml-apps && uv sync`)
+- The `deriva-ml-apps` package installed (`cd ~/GitHub/deriva-ml-apps && uv sync`). This is a **separate** package from `deriva-ml`; the apps package ships visualization tools (Schema Workbench, Storage Manager, etc.) and works on any Deriva catalog regardless of whether the deriva-ml-mcp plugin is loaded.
 - The Schema Workbench built (`cd ~/GitHub/deriva-ml-apps/schema-workbench && pnpm install && pnpm build`)
 
 ## Steps

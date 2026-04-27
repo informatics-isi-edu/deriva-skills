@@ -8,46 +8,26 @@
     {
       "name": "deriva",
       "source": "./",
-      "description": "Dataset lifecycle, ML execution, feature engineering, vocabulary management, and experiment configuration for Deriva catalogs and DerivaML workflows. Includes 30+ skills covering the full ML development cycle from data curation through model training.",
+      "description": "Skills for working with Deriva catalogs via deriva-mcp-core - schema operations, table/column creation, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting. For DerivaML ML workflows, additionally install deriva-ml-skills.",
       "version": "0.19.5",
       "author": {
         "name": "ISI Informatics"
       },
       "skills": [
-        "./skills/api-naming-conventions",
         "./skills/browse-erd",
-        "./skills/catalog-operations-workflow",
-        "./skills/check-deriva-ml-versions",
         "./skills/check-deriva-versions",
         "./skills/coding-guidelines",
-        "./skills/configure-experiment",
-        "./skills/create-feature",
         "./skills/create-table",
         "./skills/create-web-app",
         "./skills/customize-display",
-        "./skills/dataset-lifecycle",
-        "./skills/debug-bag-contents",
-        "./skills/execution-lifecycle",
+        "./skills/deriva-context",
         "./skills/generate-descriptions",
-        "./skills/help",
-        "./skills/maintain-experiment-notes",
-        "./skills/manage-storage",
         "./skills/manage-vocabulary",
-        "./skills/ml-data-engineering",
-        "./skills/model-development-workflow",
-        "./skills/new-model",
         "./skills/query-catalog-data",
         "./skills/route-catalog-schema",
-        "./skills/route-project-setup",
-        "./skills/route-run-workflows",
-        "./skills/run-notebook",
         "./skills/semantic-awareness",
-        "./skills/setup-notebook-environment",
         "./skills/troubleshoot-deriva-errors",
-        "./skills/troubleshoot-execution",
-        "./skills/use-annotation-builders",
-        "./skills/work-with-assets",
-        "./skills/write-hydra-config"
+        "./skills/use-annotation-builders"
       ]
     }
   ]

@@ -444,7 +444,7 @@ preview_handlebars_template(
 
 ## Python Annotation Builders
 
-For production use (scripts, notebooks, version-controlled configurations), the Python API provides type-safe annotation builders:
+For production use (scripts, notebooks, version-controlled configurations), the Python API provides type-safe annotation builders. **These builders currently live in the `deriva-ml` Python package** (`from deriva_ml.model import ...`) — the annotations themselves are core Chaise concepts that work on any Deriva catalog, but the typed Python wrappers ride along with deriva-ml. If you only have `deriva-py` installed and don't want the deriva-ml dependency, write annotations as plain dicts using the JSON shapes documented in the sections above. See the dedicated `use-annotation-builders` skill for the full builder workflow.
 
 ```python
 from deriva_ml.model import (

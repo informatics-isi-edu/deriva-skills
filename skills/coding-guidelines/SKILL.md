@@ -118,14 +118,16 @@ For docstring templates, type hint examples, ruff rule sets, and the versioning 
 
 Never commit notebook outputs to Git -- install `nbstripout` to strip them automatically. Keep each notebook focused on one task, and ensure it runs end-to-end with Restart & Run All.
 
-See `setup-notebook-environment` for full environment setup and `run-notebook` for execution tracking.
+For Jupyter / DerivaML environment setup and execution-tracked notebook workflows, see the `setup-notebook-environment` and `run-notebook` skills in the `deriva-ml-skills` plugin (tier-2).
 
-## Experiments and Data
+## Experiments and Data *(deriva-ml-skills, tier-2)*
 
-- Define experiment configs in hydra-zen (see `configure-experiment`)
-- Always test with `dry_run=True` before production runs (see `run-experiment`)
-- Never commit data files to Git -- store in Deriva catalogs and pin dataset versions (see `dataset-lifecycle`)
-- Wrap all data operations in executions for provenance (see `execution-lifecycle`)
+The following guidelines apply when you have the `deriva-ml-skills` plugin installed and are running ML experiments. They are reproduced here because they're closely related to general project hygiene; the linked skills live in the tier-2 plugin.
+
+- Define experiment configs in hydra-zen — see `write-hydra-config` and `configure-experiment` in `deriva-ml-skills`
+- Always test with `dry_run=True` before production runs — see `execution-lifecycle` in `deriva-ml-skills`
+- Never commit data files to Git -- store in Deriva catalogs and pin dataset versions — see `dataset-lifecycle` in `deriva-ml-skills`
+- Wrap all data operations in executions for provenance — see `execution-lifecycle` in `deriva-ml-skills`
 
 ## Extensibility
 

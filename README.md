@@ -1,8 +1,8 @@
 # Deriva Skills Plugin
 
-[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs and [DerivaML](https://github.com/informatics-isi-edu/deriva-ml) ML workflows.
+[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs via [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp). Provides 13 skills covering schema operations, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting.
 
-This plugin provides 30+ skills that guide Claude through common Deriva and DerivaML workflows, including dataset management, ML execution, experiment configuration, and catalog operations.
+This is the **tier-1** skills plugin — the surface that works on any Deriva catalog. For DerivaML ML workflows (datasets, executions, features, experiments, model development), additionally install the companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2).
 
 ## Installation
 
@@ -10,8 +10,15 @@ This plugin provides 30+ skills that guide Claude through common Deriva and Deri
 # Add the marketplace (one-time)
 /plugin marketplace add informatics-isi-edu/deriva-skills
 
-# Install the plugin
+# Install the deriva plugin
 /plugin install deriva
+```
+
+For DerivaML workflows, additionally:
+
+```bash
+/plugin marketplace add informatics-isi-edu/deriva-ml-skills
+/plugin install deriva-ml
 ```
 
 ## Updating
@@ -20,10 +27,16 @@ This plugin provides 30+ skills that guide Claude through common Deriva and Deri
 /plugin install deriva
 ```
 
-Or check your entire DerivaML ecosystem:
+Or check the entire core Deriva ecosystem:
 
 ```
 /deriva:check-deriva-versions
+```
+
+If you also have the deriva-ml plugin installed, run the tier-2 sibling afterward:
+
+```
+/deriva-ml:check-deriva-ml-versions
 ```
 
 ## Available Skills
@@ -32,24 +45,16 @@ Or check your entire DerivaML ecosystem:
 
 | Category | Skill | Description |
 |----------|-------|-------------|
-| **Catalog** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
-| | `/deriva:create-feature` | Create and populate features for ML labeling |
+| **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
 | | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools |
 | | `/deriva:use-annotation-builders` | Python type-safe annotation builder classes |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
 | | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog |
-| **Datasets** | `/deriva:create-dataset` | Create, populate, and split datasets for ML |
-| | `/deriva:prepare-training-data` | Prepare datasets for ML training via denormalization |
-| | `/deriva:debug-bag-contents` | Diagnose missing data in dataset bag exports |
-| **Execution** | `/deriva:run-ml-execution` | ML execution lifecycle with provenance tracking |
-| | `/deriva:work-with-assets` | Asset lookup, provenance, and management |
-| **Experiments** | `/deriva:configure-experiment` | Set up DerivaML experiment project structure |
-| | `/deriva:run-experiment` | Pre-flight checklist and CLI for deriva-ml-run |
-| | `/deriva:write-hydra-config` | Write and validate hydra-zen config files |
-| **Notebooks** | `/deriva:setup-notebook-environment` | Set up Jupyter environment for DerivaML |
-| | `/deriva:run-notebook` | Develop and run notebooks with execution tracking |
-| **Standards** | `/deriva:coding-guidelines` | DerivaML project coding standards |
-| **Maintenance** | `/deriva:check-deriva-versions` | Check ecosystem components against upstream and update |
+| | `/deriva:route-catalog-schema` | Router for catalog structure / data exploration tasks |
+| **Web apps** | `/deriva:create-web-app` | Scaffold a Chaise-based web app for a catalog |
+| **Standards** | `/deriva:coding-guidelines` | Deriva / Python project coding standards |
+| **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) |
+| **Maintenance** | `/deriva:check-deriva-versions` | Check the core Deriva ecosystem (deriva-py, deriva-mcp-core, deriva plugin) |
 | **Visualization** | `/deriva:browse-erd` | Interactive ERD browser for catalog schemas |
 
 **Auto-invoked** — Claude loads these automatically when relevant:
@@ -58,11 +63,12 @@ Or check your entire DerivaML ecosystem:
 |-------|-------------------|
 | `semantic-awareness` | Before creating any new catalog entity |
 | `generate-descriptions` | When creating entities without descriptions |
-| `maintain-experiment-notes` | After significant experiment design decisions |
-| `dataset-versioning` | When working with dataset versions |
-| `catalog-operations-workflow` | When performing catalog mutations |
-| `api-naming-conventions` | When writing DerivaML Python code |
-| `troubleshoot-execution` | When any execution fails or produces unexpected results |
+
+## DerivaML workflows
+
+The DerivaML-specific surface (datasets, executions, features, experiments, model development, Hydra-zen configs) lives in the companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin. It depends on this plugin as its tier-1 foundation; install both for full ML workflow support.
+
+When the deriva-ml plugin is loaded, **its abstractions take precedence over the raw catalog surface this plugin documents**: Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts (stored as Deriva tables underneath) — use the `/deriva-ml:` skills and the deriva-ml Python API for them, not the raw `insert_records` / `update_record` core tools.
 
 ## Development
 
@@ -74,9 +80,11 @@ claude --plugin-dir /path/to/deriva-skills
 
 ## Related Projects
 
-- [Deriva MCP Server](https://github.com/informatics-isi-edu/deriva-mcp) — MCP server for Deriva catalog operations
-- [DerivaML](https://github.com/informatics-isi-edu/deriva-ml) — Core library for ML workflows on Deriva
-- [Deriva](https://github.com/informatics-isi-edu/deriva-py) — Python SDK for Deriva scientific data management
+- [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp) — Core MCP framework + the deriva-py-backed MCP server
+- [`deriva-py`](https://github.com/informatics-isi-edu/deriva-py) — Python SDK for Deriva scientific data management
+- [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) — Companion tier-2 plugin: DerivaML ML workflow skills
+- [`deriva-ml-mcp`](https://github.com/informatics-isi-edu/deriva-ml-mcp) — DerivaML MCP plugin (loaded by deriva-mcp-core)
+- [`deriva-ml`](https://github.com/informatics-isi-edu/deriva-ml) — Core library for ML workflows on Deriva
 
 ## License
 

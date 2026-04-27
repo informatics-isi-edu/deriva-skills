@@ -1,7 +1,7 @@
 {
   "name": "deriva",
   "version": "0.19.5",
-  "description": "Skills for working with Deriva catalogs and DerivaML workflows - dataset management, ML execution, experiment configuration, and catalog operations",
+  "description": "Skills for working with Deriva catalogs via deriva-mcp-core - schema operations, table/column creation, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting. For DerivaML ML workflows (datasets, executions, features, experiments), additionally install deriva-ml-skills.",
   "author": {
     "name": "ISI Informatics",
     "url": "https://github.com/informatics-isi-edu"
@@ -10,10 +10,10 @@
   "license": "Apache-2.0",
   "keywords": [
     "deriva",
-    "derivaml",
-    "ml",
     "catalog",
-    "datasets",
-    "experiments"
+    "ermrest",
+    "chaise",
+    "schema",
+    "vocabulary"
   ]
 }

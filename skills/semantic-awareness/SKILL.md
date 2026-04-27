@@ -163,9 +163,11 @@ See the `generate-descriptions` skill for templates and detailed guidance.
 When creating new catalog entities, multiple skills apply. Follow this order:
 
 1. **`semantic-awareness`** — Check for duplicates first. Search for existing entities that serve the same or similar purpose before designing anything new.
-2. **Domain skill** (e.g., `manage-vocabulary`, `create-feature`, `create-table`, `dataset-lifecycle`) — Design and create the entity using the appropriate skill's workflow.
+2. **Domain skill** — Design and create the entity using the appropriate skill's workflow:
+   - Tier-1 (this plugin): `manage-vocabulary`, `create-table`
+   - Tier-2 (`deriva-ml-skills`, if installed): `create-feature`, `dataset-lifecycle`, `execution-lifecycle`, `work-with-assets`
 3. **`generate-descriptions`** — Auto-generate descriptions if the user didn't provide one. Good descriptions make entities discoverable in future searches.
-4. **`maintain-experiment-notes`** — Log the decision and rationale. Record what was created, why, and any alternatives that were considered.
+4. **`maintain-experiment-notes`** *(tier-2; deriva-ml-skills)* — If installed, log the decision and rationale to `experiment-decisions.md`. Record what was created, why, and any alternatives that were considered. In a tier-1-only environment, capture the rationale in your project's normal change log or PR description instead.
 
 ## The Flow
 
