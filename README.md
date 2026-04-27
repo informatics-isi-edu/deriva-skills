@@ -1,6 +1,6 @@
 # Deriva Skills Plugin
 
-[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs via [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp). Provides 13 skills covering schema operations, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting.
+[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs via [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp-core). Provides 14 skills covering schema operations, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting.
 
 This is the **tier-1** skills plugin — the surface that works on any Deriva catalog. For DerivaML ML workflows (datasets, executions, features, experiments, model development), additionally install the companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2).
 
@@ -80,7 +80,7 @@ claude --plugin-dir /path/to/deriva-skills
 
 ## Related Projects
 
-- [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp) — Core MCP framework + the deriva-py-backed MCP server
+- [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp-core) — Core MCP framework + generic Deriva catalog tools
 - [`deriva-py`](https://github.com/informatics-isi-edu/deriva-py) — Python SDK for Deriva scientific data management
 - [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) — Companion tier-2 plugin: DerivaML ML workflow skills
 - [`deriva-ml-mcp`](https://github.com/informatics-isi-edu/deriva-ml-mcp) — DerivaML MCP plugin (loaded by deriva-mcp-core)
