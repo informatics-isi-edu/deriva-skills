@@ -1,0 +1,875 @@
+# Skills Restructure: Two-Plugin Split + Refactoring + v1.4 Sweep
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to execute this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Split the monolithic `deriva-skills` repo into two plugin packages aligned with the `deriva-mcp-core` / `deriva-ml-mcp` boundary, refactor four gray-zone skills along the way, and bring all surviving skills current with the deriva-ml-mcp v1.4.0 surface.
+
+**Architecture:**
+- **`deriva-skills`** (existing repo, preserved) hosts the **`deriva`** plugin: skills that work with `deriva-mcp-core` alone. ~14 skills (12 originally tier-1 + 2 promoted).
+- **`deriva-ml-skills`** (new repo) hosts the **`deriva-ml`** plugin: skills that require `deriva-ml-mcp`. ~22 skills (24 originally tier-2 - 2 promoted out + 2 from splits).
+- The `deriva-ml` plugin **depends on** `deriva` (declared in plugin.json description + README; users install both marketplaces).
+- Each repo has its own marketplace (`deriva-plugins` and `deriva-ml-plugins`), version, CI, release cadence.
+- Workspaces (`*-workspace/` eval-harness directories) move to `evals/` in their owning plugin.
+
+**Tech Stack:** Markdown skills, `bump-version` per workspace convention, GitHub `gh` CLI for repo creation + marketplace setup.
+
+---
+
+## Inputs (decisions locked)
+
+- Two repos: `deriva-skills` (existing) + `deriva-ml-skills` (new)
+- Plugin names: `deriva` (existing, preserved) + `deriva-ml` (new)
+- Marketplace names: `deriva-plugins` (existing) + `deriva-ml-plugins` (new)
+- Repo URLs: `https://github.com/informatics-isi-edu/deriva-skills` (existing) + `https://github.com/informatics-isi-edu/deriva-ml-skills` (new)
+- Tier-2 git history: do not preserve. Start fresh.
+- Refactorings: all 4 Category A/B items (2 splits + 2 promotions)
+- Workspaces: follow their skills (B1); also relocate to `evals/` during the restructure
+- The user's pre-existing CLAUDE.md edit + untracked `.claude/` directory in `deriva-skills`: leave alone
+
+## Skill classification (final)
+
+### Tier 1 (`deriva` plugin in `deriva-skills` repo) — 14 skills
+
+| Skill | Source |
+|---|---|
+| browse-erd | original tier-1 |
+| coding-guidelines | original tier-1 |
+| create-table | original tier-1 |
+| create-web-app | original tier-1 |
+| customize-display | original tier-1 |
+| query-catalog-data | original tier-1 |
+| route-catalog-schema | original tier-1 |
+| use-annotation-builders | original tier-1 |
+| semantic-awareness | pattern utility (auto-invoked) |
+| generate-descriptions | pattern utility (auto-invoked) |
+| generate-scripts | promoted (Category B) |
+| manage-vocabulary | promoted (Category B) |
+| check-deriva-versions | tier-1 half of split (Category A) |
+| troubleshoot-deriva-errors | tier-1 half of split (Category A) |
+
+### Tier 2 (`deriva-ml` plugin in `deriva-ml-skills` repo) — 22 skills
+
+| Skill | Source |
+|---|---|
+| api-naming-conventions | original tier-2 |
+| catalog-operations-workflow | original tier-2 |
+| configure-experiment | original tier-2 |
+| create-feature | original tier-2 |
+| dataset-lifecycle | original tier-2 |
+| debug-bag-contents | original tier-2 |
+| execution-lifecycle | original tier-2 |
+| help | original tier-2 |
+| maintain-experiment-notes | original tier-2 |
+| manage-storage | original tier-2 |
+| ml-data-engineering | original tier-2 |
+| model-development-workflow | original tier-2 |
+| new-model | original tier-2 |
+| optimization | original tier-2 |
+| route-project-setup | original tier-2 |
+| route-run-workflows | original tier-2 |
+| run-notebook | original tier-2 |
+| setup-notebook-environment | original tier-2 |
+| work-with-assets | original tier-2 |
+| write-hydra-config | original tier-2 |
+| check-deriva-ml-versions | tier-2 half of split (Category A) |
+| troubleshoot-execution | tier-2 half of split (Category A) |
+
+### Workspaces (move to `evals/` in owning plugin)
+
+| Workspace | Owning plugin |
+|---|---|
+| manage-vocabulary-workspace | `deriva` (tier-1) |
+| configure-experiment-workspace | `deriva-ml` |
+| create-feature-workspace | `deriva-ml` |
+| dataset-lifecycle-workspace | `deriva-ml` |
+| execution-lifecycle-workspace | `deriva-ml` |
+| ml-data-engineering-workspace | `deriva-ml` |
+| run-notebook-workspace | `deriva-ml` |
+| work-with-assets-workspace | `deriva-ml` |
+
+Path change for all: `skills/<skill>-workspace/` → `evals/<skill>/` in the appropriate repo.
+
+## Validation gates (apply at every phase)
+
+1. **Plugin loads in Claude Code**: `claude --plugin-dir <path>` succeeds without error
+2. **No grep-discoverable references to skills not in this plugin**: `grep -rE "deriva:<other-tier-skill-name>"` returns nothing in this repo's skill bodies
+3. **Cross-references valid**: any `see also <skill>` reference resolves to a skill that exists in either this plugin or the dependency
+4. **Marketplace JSON validates**: the `skills` array enumerates only skills that exist in the repo
+5. **Tier-1 has no `deriva_ml_*` tool references in skill bodies** (the whole point of the split)
+6. **Tier-2 references survive**: `grep -rE "(deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/)"` finds the v1.4 surface
+
+---
+
+## Phase 1: In-place refactorings (still on existing repo, both tiers mixed)
+
+Goal: apply the 2 splits + 2 promotions as small atomic commits before the physical split. This way each refactor is reviewable independently and the tier-split phase is a pure file-move with no behavior change.
+
+Branch: `feature/restructure-prep` off `main`. Single PR at the end of phase 1 lands all 4 refactorings as separate commits.
+
+### Task 1.1: Promote `generate-scripts` to tier-1
+
+**Files:**
+- Modify: `skills/generate-scripts/SKILL.md`
+- Modify: `skills/generate-scripts/references/*.md` (if any)
+
+- [ ] **Step 1: Audit current `deriva_ml_*` references**
+
+```bash
+cd /Users/carl/GitHub/DerivaML/deriva-skills
+grep -rnE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/|MLVocab|deriva-ml-run" skills/generate-scripts/
+```
+
+Expected: 1 reference (per the prior survey). Confirm what it is.
+
+- [ ] **Step 2: Rewrite the body to be MCP-tool-name-agnostic**
+
+The skill teaches "when MCP tools return ≤100 rows and you need more, write a Python script." The 100-row threshold is a deriva-mcp-core constraint. Examples should reference core tools (`get_entities`, `query_attribute`, `count_table`) instead of `deriva_ml_*` tools. Where deriva-ml examples are illustrative, replace with deriva-py-only examples.
+
+If a deriva-ml example genuinely cannot be removed (e.g., the script-generation pattern for execution provenance), wrap it in:
+
+```markdown
+> **Tier-2 only:** if you have `deriva-ml-skills` installed, see `dataset-lifecycle` for ML-domain script examples (datasets, executions, features).
+```
+
+- [ ] **Step 3: Run validation gate 5 (no `deriva_ml_*` refs)**
+
+```bash
+grep -rE "deriva_ml_" skills/generate-scripts/
+```
+
+Expected: empty (or only inside the `> Tier-2 only:` callout).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add skills/generate-scripts/
+git commit -m "refactor(generate-scripts): promote to tier-1 (deriva-py only)"
+```
+
+### Task 1.2: Promote `manage-vocabulary` to tier-1
+
+**Files:**
+- Modify: `skills/manage-vocabulary/SKILL.md`
+- Modify: `skills/manage-vocabulary/references/*.md` (if any)
+
+- [ ] **Step 1: Audit current `deriva_ml_*` references**
+
+```bash
+grep -rnE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/|MLVocab|Workflow_Type|Dataset_Type|Asset_Type|Execution_Status" skills/manage-vocabulary/
+```
+
+Expected: ~7 references (per survey). Mostly `Dataset_Type` / `Workflow_Type` example mentions.
+
+- [ ] **Step 2: Rewrite ML-vocab examples to be ML-agnostic**
+
+Replace `Dataset_Type` / `Workflow_Type` extension examples with generic-vocab examples. Add a one-paragraph "ML-domain vocabularies" cross-reference to the tier-2 plugin:
+
+```markdown
+> **ML-domain vocabularies:** the deriva-ml-mcp plugin ships built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status`) that you may want to extend. The operations are the same as for any vocabulary; see `deriva-ml-skills`'s `dataset-lifecycle` and `work-with-assets` skills for ML-specific extension patterns.
+```
+
+- [ ] **Step 3: Validation gate 5**
+
+```bash
+grep -rE "deriva_ml_" skills/manage-vocabulary/
+# Should be empty or only inside the cross-reference callout.
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add skills/manage-vocabulary/
+git commit -m "refactor(manage-vocabulary): promote to tier-1; ML-domain vocabs cross-referenced"
+```
+
+### Task 1.3: Split `check-deriva-versions` into tier-1 + tier-2 sibling
+
+**Files:**
+- Modify: `skills/check-deriva-versions/SKILL.md` (becomes tier-1 only: deriva-py + deriva-mcp-core + deriva-skills plugin self)
+- Create: `skills/check-deriva-ml-versions/SKILL.md` (tier-2: extends with deriva-ml + deriva-ml-mcp + deriva-ml-skills checks)
+- Update: `skills/route-project-setup/SKILL.md` to reference both skills (router lives in tier-2; can route to either)
+
+- [ ] **Step 1: Read the current `check-deriva-versions/SKILL.md`**
+
+Identify which checks are deriva-py / deriva-mcp-core (stay in tier-1) vs. which are deriva-ml / deriva-ml-mcp / deriva-ml-skills (move to tier-2).
+
+- [ ] **Step 2: Edit `skills/check-deriva-versions/SKILL.md`**
+
+Strip out all deriva-ml / deriva-ml-mcp / deriva-ml-skills version checks. Update the description to focus on the deriva-py + deriva-mcp-core + deriva-skills(plugin) version surface.
+
+Add a forward-pointer:
+
+```markdown
+## Tier-2 ecosystem checks
+
+If you have `deriva-ml-skills` installed, also run `/deriva-ml:check-deriva-ml-versions` to verify deriva-ml + deriva-ml-mcp + deriva-ml-skills(plugin) versions.
+```
+
+- [ ] **Step 3: Create `skills/check-deriva-ml-versions/SKILL.md`**
+
+Mirror the structure of `check-deriva-versions` but scoped to:
+- deriva-ml package version
+- deriva-ml-mcp plugin version
+- deriva-ml-skills plugin version
+
+Include in its description that this skill **assumes the user has already run the tier-1 `check-deriva-versions`** (or runs both as part of `/deriva-ml:check-deriva-ml-versions` invoking the tier-1 one first).
+
+- [ ] **Step 4: Validation**
+
+```bash
+grep -rE "deriva_ml|deriva-ml-mcp|deriva-ml-skills" skills/check-deriva-versions/
+# Should match only the cross-reference text, no operational references.
+grep -rE "deriva-py|deriva-mcp-core" skills/check-deriva-ml-versions/
+# Should be empty (those live in the tier-1 sibling).
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add skills/check-deriva-versions/ skills/check-deriva-ml-versions/
+git commit -m "refactor(versions): split check-deriva-versions into tier-1 + tier-2 siblings"
+```
+
+### Task 1.4: Split `troubleshoot-execution` into tier-1 + tier-2 sibling
+
+**Files:**
+- Create: `skills/troubleshoot-deriva-errors/SKILL.md` (tier-1: auth, permissions, missing files, generic catalog errors)
+- Modify: `skills/troubleshoot-execution/SKILL.md` (tier-2: stays as-is for execution-specific failures, with cross-reference to the tier-1 sibling)
+
+- [ ] **Step 1: Read the current `troubleshoot-execution/SKILL.md`**
+
+Identify the auth/permissions/connection sections that apply to any deriva-py user (move to tier-1) vs. the execution-state-machine / dataset-bag / hydra-config sections that only apply to deriva-ml (stay in tier-2).
+
+- [ ] **Step 2: Create `skills/troubleshoot-deriva-errors/SKILL.md`**
+
+Extract the deriva-py-generic sections into the new skill. Description focuses on: authentication errors (Globus / cookies / bearer tokens), permissions denied, catalog connection drops, missing files in hatrac, generic ERMrest errors.
+
+- [ ] **Step 3: Edit `skills/troubleshoot-execution/SKILL.md`**
+
+Remove the sections that moved to the tier-1 sibling. Add a forward-pointer at the top:
+
+```markdown
+> If your error is not execution-specific (auth failure, missing file, permission denied), use `troubleshoot-deriva-errors` from the `deriva` plugin first. This skill handles execution-state-machine and ML-pipeline-specific failures.
+```
+
+- [ ] **Step 4: Validation**
+
+```bash
+# tier-1 piece: no execution-state-machine references
+grep -rE "execution|workflow|hydra|dataset_bag|deriva-ml-run" skills/troubleshoot-deriva-errors/
+# Should match only the cross-reference text or be empty.
+
+# tier-2 piece: no auth/permission generic content
+grep -rE "Globus|bearer token|cookie|authn/session|missing file" skills/troubleshoot-execution/
+# Should be empty (moved to tier-1 sibling).
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add skills/troubleshoot-deriva-errors/ skills/troubleshoot-execution/
+git commit -m "refactor(troubleshoot): split troubleshoot-execution into tier-1 + tier-2 siblings"
+```
+
+### Task 1.5: PR + merge phase 1
+
+- [ ] **Step 1: Push branch + open PR**
+
+```bash
+git push -u origin feature/restructure-prep
+gh pr create --title "Restructure prep: 2 promotions + 2 splits" --body "Phase 1 of the two-plugin restructure (see docs/superpowers/plans/2026-04-27-skills-restructure.md). Each refactoring is its own commit so they can be reviewed independently before the physical split."
+```
+
+- [ ] **Step 2: Self-review checklist**
+  - All 4 refactoring commits land cleanly?
+  - No skill body references a skill that doesn't exist?
+  - All cross-reference forward-pointers use plausible final names (`/deriva-ml:check-deriva-ml-versions`, etc.)?
+
+- [ ] **Step 3: Merge**
+
+```bash
+gh pr merge --merge --delete-branch
+```
+
+---
+
+## Phase 2: Carve out tier-1 in `deriva-skills` repo
+
+Goal: remove all 22 tier-2 skills from `deriva-skills` so it contains only the 14 tier-1 skills + 1 tier-1 workspace. After this phase, `deriva-skills` is the tier-1 repo only; tier-2 content is preserved on a branch for the phase 3 import.
+
+Branch: `feature/extract-tier-2` off `main` (post phase 1 merge).
+
+### Task 2.1: Create snapshot branch for tier-2 content
+
+- [ ] **Step 1: Create snapshot branch from current main**
+
+```bash
+git checkout main
+git pull
+git branch tier-2-snapshot-2026-04-27
+```
+
+This branch will be the source of the tier-2 import in phase 3. Don't touch it after creation.
+
+### Task 2.2: Delete tier-2 skills from `deriva-skills`
+
+- [ ] **Step 1: Switch to working branch**
+
+```bash
+git checkout -b feature/extract-tier-2
+```
+
+- [ ] **Step 2: Delete all 22 tier-2 skill directories**
+
+```bash
+git rm -r skills/api-naming-conventions
+git rm -r skills/catalog-operations-workflow
+git rm -r skills/configure-experiment
+git rm -r skills/create-feature
+git rm -r skills/dataset-lifecycle
+git rm -r skills/debug-bag-contents
+git rm -r skills/execution-lifecycle
+git rm -r skills/help
+git rm -r skills/maintain-experiment-notes
+git rm -r skills/manage-storage
+git rm -r skills/ml-data-engineering
+git rm -r skills/model-development-workflow
+git rm -r skills/new-model
+git rm -r skills/optimization
+git rm -r skills/route-project-setup
+git rm -r skills/route-run-workflows
+git rm -r skills/run-notebook
+git rm -r skills/setup-notebook-environment
+git rm -r skills/troubleshoot-execution
+git rm -r skills/work-with-assets
+git rm -r skills/write-hydra-config
+git rm -r skills/check-deriva-ml-versions
+```
+
+(22 deletions; verify the count.)
+
+- [ ] **Step 3: Delete tier-2 workspaces**
+
+```bash
+git rm -r skills/configure-experiment-workspace
+git rm -r skills/create-feature-workspace
+git rm -r skills/dataset-lifecycle-workspace
+git rm -r skills/execution-lifecycle-workspace
+git rm -r skills/ml-data-engineering-workspace
+git rm -r skills/run-notebook-workspace
+git rm -r skills/work-with-assets-workspace
+```
+
+(7 workspace deletions; the 8th — `manage-vocabulary-workspace` — stays in tier-1.)
+
+### Task 2.3: Move tier-1 workspace to `evals/`
+
+- [ ] **Step 1: Create `evals/` directory and move the workspace**
+
+```bash
+mkdir -p evals
+git mv skills/manage-vocabulary-workspace evals/manage-vocabulary
+```
+
+### Task 2.4: Update plugin metadata
+
+- [ ] **Step 1: Edit `.claude-plugin/plugin.json`**
+
+```json
+{
+  "name": "deriva",
+  "version": "1.0.0",                      // major bump signals the surface change
+  "description": "Skills for working with Deriva catalogs via deriva-mcp-core - schema operations, vocabulary management, query patterns, and Chaise display customization. For DerivaML ML workflows, additionally install deriva-ml-skills.",
+  "author": { "name": "ISI Informatics", "url": "https://github.com/informatics-isi-edu" },
+  "repository": "https://github.com/informatics-isi-edu/deriva-skills",
+  "license": "Apache-2.0",
+  "keywords": ["deriva", "catalog", "ermrest", "chaise", "schema"]
+}
+```
+
+Note: removes `derivaml` and `ml` from keywords; updates description to clarify scope.
+
+- [ ] **Step 2: Edit `.claude-plugin/marketplace.json`**
+
+Update the `skills` array to enumerate only the 14 tier-1 skills:
+
+```json
+{
+  "name": "deriva-plugins",
+  "owner": { "name": "ISI Informatics", "email": "isrd@isi.edu" },
+  "plugins": [
+    {
+      "name": "deriva",
+      "source": "./",
+      "description": "Skills for Deriva catalogs via deriva-mcp-core. For DerivaML, additionally install deriva-ml-skills.",
+      "version": "1.0.0",
+      "author": { "name": "ISI Informatics" },
+      "skills": [
+        "./skills/browse-erd",
+        "./skills/check-deriva-versions",
+        "./skills/coding-guidelines",
+        "./skills/create-table",
+        "./skills/create-web-app",
+        "./skills/customize-display",
+        "./skills/generate-descriptions",
+        "./skills/generate-scripts",
+        "./skills/manage-vocabulary",
+        "./skills/query-catalog-data",
+        "./skills/route-catalog-schema",
+        "./skills/semantic-awareness",
+        "./skills/troubleshoot-deriva-errors",
+        "./skills/use-annotation-builders"
+      ]
+    }
+  ]
+}
+```
+
+### Task 2.5: Update README
+
+- [ ] **Step 1: Rewrite `README.md`**
+
+Update:
+- Title and intro: clarify this is the "tier-1" deriva-py / deriva-mcp-core skills plugin
+- Available Skills table: list only the 14 tier-1 skills
+- Add a section pointing to `deriva-ml-skills` for ML workflows
+- Update the install snippet to clarify it installs the `deriva` plugin only
+
+### Task 2.6: Update CLAUDE.md
+
+- [ ] **Step 1: Refresh `CLAUDE.md`**
+
+The user's pre-existing CLAUDE.md changes (uncommitted) should be preserved. Pull the file's current content, fold in:
+- Note about the two-plugin architecture
+- Tier-1 scope (deriva-mcp-core only)
+- Cross-reference to `deriva-ml-skills` for tier-2 content
+
+Be careful: the user's working-tree changes should land in the same commit as the restructure changes (or in a separate commit at user discretion).
+
+### Task 2.7: Validation pass
+
+- [ ] **Step 1: Plugin loads**
+
+```bash
+claude --plugin-dir .
+```
+
+Should load with 14 skills registered, no errors.
+
+- [ ] **Step 2: No tier-2 references in tier-1 skill bodies**
+
+```bash
+grep -rE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/|MLVocab|deriva-ml-run|deriva_ml\." skills/
+```
+
+Should return nothing or only cross-reference callout text.
+
+- [ ] **Step 3: No broken cross-references**
+
+```bash
+# Find every "see also <skill>" reference and verify the skill exists
+grep -rE "/deriva:[a-z-]+|/deriva-ml:[a-z-]+" skills/
+```
+
+For each `/deriva:X` reference, confirm `skills/X/` exists. For each `/deriva-ml:X` reference, confirm it's a forward-pointer to a tier-2 skill (acceptable — user may not have tier-2 installed; the cross-reference is informational).
+
+### Task 2.8: PR + merge phase 2
+
+- [ ] **Step 1: Push + open PR**
+
+```bash
+git push -u origin feature/extract-tier-2
+gh pr create --title "Carve out tier-2 (extract for new repo)" --body "Phase 2 of the restructure: removes all 22 tier-2 skills + 7 workspaces from deriva-skills. They land in the new deriva-ml-skills repo in phase 3 (sourced from the tier-2-snapshot-2026-04-27 branch). After this PR merges, deriva-skills contains only the 14 tier-1 skills + 1 tier-1 workspace. Major version bump to 1.0.0 signals the surface change."
+```
+
+- [ ] **Step 2: Merge**
+
+```bash
+gh pr merge --merge --delete-branch
+```
+
+- [ ] **Step 3: Tag v1.0.0**
+
+```bash
+uv run bump-version major
+```
+
+(Confirm the bump-version setup expects the major bump from current 0.19.5; adjust if needed.)
+
+---
+
+## Phase 3: Create `deriva-ml-skills` repo + populate
+
+Goal: stand up the new repo with the 22 tier-2 skills + 7 tier-2 workspaces, fresh history, with plugin metadata pointing at `deriva` as a documented dependency.
+
+### Task 3.1: Create the new GitHub repo
+
+- [ ] **Step 1: Create the repo**
+
+```bash
+gh repo create informatics-isi-edu/deriva-ml-skills \
+  --public \
+  --description "Claude Code skills for DerivaML ML workflows - dataset lifecycle, executions, features, experiments, and Hydra-zen configs. Requires deriva-ml-mcp and the deriva-skills plugin."
+```
+
+- [ ] **Step 2: Local workspace**
+
+```bash
+cd /Users/carl/GitHub/DerivaML
+mkdir deriva-ml-skills
+cd deriva-ml-skills
+git init
+```
+
+### Task 3.2: Copy tier-2 skills from snapshot branch
+
+- [ ] **Step 1: Extract tier-2 skill content from the snapshot branch**
+
+```bash
+cd /Users/carl/GitHub/DerivaML/deriva-skills
+git checkout tier-2-snapshot-2026-04-27
+
+# Copy the 22 tier-2 skills + their workspaces to the new repo
+mkdir -p ../deriva-ml-skills/skills ../deriva-ml-skills/evals
+
+# Skills (22)
+for s in api-naming-conventions catalog-operations-workflow check-deriva-ml-versions \
+         configure-experiment create-feature dataset-lifecycle debug-bag-contents \
+         execution-lifecycle help maintain-experiment-notes manage-storage \
+         ml-data-engineering model-development-workflow new-model optimization \
+         route-project-setup route-run-workflows run-notebook setup-notebook-environment \
+         troubleshoot-execution work-with-assets write-hydra-config; do
+  cp -r "skills/$s" "../deriva-ml-skills/skills/$s"
+done
+
+# Workspaces -> evals/ (7)
+for w in configure-experiment create-feature dataset-lifecycle execution-lifecycle \
+         ml-data-engineering run-notebook work-with-assets; do
+  cp -r "skills/${w}-workspace" "../deriva-ml-skills/evals/$w"
+done
+
+git checkout main  # back to current state in the deriva-skills working tree
+```
+
+- [ ] **Step 2: Verify counts in the new repo**
+
+```bash
+cd /Users/carl/GitHub/DerivaML/deriva-ml-skills
+ls skills/ | wc -l   # expect 22
+ls evals/ | wc -l    # expect 7
+```
+
+### Task 3.3: Create plugin metadata
+
+- [ ] **Step 1: Create `.claude-plugin/plugin.json`**
+
+```json
+{
+  "name": "deriva-ml",
+  "version": "1.0.0",
+  "description": "Skills for DerivaML ML workflows - dataset lifecycle, executions, features, experiments, and Hydra-zen configs. Requires deriva-ml-mcp server and the deriva-skills plugin (install both: /plugin marketplace add informatics-isi-edu/deriva-skills && /plugin install deriva).",
+  "author": { "name": "ISI Informatics", "url": "https://github.com/informatics-isi-edu" },
+  "repository": "https://github.com/informatics-isi-edu/deriva-ml-skills",
+  "license": "Apache-2.0",
+  "keywords": ["deriva", "derivaml", "ml", "datasets", "experiments", "executions", "features"]
+}
+```
+
+- [ ] **Step 2: Create `.claude-plugin/marketplace.json`**
+
+```json
+{
+  "name": "deriva-ml-plugins",
+  "owner": { "name": "ISI Informatics", "email": "isrd@isi.edu" },
+  "plugins": [
+    {
+      "name": "deriva-ml",
+      "source": "./",
+      "description": "DerivaML skills for ML workflows. Requires deriva-ml-mcp server and the deriva-skills plugin (install both: /plugin marketplace add informatics-isi-edu/deriva-skills && /plugin install deriva).",
+      "version": "1.0.0",
+      "author": { "name": "ISI Informatics" },
+      "skills": [
+        "./skills/api-naming-conventions",
+        "./skills/catalog-operations-workflow",
+        "./skills/check-deriva-ml-versions",
+        "./skills/configure-experiment",
+        "./skills/create-feature",
+        "./skills/dataset-lifecycle",
+        "./skills/debug-bag-contents",
+        "./skills/execution-lifecycle",
+        "./skills/help",
+        "./skills/maintain-experiment-notes",
+        "./skills/manage-storage",
+        "./skills/ml-data-engineering",
+        "./skills/model-development-workflow",
+        "./skills/new-model",
+        "./skills/optimization",
+        "./skills/route-project-setup",
+        "./skills/route-run-workflows",
+        "./skills/run-notebook",
+        "./skills/setup-notebook-environment",
+        "./skills/troubleshoot-execution",
+        "./skills/work-with-assets",
+        "./skills/write-hydra-config"
+      ]
+    }
+  ]
+}
+```
+
+### Task 3.4: Create supporting docs
+
+- [ ] **Step 1: README.md** — explain the plugin, the dependency on `deriva-skills`, the install instructions for both marketplaces, the 22 skills.
+- [ ] **Step 2: CLAUDE.md** — reference the workspace top-level CLAUDE.md, document repo conventions (mirror tier-1 pattern), explain the dependency on `deriva-mcp-core` + `deriva-ml-mcp`.
+- [ ] **Step 3: pyproject.toml** — minimal, for `bump-version` + `uv` tooling. Mirror `deriva-skills`'s pyproject if it has one.
+- [ ] **Step 4: .gitignore** — copy from `deriva-skills`.
+
+### Task 3.5: Update internal cross-references
+
+- [ ] **Step 1: Sweep tier-2 skills for stale tier-1 references**
+
+In phase 1 we added forward-pointers like `> If your error is not execution-specific... use troubleshoot-deriva-errors from the deriva plugin first.` Those references now span repos. Verify they still work with the cross-repo install:
+
+```bash
+grep -rE "/deriva:[a-z-]+|troubleshoot-deriva-errors|check-deriva-versions" skills/
+```
+
+For each reference, the user reading the skill content can install the referenced tier-1 skill from `deriva-skills`. The reference text may need updating to clarify the cross-plugin install step.
+
+- [ ] **Step 2: Update skill descriptions referencing the old monolithic plugin**
+
+Some descriptions say "this plugin's other skills..."; update to be specific about which plugin (tier-1 vs tier-2).
+
+### Task 3.6: Validation
+
+- [ ] **Step 1: Plugin loads**
+
+```bash
+claude --plugin-dir .
+```
+
+Should load with 22 skills, no errors.
+
+- [ ] **Step 2: Tier-2 surface validates against MCP**
+
+```bash
+# Confirm every tier-2 skill body references valid MCP tools (will be tightened in phase 4)
+grep -rE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/" skills/ | wc -l
+```
+
+Expect substantial output — these are the references the phase 4 sweep will validate.
+
+### Task 3.7: First commit + push
+
+- [ ] **Step 1: Initial commit**
+
+```bash
+git add -A
+git commit -m "Initial commit: deriva-ml-skills v1.0.0 (22 skills + 7 evals)
+
+Imported from deriva-skills tier-2-snapshot-2026-04-27 (no history
+preserved per migration plan). Pairs with the deriva-skills tier-1
+plugin via plugin.json + README dependency declaration.
+
+See docs/superpowers/plans/2026-04-27-skills-restructure.md (in
+deriva-skills) for the full restructure rationale."
+```
+
+- [ ] **Step 2: Push + tag v1.0.0**
+
+```bash
+git remote add origin https://github.com/informatics-isi-edu/deriva-ml-skills.git
+git push -u origin main
+uv run bump-version major  # if pyproject sets up bump-version
+# OR: git tag v1.0.0 && git push --tags
+```
+
+---
+
+## Phase 4: Sweep both plugins for v1.4 MCP surface
+
+Goal: with both repos in place, sweep all skill bodies for the latest deriva-ml-mcp v1.4.0 surface (URI namespacing, tool name prefix, new v1.2/v1.3/v1.4 surfaces).
+
+### Task 4.1: Sweep `deriva` (tier-1) for any deriva-mcp-core surface drift
+
+- [ ] **Step 1: Branch**
+
+```bash
+cd /Users/carl/GitHub/DerivaML/deriva-skills
+git checkout -b feature/v1-sweep
+```
+
+- [ ] **Step 2: Audit core MCP tool name references**
+
+The tier-1 skills reference deriva-mcp-core tool names (`add_term`, `get_entities`, `update_entities`, `query_attribute`, `add_column`, `set_column_description`, etc.). Verify each reference is current.
+
+```bash
+# Sample some references
+grep -rE "\b(get_entities|insert_entities|update_entities|delete_entities|add_term|delete_term|add_synonym|create_vocabulary|add_column|create_table|query_attribute|count_table|rag_search)\b" skills/
+```
+
+- [ ] **Step 3: Audit core resource URIs**
+
+```bash
+grep -rE "deriva://(server|catalog/[^/]+/[^/]+/(schema|tables|table))" skills/
+```
+
+These should all be current; no rewrites expected.
+
+- [ ] **Step 4: Commit any fixes; PR + merge**
+
+```bash
+git add -A
+git commit -m "sweep(tier-1): audit deriva-mcp-core surface references for currency"
+gh pr create --title "v1 sweep: tier-1 surface audit" --body "..."
+gh pr merge --merge --delete-branch
+```
+
+- [ ] **Step 5: Tag v1.0.1 if any sweep edits landed**
+
+```bash
+uv run bump-version patch  # if any drift was fixed
+```
+
+### Task 4.2: Sweep `deriva-ml` (tier-2) for v1.4 MCP surface — the big sweep
+
+This is the load-bearing sweep. ~22 SKILL.md files; ~299 tool-name occurrences from the prior survey.
+
+- [ ] **Step 1: Branch**
+
+```bash
+cd /Users/carl/GitHub/DerivaML/deriva-ml-skills
+git checkout -b feature/v1.4-mcp-surface-sweep
+```
+
+- [ ] **Step 2: Apply URI namespacing rewrite**
+
+Mapping (per the deriva-ml-mcp v1.0/v1.2 surface):
+
+| Old (flat) | New (namespaced) |
+|---|---|
+| `deriva://catalog/datasets` | `deriva://catalog/{h}/{c}/ml/datasets` |
+| `deriva://dataset/{rid}` | `deriva://catalog/{h}/{c}/ml/dataset/{rid}` |
+| `deriva://dataset/{rid}/members` | `deriva://catalog/{h}/{c}/ml/dataset/{rid}/members` |
+| `deriva://catalog/workflows` | `deriva://catalog/{h}/{c}/ml/workflows` |
+| `deriva://workflow/{rid}` | `deriva://catalog/{h}/{c}/ml/workflow/{rid}` |
+| `deriva://catalog/executions` | `deriva://catalog/{h}/{c}/ml/executions` |
+| `deriva://execution/{rid}` | `deriva://catalog/{h}/{c}/ml/execution/{rid}` |
+| `deriva://execution/{rid}/inputs|outputs|metadata` | (collapsed into `deriva://catalog/{h}/{c}/ml/execution/{rid}` detail payload) |
+| `deriva://experiment/{rid}` | (folded into execution detail payload's `experiment` key) |
+| `deriva://catalog/dataset-types|workflow-types` | `deriva://catalog/{h}/{c}/ml/registries` |
+| `deriva://feature/{table}/{name}` | (no direct equivalent — use `deriva_ml_get_feature` tool) |
+| `deriva://table/{name}/feature-values{,/newest,/first,/majority_vote}` | (use `deriva_ml_list_feature_values` tool with selector arg) |
+| `deriva://catalog/asset-tables`, `/assets`, `/asset/{rid}` | `deriva://catalog/{h}/{c}/ml/asset-tables` and `/asset/{rid}` (v1.2) |
+
+Process per skill:
+- Read SKILL.md and references/*.md
+- Apply mapping
+- Where the new MCP doesn't have a direct URI, replace with the corresponding `deriva_ml_*` tool reference
+- Commit per skill (or per logical group of 3-4 related skills)
+
+- [ ] **Step 3: Apply tool-name prefix rewrite**
+
+All 39 v1.0 tool names → `deriva_ml_*` prefixed. Plus the v1.2 rename (`update_dataset_types` → `update_dataset`). Plus the v1.2 net-new tools (asset surface, `update_execution`). Plus v1.4 (`resync_indexes`).
+
+```bash
+# To get the canonical 46 tool name list:
+grep -hE "^    async def deriva_ml_[a-z_]+\(" \
+  /Users/carl/GitHub/DerivaML/deriva-ml-mcp/src/deriva_ml_mcp/tools/{dataset/{read,mutate,complex},feature,workflow,execution,asset,maintenance}.py | \
+  sed 's/^[[:space:]]*async def \([a-z_]*\).*/\1/'
+```
+
+Mapping rule: bare verb → `deriva_ml_<verb>` (with the v1.2 rename applied: `update_dataset_types` → `update_dataset`).
+
+- [ ] **Step 4: Add references to new v1.x surfaces where natural**
+
+- v1.1 vocab indexer + `deriva_ml_reindex_vocabularies` — relevant in `manage-vocabulary` (tier-1 sibling cross-reference) and any tier-2 vocab-touching skill
+- v1.2 asset tools — relevant in `work-with-assets`
+- v1.2 `update_execution` — relevant in `execution-lifecycle`, `troubleshoot-execution`
+- v1.3 surgical re-indexing — transparent to skills (no surface change)
+- v1.4 `deriva_ml_resync_indexes` — relevant in `troubleshoot-execution`, any cross-user-collab skill
+
+- [ ] **Step 5: Add references to v1.x prompts**
+
+Where a skill's body would benefit from the LLM having read a specific prompt:
+
+- `deriva_ml_getting_started` — referenced from `help`, `route-*` skills
+- `deriva_ml_execution_lifecycle` — referenced from `execution-lifecycle`, `troubleshoot-execution`
+- `deriva_ml_workflow_dedup` — referenced from `dataset-lifecycle` (workflow registration), `new-model`
+
+- [ ] **Step 6: Commit incrementally**
+
+After each skill (or logical group of 3-4 skills), commit with a descriptive message. This way if anything goes sideways mid-sweep, we don't lose the partial work.
+
+```bash
+git add skills/dataset-lifecycle/
+git commit -m "sweep: dataset-lifecycle v1.4 surface (URIs + tool names + new asset/update_execution refs)"
+```
+
+Repeat for each skill / group.
+
+- [ ] **Step 7: Validation**
+
+```bash
+# Confirm no stale flat URIs remain
+grep -rE "deriva://(dataset|feature|table|vocabulary|catalog/(features|datasets|workflows|executions|experiments|vocabularies|dataset-types|workflow-types))" skills/ | grep -v TODO
+
+# Confirm no bare tool names remain (with word-boundary regex)
+grep -rE "\b(create_dataset|list_datasets|add_feature_values|create_workflow|start_execution|commit_execution|create_execution|update_dataset_types)\b" skills/ | grep -vE "deriva_ml_|ml\.|TODO|Old name|legacy|history"
+```
+
+Both should return nothing or only contextually-explained references.
+
+- [ ] **Step 8: Plugin loads + cross-references resolve**
+
+```bash
+claude --plugin-dir .
+```
+
+- [ ] **Step 9: PR + merge**
+
+```bash
+git push -u origin feature/v1.4-mcp-surface-sweep
+gh pr create --title "v1.4 MCP surface sweep" --body "Brings all 22 tier-2 skills current with deriva-ml-mcp v1.4.0: URI namespacing, deriva_ml_* tool prefix, update_dataset_types -> update_dataset rename, new v1.2 asset surface + update_execution + v1.4 resync_indexes references."
+gh pr merge --merge --delete-branch
+```
+
+- [ ] **Step 10: Tag v1.1.0**
+
+```bash
+uv run bump-version minor  # 1.0.0 -> 1.1.0; minor bump signals new MCP surface coverage
+```
+
+### Task 4.3: Update README + announce
+
+- [ ] **Step 1: Update READMEs in both repos**
+
+The READMEs should now describe:
+- The two-plugin split + the dependency relationship
+- Install instructions for each + the combined experience
+- Skill counts per plugin
+- Pointer to the migration plan in this doc
+
+- [ ] **Step 2: Update top-level workspace `CLAUDE.md`** (in `/Users/carl/GitHub/DerivaML/CLAUDE.md`) to mention the two-plugin architecture under deriva-skills.
+
+---
+
+## Self-review
+
+After writing the plan, look at the spec with fresh eyes:
+
+**Spec coverage:** Each numbered decision (locked above) maps to a specific phase task. All 14 tier-1 + 22 tier-2 skills accounted for; all 8 workspaces accounted for; all 4 refactorings have task entries; both repos have plugin/marketplace/README/CLAUDE work.
+
+**Placeholder scan:** No TBDs. Each task has an exact command or file edit. The one place that's intentionally hand-wavy is task 4.2 step 6 ("Commit incrementally per skill or logical group") — the granularity is the implementer's call but the requirement is "incremental, not single big commit" so partial progress survives.
+
+**Type consistency:** Plugin names (`deriva` / `deriva-ml`) are consistent across plugin.json, marketplace.json, README, install commands, cross-references. Marketplace names (`deriva-plugins` / `deriva-ml-plugins`) are consistent.
+
+## Execution Handoff
+
+Plan saved. Two execution options:
+
+**1. Subagent-Driven (recommended)** — I dispatch a fresh subagent per phase (4 subagents total: prep refactorings, tier-1 carve-out, tier-2 new repo, v1.4 sweep), review between phases.
+
+**2. Inline Execution** — execute phase-by-phase in this session, no subagent dispatch, with checkpoints for review.
+
+Which approach?
