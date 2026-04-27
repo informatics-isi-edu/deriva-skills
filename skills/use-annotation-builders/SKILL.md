@@ -13,24 +13,19 @@ DerivaML provides Python builder classes for constructing Deriva annotations wit
 > **Requires:** the `deriva-ml` Python package, which ships the annotation builder classes (`from deriva_ml.model.annotations import Display, VisibleColumns, ...`). The annotations themselves are core Chaise concepts that work on any Deriva catalog, but the typed Python wrappers currently live in the deriva-ml package. If you only have `deriva-py` installed, use the `customize-display` skill (MCP tools — no Python imports required) or write annotations as plain dicts.
 
 
-## Prerequisite: Connect to a Catalog
+## Connection model
 
-All operations in this skill require an active catalog connection. Before anything else:
+Builders run inside Python code that has constructed a `DerivaML` instance — that instance owns the catalog connection. The Python builder pattern stages edits on the local model and commits them with `ml.apply_annotations()` (this is a Python API call, NOT an MCP tool).
 
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
-
+> **Note:** The MCP-side `apply_annotations` tool was removed in `deriva-mcp-core` (annotations apply immediately when set via MCP). The Python `ml.apply_annotations()` call documented in this skill is a separate concept — it commits the locally-staged builder edits to the catalog. The two patterns are distinct: MCP tools are immediate-apply; Python builders stage then apply.
 
 ## When to Use Builders vs MCP Tools
 
 | Use Case | Approach |
 |----------|----------|
-| Interactive catalog setup | MCP tools (`set_visible_columns`, `apply_annotations`, etc.) |
+| Interactive catalog setup | MCP tools (`set_visible_columns`, `set_row_name_pattern`, etc.) — immediate apply |
 | One-off display tweaks | MCP tools |
-| Production deployment scripts | Builders |
+| Production deployment scripts | Builders + `ml.apply_annotations()` |
 | Reusable catalog configuration | Builders |
 | Complex pseudo-columns and facets | Builders |
 | Code that needs IDE autocompletion | Builders |
@@ -175,6 +170,6 @@ To inspect current annotations on a specific table or column:
 - Builders produce the same JSON that MCP tools set -- they are two ways to do the same thing.
 - Use builders when you need to version-control your catalog configuration in Python scripts.
 - Use MCP tools for quick interactive changes.
-- Always call `ml.apply_annotations()` (Python) or `apply_annotations()` (MCP) after making changes.
+- Always call `ml.apply_annotations()` after making builder changes. (MCP tools immediate-apply; this only applies to the Python builder pattern.)
 - PseudoColumns are powerful for showing related data without changing the data model.
 - Test complex Handlebars patterns with `preview_handlebars_template` before applying them.

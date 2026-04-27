@@ -1,50 +1,64 @@
 # Common Annotation Recipes and Patterns
 
+> All examples below assume `hostname="data.example.org"`, `catalog_id="1"`, and `schema="myproject"` — substitute your actual values. Every annotation tool persists the change immediately (no `apply_annotations()` step in the new MCP architecture).
+
 ## Column Display Formatting
 
 Control how individual column values are rendered:
 
-```
+```python
 set_column_display(
-    table_name="Image",
-    column_name="URL",
-    annotation={"compact": {"markdown_pattern": "[Download]({{{URL}}})"}}
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image", column="URL",
+    annotation={"compact": {"markdown_pattern": "[Download]({{{URL}}})"}},
 )
 
 set_column_display(
-    table_name="Measurement",
-    column_name="Value",
-    annotation={"compact": {"markdown_pattern": "{{{Value}}} {{{Units}}}"}}
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Measurement", column="Value",
+    annotation={"compact": {"markdown_pattern": "{{{Value}}} {{{Units}}}"}},
 )
 ```
 
 ## Common Recipes
 
 ### Hide system columns from compact view
-```
-remove_visible_column(table_name="Image", context="compact", column="RID")
-remove_visible_column(table_name="Image", context="compact", column="RCT")
-remove_visible_column(table_name="Image", context="compact", column="RMT")
-remove_visible_column(table_name="Image", context="compact", column="RCB")
-remove_visible_column(table_name="Image", context="compact", column="RMB")
+
+```python
+for col in ["RID", "RCT", "RMT", "RCB", "RMB"]:
+    remove_visible_column(
+        hostname="data.example.org", catalog_id="1",
+        schema="myproject", table="Image",
+        context="compact", column=col,
+    )
 ```
 
 ### Make a table's compact view show key info only
-```
+
+```python
 set_visible_columns(
-    table_name="Subject",
-    annotation={"compact": ["Name", "Age", "Sex", "Species", "Diagnosis"]}
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    annotation={"compact": ["Name", "Age", "Sex", "Species", "Diagnosis"]},
 )
-set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
-apply_annotations()
+set_row_name_pattern(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    pattern="{{{Name}}}",
+)
 ```
 
 ### Configure a vocabulary table display
-```
+
+```python
 set_visible_columns(
-    table_name="Diagnosis",
-    annotation={"compact": ["Name", "Description", "Synonyms"]}
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Diagnosis",
+    annotation={"compact": ["Name", "Description", "Synonyms"]},
 )
-set_row_name_pattern(table_name="Diagnosis", pattern="{{{Name}}}")
-apply_annotations()
+set_row_name_pattern(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Diagnosis",
+    pattern="{{{Name}}}",
+)
 ```

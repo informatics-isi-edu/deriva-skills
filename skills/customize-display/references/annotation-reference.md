@@ -487,7 +487,7 @@ set_visible_columns(
     annotation={"compact": ["Name", "Age", "Sex", "Species", "Diagnosis"]}
 )
 set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
-apply_annotations()
+# (changes apply immediately — no apply_annotations step in deriva-mcp-core)
 ```
 
 ### Configure vocabulary table display
@@ -498,7 +498,6 @@ set_visible_columns(
     annotation={"compact": ["Name", "Description", "Synonyms"]}
 )
 set_row_name_pattern(table_name="Diagnosis", pattern="{{{Name}}}")
-apply_annotations()
 ```
 
 ### Show image previews in compact view
@@ -508,7 +507,6 @@ set_column_display(
     table_name="Image", column_name="URL",
     annotation={"compact": {"markdown_pattern": "[![Preview]({{{URL}}})]({{{URL}}})"}}
 )
-apply_annotations()
 ```
 
 ### Add record count from related table
@@ -540,19 +538,18 @@ set_column_display(
     table_name="Image", column_name="URL",
     annotation={"compact": {"markdown_pattern": "[Download]({{{URL}}})"}}
 )
-apply_annotations()
 ```
 
-## Reference Resources
+## Reference Tools
 
-| Resource / Tool | Purpose |
-|-----------------|---------|
-| `apply_annotations` | Persist all pending annotation changes to the catalog |
-| `apply_catalog_annotations` | Apply sensible defaults to all tables |
+| Tool | Purpose |
+|------|---------|
+| `get_table_annotations(hostname, catalog_id, schema, table)` | View current annotations on a table |
+| `get_column_annotations(hostname, catalog_id, schema, table, column)` | View column annotations |
+| `apply_navbar_annotations(hostname, catalog_id, ...)` | Catalog-level navbar configuration |
 | `get_handlebars_template_variables` | Discover available template variables for a table |
 | `preview_handlebars_template` | Test a template against actual data |
 | `validate_template_syntax` | Check template syntax without running it |
-| `deriva://table/{name}/annotations` | View current annotations on a table |
-| `deriva://table/{name}/column/{col}/annotations` | View column annotations |
-| `deriva://docs/annotation-contexts` | Complete context reference |
+
+> **Architectural notes:** Annotations apply immediately when set — there is no `apply_annotations()` step in `deriva-mcp-core` (the legacy `deriva-mcp` server staged edits and required a final apply call; that pattern is gone). The `apply_catalog_annotations()` "set defaults across all tables" tool was also not ported — set defaults per-table using the `set_*` tools shown above.
 | `deriva://docs/annotations` | Full annotation guide |

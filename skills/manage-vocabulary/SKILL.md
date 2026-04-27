@@ -11,18 +11,12 @@ Controlled vocabularies are the standard way to represent categorical data in De
 
 Vocabularies are referenced as foreign-key targets from any categorical column in your domain schema — subject species, sample type, image quality grade, instrument calibration status, and so on.
 
-> **Steering principle (deriva-ml environments):** if the `deriva-ml-mcp` plugin is loaded in this catalog, DerivaML ships several built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`) and corresponding dedicated extender tools (`create_dataset_type_term`, `add_workflow_type`, `add_asset_type`). **You must use those dedicated tools / the DerivaML abstractions** for those vocabularies — not the generic `add_term` documented here — because they apply DerivaML-specific business logic and integrate with the rest of the deriva-ml lifecycle (dataset typing, workflow typing, asset typing). See the `dataset-lifecycle`, `create-feature`, and `work-with-assets` skills in `deriva-ml-skills`. This skill covers the generic catalog vocabulary surface for **all other** vocabularies (your own domain vocabs like `Sample_Type`, `Tissue_Type`, `Image_Quality`).
+> **Note (deriva-ml environments):** if the `deriva-ml-mcp` plugin is loaded in this catalog, DerivaML ships several built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`) under the `deriva-ml` schema. Use the generic `add_term` / `delete_term` / `add_synonym` tools documented here to manage these vocabularies — pass `schema="deriva-ml"` and `table="Dataset_Type"` (etc.) to the standard tools. The `deriva-ml-mcp` plugin used to ship dedicated extender tools (`create_dataset_type_term`, `add_workflow_type`, `add_asset_type`) but those were removed in favor of the generic vocabulary surface; the new tools handle the same business logic transparently because vocabulary tables are managed by `deriva-mcp-core` directly. See the `dataset-lifecycle`, `create-feature`, and `work-with-assets` skills in `deriva-ml-skills` for the broader DerivaML domain workflows.
 
 
-## Prerequisite: Connect to a Catalog
+## Stateless model
 
-All operations in this skill require an active catalog connection. Before anything else:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
+The new MCP server is stateless — every tool below takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
 
 
 ## Phase 1: Assess
@@ -47,13 +41,23 @@ rag_search("species organism", doc_type="catalog-schema")
 rag_search("image quality grade", doc_type="catalog-schema")
 ```
 
-Then use resources for full structured details:
+Then use the dedicated tools for full structured details:
 
-To **list all vocabularies**, read the `deriva://catalog/vocabularies` resource.
+```python
+# Browse terms in a specific vocabulary
+list_vocabulary_terms(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Species",
+)
 
-To **browse terms** in a specific vocabulary, read the `deriva://vocabulary/{vocab_name}` resource (e.g., `deriva://vocabulary/Species`). Alternatively, call `preview_table` with `table_name` set to the vocabulary name.
+# Look up a specific term (synonym-aware — finds "X-ray" if there's a "Xray" synonym)
+lookup_term(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Species", name="Mouse",
+)
+```
 
-To **look up a specific term**, read the `deriva://vocabulary/{vocab_name}/{term_name}` resource. This matches against both names and synonyms — looking up `"Xray"` will find `"X-ray"`. In the Python API, `ml.lookup_term("Species", "Mouse")` provides the same synonym-aware lookup.
+To **list all vocabulary tables in a catalog**, call `catalog_tables(...)` and filter for tables that have the standard vocabulary columns (Name, Description, Synonyms, ID, URI), or use `rag_search(..., doc_type="catalog-schema")` to find them by concept.
 
 ## Description Guidance
 
@@ -108,11 +112,16 @@ Orthogonal vocabularies compose — you can filter by modality AND quality indep
 
 ## Phase 3: Create
 
-Call `create_vocabulary` with:
-- `vocabulary_name`: table name in PascalCase with underscores (e.g., `"Tissue_Type"`)
-- `comment` (required): what this vocabulary classifies (e.g., `"Classification of biological tissue types for histology analysis"`)
+```python
+create_vocabulary(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject",                   # which schema to create the vocab table in
+    vocabulary_name="Tissue_Type",        # PascalCase with underscores
+    comment="Classification of biological tissue types for histology analysis",  # required
+)
+```
 
-This creates a table in the domain schema with the standard vocabulary columns.
+This creates a table in the named schema with the standard vocabulary columns (Name, Description, Synonyms, ID, URI).
 
 **Naming conventions:**
 - Use `PascalCase` with underscores between words: `Tissue_Type`, `Image_Quality`, `Stain_Protocol`
@@ -121,45 +130,81 @@ This creates a table in the domain schema with the standard vocabulary columns.
 
 ## Adding Terms
 
-Call `add_term` with:
-- `vocabulary_name`: the vocabulary table name
-- `term_name`: the term to add
-- `description`: what this term means (required — see `references/patterns.md` for guidance on writing good descriptions)
-- `synonyms` (optional): list of alternate names to add at creation time (e.g., `["HE", "Hematoxylin and Eosin"]`)
+```python
+add_term(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Tissue_Type",
+    name="Hyaline Cartilage",
+    description="Smooth, glassy cartilage covering joint surfaces; lacks blood vessels and nerves",
+    synonyms=["Articular Cartilage"],     # optional
+)
+```
 
-**Every term should have a meaningful description.** Descriptions appear as tooltips in the Chaise UI. Avoid descriptions that just restate the name — explain what the term means in context.
+**Every term must have a meaningful description.** Descriptions appear as tooltips in the Chaise UI. Avoid descriptions that just restate the name — explain what the term means in context.
 
 ## Adding Synonyms
 
 Synonyms make terms discoverable under alternative names, abbreviations, or common misspellings.
 
-Call `add_synonym` with `vocabulary_name`, `term_name`, and `synonym`.
+```python
+add_synonym(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Tissue_Type",
+    name="Hyaline Cartilage",
+    synonym="Articular Cartilage",
+)
+```
 
-Synonyms are searchable via the `deriva://vocabulary/{vocab_name}/{term_name}` resource and the Python API's `ml.lookup_term()`. For guidance on when to use synonyms vs creating new terms, see `references/patterns.md`.
+Synonyms are searchable via `lookup_term(...)` (the new MCP surface's synonym-aware lookup). For guidance on when to use synonyms vs creating new terms, see `references/patterns.md`.
 
 ## Removing Terms and Synonyms
 
-To **remove a synonym**, call `remove_synonym` with `vocabulary_name`, `term_name`, and `synonym`.
+```python
+# Remove a synonym
+remove_synonym(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Tissue_Type",
+    name="Hyaline Cartilage", synonym="Articular Cartilage",
+)
 
-To **delete a term**, call `delete_term` with `vocabulary_name` and `term_name`. This only works if the term is not referenced by any records — otherwise it will fail with a foreign key constraint error. Remove the references first.
+# Delete a term (only works if no records reference it; otherwise fails with FK error)
+delete_term(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Tissue_Type",
+    name="Hyaline Cartilage",
+)
+```
 
 ## Updating Term Descriptions
 
-Call `update_term_description` with `vocabulary_name`, `term_name`, and the new `description`.
+```python
+update_term_description(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Tissue_Type",
+    name="Hyaline Cartilage",
+    description="Updated description...",
+)
+```
 
 ## Workflow: Adding Terms to an Existing Vocabulary
 
-1. **Search first** — read `deriva://vocabulary/{vocab_name}` to check if the term (or a synonym) already exists
+1. **Search first** — `lookup_term(...)` to check if the term (or a synonym) already exists
 2. **Add the term** with a meaningful description (and optional synonyms)
 3. **Add additional synonyms** for common alternate names if not provided at creation
-4. **Verify** — read `deriva://vocabulary/{vocab_name}` to confirm
+4. **Verify** — `list_vocabulary_terms(...)` to confirm
 
-## Reference Resources
+## Reference Tools
 
-- `deriva://catalog/vocabularies` — Browse all vocabularies and term counts
-- `deriva://vocabulary/{vocab_name}` — Browse terms in a specific vocabulary
-- `deriva://vocabulary/{vocab_name}/{term_name}` — Look up a specific term (synonym-aware)
-- `references/patterns.md` — Built-in vocabularies, domain examples, FK patterns, description guidance, tips
+- `create_vocabulary(hostname, catalog_id, schema, vocabulary_name, comment)` — Create a new vocabulary table
+- `add_term(hostname, catalog_id, schema, table, name, description, synonyms=...)` — Add a term
+- `delete_term(hostname, catalog_id, schema, table, name)` — Remove a term
+- `add_synonym(hostname, catalog_id, schema, table, name, synonym)` — Add a synonym to an existing term
+- `remove_synonym(hostname, catalog_id, schema, table, name, synonym)` — Remove a synonym
+- `update_term(hostname, catalog_id, schema, table, name, ...)` — General-purpose term update
+- `update_term_description(hostname, catalog_id, schema, table, name, description)` — Description-only update
+- `list_vocabulary_terms(hostname, catalog_id, schema, table)` — Browse all terms
+- `lookup_term(hostname, catalog_id, schema, table, name)` — Synonym-aware term lookup
+- `references/patterns.md` — Domain examples, FK patterns, description guidance, tips
 
 ## Related Skills
 

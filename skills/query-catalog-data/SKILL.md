@@ -6,19 +6,9 @@ disable-model-invocation: true
 
 # Querying and Exploring Data in a Deriva Catalog
 
-This skill covers how to find, filter, and explore data in a Deriva catalog using MCP tools and resources.
+This skill covers how to find, filter, and explore data in a Deriva catalog using the `deriva-mcp-core` MCP tools and resources.
 
-
-## Prerequisite: Connect to a Catalog
-
-All operations in this skill require an active catalog connection. Before anything else:
-
-```
-connect_catalog(hostname="...", catalog_id="...")
-```
-
-If already connected (check `deriva://catalog/connections`), skip this step.
-
+> **Stateless model:** the new MCP server is stateless. Every tool call below takes `hostname=` and `catalog_id=` arguments explicitly — there is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show `hostname=...` and `catalog_id=...`.
 
 ## Discovery: Start with RAG Search
 
@@ -29,80 +19,115 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 | Tables, columns, relationships | `rag_search("...", doc_type="catalog-schema")` |
 | Feature definitions and columns | `rag_search("...", doc_type="catalog-schema")` |
 | Vocabulary terms and meanings | `rag_search("...", doc_type="catalog-schema")` |
-| Datasets by purpose or type | `rag_search("...", doc_type="catalog-data")` |
-| Executions by workflow or status | `rag_search("...", doc_type="catalog-data")` |
-| DerivaML API how-to | `rag_search("...", include_schema=False, include_data=False)` |
+| Datasets by purpose or type *(tier-2; deriva-ml-skills)* | `rag_search("...", doc_type="catalog-data")` |
+| Executions by workflow or status *(tier-2; deriva-ml-skills)* | `rag_search("...", doc_type="catalog-data")` |
 
-**Only use raw resources when you need the complete, machine-readable output** — e.g., for programmatic processing or when RAG results don't answer the question:
+**Only use raw schema tools when you need the complete, machine-readable output** — e.g., for programmatic processing or when RAG results don't answer the question:
 
-| Resource | Purpose |
-|----------|---------|
-| `deriva://catalog/schema` | Full schema JSON (large — use only when needed) |
-| `deriva://table/{name}/schema` | One table's complete structure |
-| `deriva://catalog/tables` | All tables with row counts |
-| `deriva://vocabulary/{name}` | Complete vocabulary term list |
-| `deriva://dataset/{rid}` | Dataset details and versions |
-| `deriva://chaise-url/{table_or_rid}` | Web UI link (pass table name or RID) |
+| Tool | Purpose |
+|------|---------|
+| `get_schema(hostname, catalog_id)` | Full schema JSON (large — use only when needed) |
+| `get_table(hostname, catalog_id, schema, table)` | One table's complete structure |
+| `catalog_tables(hostname, catalog_id)` | All tables with row counts |
+| `list_vocabulary_terms(hostname, catalog_id, schema, table)` | Complete vocabulary term list |
+| `lookup_term(hostname, catalog_id, schema, table, name)` | Look up a vocabulary term (synonym-aware) |
 
 ## Key Tools
 
 | Tool | Purpose |
 |------|---------|
-| `rag_search` | **Primary discovery tool** — semantic search across schema, data, and docs |
-| `preview_table` | Query with filters, columns, limit/offset |
-| `get_table_sample_data` | Preview sample rows from a table |
-| `preview_table` (with limit=1) | Count matching records |
-| `get_record` | Fetch a single record by RID |
-| `validate_rids` | Check if RIDs exist |
-| `preview_denormalized_dataset` | Schema shape + size estimates (no dataset needed), or join dataset tables into flat DataFrame |
-| Python API `dataset.download_dataset_bag(version)` | Download full dataset as BDBag |
-| resource `deriva://dataset/{rid}/members` | List records in a dataset |
-| `list_asset_executions` | Find executions that created/used an asset |
+| `rag_search(query, doc_type="catalog-schema"|"catalog-data")` | **Primary discovery tool** — semantic search across schema, data, and docs |
+| `query_attribute(hostname, catalog_id, schema, table, ...)` | Filtered query with column projection, limit, offset |
+| `query_aggregate(hostname, catalog_id, schema, table, ...)` | Aggregation queries (counts, group-by) |
+| `count_table(hostname, catalog_id, schema, table, filter=...)` | Count matching records (faster than fetching) |
+| `get_table_sample_data(hostname, catalog_id, schema, table)` | Preview sample rows from a table |
+| `get_entities(hostname, catalog_id, schema, table, filter=...)` | Fetch records (use `filter={"RID": "..."}` to get a single record by RID) |
 
 ## Common Patterns
 
-```
-# Query with filter
-preview_table(table_name="Subject", filters={"Species": "Mouse"}, limit=50)
+```python
+# Query with filter (substitute your hostname + catalog_id everywhere)
+query_attribute(
+    hostname="data.example.org",
+    catalog_id="1",
+    schema="myproject",
+    table="Subject",
+    filter={"Species": "Mouse"},
+    limit=50,
+)
 
 # Paginate
-preview_table(table_name="Image", limit=100, offset=200)
+query_attribute(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    limit=100, offset=200,
+)
 
-# Get specific record
-get_record(table_name="Subject", rid="2-B4C8")
+# Get a specific record by RID
+get_entities(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    filter={"RID": "2-B4C8"},
+)
 
-# Explore schema shape + size estimates (no dataset needed)
-preview_denormalized_dataset(include_tables=["Image", "Subject"])
+# Count matching records (no row fetch)
+count_table(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    filter={"Species": "Mouse"},
+)
 
-# Dataset-scoped info (no rows)
-preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8")
-
-# ML-ready flat data with row preview
-preview_denormalized_dataset(include_tables=["Image", "Subject"], dataset_rid="2-B4C8", limit=50)
+# Sample preview (no filter; first N rows)
+get_table_sample_data(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+)
 ```
 
-## Re-querying Cached Results
+## Validating RIDs
 
-When you run `preview_table` or `preview_denormalized_dataset`, the results are cached server-side. You can re-query them with different sort, filter, or pagination without re-executing the original query:
+The new MCP surface does not have a dedicated `validate_rids` tool. Use `get_entities` with a RID filter and check the result:
 
+```python
+result = get_entities(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Subject",
+    filter={"RID": "2-B4C8"},
+)
+if not result:
+    # RID does not exist (or is in a different table)
+    ...
 ```
-# See what's cached
-list_cached_results()
 
-# Re-query with different sort/filter/pagination
-query_cached_result(cache_key="...", sort_by="Image.CDR", sort_desc=True, limit=50)
-query_cached_result(cache_key="...", filter_col="Subject.Species", filter_val="Mouse")
-query_cached_result(cache_key="...", limit=100, offset=200)
+For RID validation across multiple candidate tables, query each in turn — there is no single-tool cross-table RID lookup in the new surface.
+
+## Aggregations
+
+For COUNT, SUM, AVG, MIN, MAX queries over a table, use `query_aggregate`:
+
+```python
+query_aggregate(
+    hostname="data.example.org", catalog_id="1",
+    schema="myproject", table="Image",
+    group_by=["Subject.Species"],
+    aggregates={"image_count": "COUNT(*)"},
+    filter={"QC_Status": "Pass"},
+)
 ```
-
-This is useful when exploring large result sets interactively — the first query fetches data from the catalog, and subsequent `query_cached_result` calls paginate/sort/filter locally.
 
 ## Tips
 
-- Always use `limit` for large tables to avoid timeouts
-- Column names are case-sensitive — check schema first
-- Use `preview_denormalized_dataset` to resolve FK RIDs into readable values — works without a dataset RID for schema exploration
-- Pin to specific dataset versions for reproducibility
-- If a table or column name is misspelled, the MCP server will suggest similar entities in the error response — check for a `suggestions` field with "did you mean?" candidates
+- Always pass `hostname=` and `catalog_id=` to every tool — there is no implicit "active catalog" in the stateless server.
+- Always use `limit` for large tables to avoid timeouts.
+- Schema and column names are case-sensitive — check schema first via `rag_search` or `get_schema`.
+- If a table or column name is misspelled, the MCP server's response includes a `suggestions` field with "did you mean?" candidates — check for that before retrying.
+- For dataset-aware querying (denormalized wide-table views, dataset member listing), use the tier-2 `dataset-lifecycle` skill in `deriva-ml-skills` — the new dataset tools live in `deriva-ml-mcp`, not in core.
 
-For the full guide with query patterns, feature queries, provenance tracking, and troubleshooting, read `references/workflow.md`.
+## Related Skills
+
+- **`/deriva:route-catalog-schema`** — router for catalog structure / data exploration tasks
+- **`/deriva:create-table`** — schema operations (creating domain tables, columns, FKs)
+- **`/deriva:manage-vocabulary`** — vocabulary CRUD on any Deriva catalog
+- **`/deriva-ml:dataset-lifecycle`** *(tier-2, deriva-ml-skills)* — dataset operations including `deriva_ml_denormalize_dataset` for ML-ready wide-table views
+
+For the full guide with query patterns, vocabulary queries, and troubleshooting, read `references/workflow.md`.
