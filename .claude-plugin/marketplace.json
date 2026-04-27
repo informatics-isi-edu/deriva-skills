@@ -43,6 +43,7 @@
         "./skills/run-notebook",
         "./skills/semantic-awareness",
         "./skills/setup-notebook-environment",
+        "./skills/troubleshoot-deriva-errors",
         "./skills/troubleshoot-execution",
         "./skills/use-annotation-builders",
         "./skills/work-with-assets",
