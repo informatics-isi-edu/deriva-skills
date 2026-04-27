@@ -5,8 +5,8 @@
 **Goal:** Split the monolithic `deriva-skills` repo into two plugin packages aligned with the `deriva-mcp-core` / `deriva-ml-mcp` boundary, refactor four gray-zone skills along the way, and bring all surviving skills current with the deriva-ml-mcp v1.4.0 surface.
 
 **Architecture:**
-- **`deriva-skills`** (existing repo, preserved) hosts the **`deriva`** plugin: skills that work with `deriva-mcp-core` alone. ~13 skills (10 originally tier-1 + 1 substantive promotion + 2 from splits' tier-1 halves).
-- **`deriva-ml-skills`** (new repo) hosts the **`deriva-ml`** plugin: skills that require `deriva-ml-mcp`. ~23 skills (24 originally tier-2 - 1 promoted out + 2 from splits' tier-2 halves).
+- **`deriva-skills`** (existing repo, preserved) hosts the **`deriva`** plugin: skills that work with `deriva-mcp-core` alone. ~14 skills (10 originally tier-1 + 1 substantive promotion + 2 from splits' tier-1 halves + 1 new `deriva-context` plugin context skill).
+- **`deriva-ml-skills`** (new repo) hosts the **`deriva-ml`** plugin: skills that require `deriva-ml-mcp`. ~24 skills (24 originally tier-2 - 1 promoted out + 2 from splits' tier-2 halves + 1 new `deriva-ml-context` plugin context skill).
 - The `deriva-ml` plugin **depends on** `deriva` (declared in plugin.json description + README; users install both marketplaces).
 - Each repo has its own marketplace (`deriva-plugins` and `deriva-ml-plugins`), version, CI, release cadence.
 - Workspaces (`*-workspace/` eval-harness directories) move to `evals/` in their owning plugin.
@@ -25,6 +25,7 @@
 - Refactorings: 3 items (2 splits + 1 substantive promotion). Original plan was 2 promotions; revised to 1 after a wider-grep audit showed `generate-scripts` is fundamentally about the deriva-ml execution-provenance Python pattern (Workflow + Execution + commit) — stripping that out leaves a thin "use ERMrest from Python" skill that doesn't justify a tier-1 slot. `manage-vocabulary` is the only honest promotion candidate (vocab CRUD genuinely works on any Deriva catalog; ML-flavored examples can be replaced with generic-domain examples).
 - Workspaces: follow their skills (B1); also relocate to `evals/` during the restructure
 - The user's pre-existing CLAUDE.md edit + untracked `.claude/` directory in `deriva-skills`: leave alone
+- Each plugin ships an always-on **plugin context skill** (`deriva-context` in Phase 2, `deriva-ml-context` in Phase 3) — the canonical Claude Code workaround for the lack of plugin-level instruction support (Claude Code plugins do not have an MCP-style `instructions` field; the always-on-skill pattern used by `superpowers:using-superpowers` is the supported equivalent). The tier-2 context skill is load-bearing: it carries the "what is DerivaML / what are the abstractions / prefer deriva-ml over raw deriva" steering principle that the user explicitly asked for, in addition to the per-skill steering callouts already added in Phase 1.
 
 ## Skill classification (final)
 
@@ -410,7 +411,53 @@ The user's pre-existing CLAUDE.md changes (uncommitted) should be preserved. Pul
 
 Be careful: the user's working-tree changes should land in the same commit as the restructure changes (or in a separate commit at user discretion).
 
-### Task 2.7: Validation pass
+### Task 2.7: Author the `deriva-context` plugin context skill
+
+Goal: ship a always-on skill at the root of the tier-1 plugin that loads a one-paragraph context blurb explaining what the `deriva` plugin gives the user and the boundary with the tier-2 `deriva-ml` plugin. This is the canonical workaround for the lack of plugin-level prompt support in Claude Code (the same pattern superpowers uses with `using-superpowers`).
+
+**Files:**
+- Create: `skills/deriva-context/SKILL.md`
+
+- [ ] **Step 1: Author `skills/deriva-context/SKILL.md`**
+
+Content sketch (tune wording but cover all the points):
+
+```yaml
+---
+name: deriva-context
+description: "ALWAYS load this context when the deriva plugin is active. Establishes what the deriva plugin provides (Deriva catalog operations via deriva-mcp-core), the relationship to the optional deriva-ml-skills plugin (which adds DerivaML domain abstractions), and the principle that domain abstractions take precedence over raw catalog primitives when both are available. Triggers on: 'deriva', 'catalog', 'deriva-mcp', 'derivaml', 'dataset', 'workflow', 'execution', 'feature', 'vocabulary', 'rid', 'ermrest'."
+disable-model-invocation: false
+---
+
+# Deriva Plugin Context
+
+The `deriva` plugin provides skills for working with **any Deriva catalog** via `deriva-mcp-core`: connecting to catalogs, querying tables, creating schemas / tables / columns, managing vocabularies and terms, customizing display annotations, and troubleshooting generic catalog errors. The skills work on plain Deriva — they do not require any DerivaML-specific plugin or domain layer.
+
+If the `deriva-ml` plugin is also loaded (typically via `deriva-ml-skills` + `deriva-ml-mcp`), it adds **DerivaML domain abstractions** on top: Datasets, Workflows, Executions, Features, Asset_Type vocabularies. Those abstractions are first-class concepts that happen to be stored as Deriva tables. **In a deriva-ml-loaded catalog you must use the deriva-ml abstractions** (`/deriva-ml:dataset-lifecycle`, `/deriva-ml:execution-lifecycle`, `/deriva-ml:create-feature`, the deriva-ml Python API and dedicated MCP tools) for those concepts — not the raw `insert_records` / `update_record` / `get_record` core tools, which bypass DerivaML's business logic, FK validation, provenance tracking, and version management.
+
+Reach for the raw catalog surface this plugin documents only for catalog objects that are NOT DerivaML domain concepts: custom domain tables, generic vocabularies (`Sample_Type`, `Tissue_Type`, `Image_Quality`, etc.), schema introspection, display customization.
+```
+
+- [ ] **Step 2: Register in `marketplace.json`**
+
+Add `"./skills/deriva-context"` to the `skills` array.
+
+- [ ] **Step 3: Validate**
+
+```bash
+claude --plugin-dir .
+# Confirm the skill loads without errors and the description triggers in
+# a fresh session that mentions "deriva".
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add skills/deriva-context/ .claude-plugin/marketplace.json
+git commit -m "feat(deriva-context): plugin-level context skill establishing tier-1 boundary and deriva-ml steering principle"
+```
+
+### Task 2.8: Validation pass
 
 - [ ] **Step 1: Plugin loads**
 
@@ -418,7 +465,7 @@ Be careful: the user's working-tree changes should land in the same commit as th
 claude --plugin-dir .
 ```
 
-Should load with 13 skills registered, no errors.
+Should load with 14 skills registered (13 original tier-1 + 1 deriva-context), no errors.
 
 - [ ] **Step 2: No tier-2 references in tier-1 skill bodies**
 
@@ -437,7 +484,7 @@ grep -rE "/deriva:[a-z-]+|/deriva-ml:[a-z-]+" skills/
 
 For each `/deriva:X` reference, confirm `skills/X/` exists. For each `/deriva-ml:X` reference, confirm it's a forward-pointer to a tier-2 skill (acceptable — user may not have tier-2 installed; the cross-reference is informational).
 
-### Task 2.8: PR + merge phase 2
+### Task 2.9: PR + merge phase 2
 
 - [ ] **Step 1: Push + open PR**
 
@@ -589,7 +636,91 @@ ls evals/ | wc -l    # expect 7
 - [ ] **Step 3: pyproject.toml** — minimal, for `bump-version` + `uv` tooling. Mirror `deriva-skills`'s pyproject if it has one.
 - [ ] **Step 4: .gitignore** — copy from `deriva-skills`.
 
-### Task 3.5: Update internal cross-references
+### Task 3.5: Author the `deriva-ml-context` plugin context skill
+
+Goal: ship the always-on context skill at the root of the `deriva-ml` plugin. Mirrors the structure of `deriva-context` (Phase 2 Task 2.7) but is the LOAD-BEARING one — it is the place where the "what is DerivaML" introduction and the "prefer deriva-ml over raw deriva" steering principle land for users who arrive in a deriva-ml-loaded session.
+
+This skill exists because Claude Code plugins do not support a plugin-level `instructions` field the way MCP servers do. The always-on skill pattern (used by `superpowers:using-superpowers` and the existing always-on skills `generate-descriptions`, `semantic-awareness`, `maintain-experiment-notes`) is the canonical workaround.
+
+**Files:**
+- Create: `skills/deriva-ml-context/SKILL.md`
+
+- [ ] **Step 1: Author `skills/deriva-ml-context/SKILL.md`**
+
+Content sketch (tune wording but cover all the points):
+
+```yaml
+---
+name: deriva-ml-context
+description: "ALWAYS load this context when the deriva-ml plugin is active. Establishes what DerivaML is (a reproducible-ML layer on top of Deriva catalogs), the core abstractions (Dataset, Workflow, Execution, Feature, Asset), and the steering principle that DerivaML abstractions take precedence over raw Deriva catalog primitives whenever both are available. Triggers on: 'derivaml', 'deriva-ml', 'dataset', 'workflow', 'execution', 'feature', 'asset', 'experiment', 'training run', 'model', 'pipeline', 'reproducible'."
+disable-model-invocation: false
+---
+
+# DerivaML Plugin Context
+
+## What is DerivaML?
+
+DerivaML is a reproducible-ML layer built on top of Deriva catalogs. It records the full provenance of every ML run -- inputs, code versions, configurations, outputs, and intermediate artifacts -- as first-class catalog entities so that experiments can be reproduced, audited, compared across users, and resumed across sessions.
+
+## Core abstractions
+
+These five concepts are the surface DerivaML adds on top of plain Deriva. Each is stored as one or more Deriva tables underneath, but you should treat them as DerivaML domain objects, not as raw tables.
+
+| Abstraction | What it represents | Primary skill | Key MCP tools |
+|---|---|---|---|
+| **Dataset** | A versioned collection of catalog rows that an execution consumed or produced | `dataset-lifecycle` | `create_dataset`, `add_dataset_members`, `increment_dataset_version`, `cache_dataset` |
+| **Workflow** | A versioned reference to the code (URL + git commit) that knows how to do a thing | `route-run-workflows` -> `new-model` / `configure-experiment` | `create_workflow`, `lookup_workflow_by_url` |
+| **Execution** | One run of a Workflow against specific input Datasets, producing output Datasets / Features / Assets | `execution-lifecycle` | `create_execution`, `start_execution`, `stop_execution`, `update_execution_status` |
+| **Feature** | A typed value attached to a row of some target table (e.g., a per-image classification label produced by a run) | `create-feature` | `create_feature`, `add_feature_value` |
+| **Asset** | A file uploaded to hatrac and recorded in the catalog with an Asset_Type and provenance link to its producing Execution | `work-with-assets` | `create_asset_table`, `add_asset_type`, `add_asset_type_to_asset` |
+
+## Steering principle: DerivaML abstractions take precedence
+
+Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts. **In a deriva-ml-loaded catalog, you must use the deriva-ml abstractions for them** -- the dedicated MCP tools listed above and the deriva-ml Python API -- not the raw `insert_records` / `update_record` / `get_record` core tools that plain Deriva exposes.
+
+The raw tools bypass:
+- DerivaML's business logic (e.g., `add_dataset_members` validates RIDs against the dataset's element-type spec)
+- FK validation across the Dataset / Workflow / Execution graph
+- Provenance tracking (each mutation links back to the active Execution)
+- Version management (Datasets are versioned; raw inserts skip the version bump)
+- RAG re-indexing (the deriva-ml-mcp tools fire surgical re-index hooks; raw tools don't)
+
+Reach for the raw catalog surface (`/deriva:create-table`, `/deriva:query-catalog-data`, `/deriva:manage-vocabulary`, etc.) only for catalog objects that are **NOT** one of the five DerivaML domain concepts: custom domain tables your project added (e.g., `Subject`, `Sample`, `Image`), generic vocabularies that aren't `Dataset_Type` / `Workflow_Type` / `Asset_Type` / `Execution_Status_Type`, schema introspection, display annotations.
+
+## Cross-plugin awareness
+
+The tier-1 `deriva` plugin is also loaded in your environment (it's a documented dependency of `deriva-ml`). When you need a generic catalog operation (auth troubleshooting, schema introspection, custom-domain table creation, generic vocabulary CRUD), reach for the corresponding tier-1 skill — the tier-2 surface complements it, doesn't replace it.
+
+## Pointers
+
+- `/deriva-ml:dataset-lifecycle` — Dataset creation, population, splitting, versioning, browsing, downloading
+- `/deriva-ml:execution-lifecycle` — Pre-flight validation, running experiments, execution provenance
+- `/deriva-ml:create-feature` — Features, labels, annotations, selectors
+- `/deriva-ml:work-with-assets` — File assets — upload, download, provenance, types
+- `/deriva-ml:troubleshoot-execution` — Execution-lifecycle troubleshooting (asset paths, upload, stuck Running, version mismatch, missing feature)
+- `/deriva:troubleshoot-deriva-errors` (tier-1) — Generic catalog troubleshooting (auth, permissions, invalid RID, missing record, generic vocab term not found)
+```
+
+- [ ] **Step 2: Register in `marketplace.json`**
+
+Add `"./skills/deriva-ml-context"` to the `skills` array.
+
+- [ ] **Step 3: Validate**
+
+```bash
+claude --plugin-dir .
+# Confirm the skill loads without errors and the description triggers in
+# a fresh session that mentions "derivaml", "dataset", "workflow", or "execution".
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add skills/deriva-ml-context/ .claude-plugin/marketplace.json
+git commit -m "feat(deriva-ml-context): plugin-level context skill establishing DerivaML abstractions and the prefer-deriva-ml steering principle"
+```
+
+### Task 3.6: Update internal cross-references
 
 - [ ] **Step 1: Sweep tier-2 skills for stale tier-1 references**
 
@@ -605,7 +736,7 @@ For each reference, the user reading the skill content can install the reference
 
 Some descriptions say "this plugin's other skills..."; update to be specific about which plugin (tier-1 vs tier-2).
 
-### Task 3.6: Validation
+### Task 3.7: Validation
 
 - [ ] **Step 1: Plugin loads**
 
@@ -613,7 +744,7 @@ Some descriptions say "this plugin's other skills..."; update to be specific abo
 claude --plugin-dir .
 ```
 
-Should load with 23 skills, no errors.
+Should load with 24 skills (23 original tier-2 + 1 deriva-ml-context), no errors.
 
 - [ ] **Step 2: Tier-2 surface validates against MCP**
 
@@ -624,13 +755,13 @@ grep -rE "deriva_ml_|deriva://catalog/[^/]+/[^/]+/ml/" skills/ | wc -l
 
 Expect substantial output — these are the references the phase 4 sweep will validate.
 
-### Task 3.7: First commit + push
+### Task 3.8: First commit + push
 
 - [ ] **Step 1: Initial commit**
 
 ```bash
 git add -A
-git commit -m "Initial commit: deriva-ml-skills v1.0.0 (23 skills + 7 evals)
+git commit -m "Initial commit: deriva-ml-skills v1.0.0 (24 skills + 7 evals)
 
 Imported from deriva-skills tier-2-snapshot-2026-04-27 (no history
 preserved per migration plan). Pairs with the deriva-skills tier-1
@@ -823,7 +954,7 @@ The READMEs should now describe:
 
 After writing the plan, look at the spec with fresh eyes:
 
-**Spec coverage:** Each numbered decision (locked above) maps to a specific phase task. All 13 tier-1 + 23 tier-2 skills accounted for; all 8 workspaces accounted for; all 3 refactorings have task entries; both repos have plugin/marketplace/README/CLAUDE work.
+**Spec coverage:** Each numbered decision (locked above) maps to a specific phase task. All 13 tier-1 + 23 tier-2 carved-over skills accounted for; the 2 new plugin context skills (`deriva-context` in Phase 2, `deriva-ml-context` in Phase 3) bring totals to 14 / 24. All 8 workspaces accounted for; all 3 refactorings have task entries; both repos have plugin/marketplace/README/CLAUDE work.
 
 **Placeholder scan:** No TBDs. Each task has an exact command or file edit. The one place that's intentionally hand-wavy is task 4.2 step 6 ("Commit incrementally per skill or logical group") — the granularity is the implementer's call but the requirement is "incremental, not single big commit" so partial progress survives.
 
