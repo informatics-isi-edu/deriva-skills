@@ -1,6 +1,6 @@
 {
   "name": "deriva",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Skills for working with Deriva catalogs via deriva-mcp-core - schema operations, table/column creation, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting. For DerivaML ML workflows (datasets, executions, features, experiments), additionally install deriva-ml-skills.",
   "author": {
     "name": "ISI Informatics",
