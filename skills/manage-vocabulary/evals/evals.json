@@ -21,14 +21,14 @@
     },
     {
       "id": 4,
-      "prompt": "What vocabularies exist in my catalog and what terms does the Dataset_Type vocabulary have?",
-      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should then read deriva://vocabulary/Dataset_Type to browse its terms. Should explain what the terms mean (Training, Testing, etc.) and that these are built-in vocabularies that can be extended.",
+      "prompt": "What vocabularies exist in my catalog and what terms does the Species vocabulary have?",
+      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should then read deriva://vocabulary/Species to browse its terms (or note that Species may not exist if the catalog has not yet defined it). Should explain that vocabularies in a fresh Deriva catalog are user-defined — the assistant should NOT claim Dataset_Type / Workflow_Type are built-in unless the deriva-ml-mcp plugin is mentioned. Cross-reference to the patterns.md domain-plugin section is acceptable.",
       "files": []
     },
     {
       "id": 5,
-      "prompt": "I want to add a new dataset type called 'Augmented' for datasets that contain augmented training data. How do I do that?",
-      "expected_output": "Should use create_dataset_type_term (the dedicated tool for Dataset_Type) rather than generic add_term. Should include a meaningful description. Should mention that dataset types support orthogonal tagging — a dataset can have both 'Training' and 'Augmented' types.",
+      "prompt": "I have a Sample_Type vocabulary with terms 'Tissue', 'Blood', 'Saliva'. I want to add a new term 'Cerebrospinal_Fluid' with the synonym 'CSF'. How do I do that?",
+      "expected_output": "Should call add_term with vocabulary_name='Sample_Type', term_name='Cerebrospinal_Fluid', a meaningful description (e.g., explaining what CSF is and when it would be collected), and synonyms=['CSF']. Should suggest first reading deriva://vocabulary/Sample_Type to confirm the new term doesn't already exist (or exist as a synonym of an existing term). Should verify the addition afterward.",
       "files": []
     },
     {

@@ -1,6 +1,6 @@
 ---
 name: manage-vocabulary
-description: "ALWAYS use this skill when creating or managing controlled vocabularies in Deriva — creating vocabulary tables, adding terms with descriptions and synonyms, browsing existing vocabularies, extending built-in vocabularies (Dataset_Type, Workflow_Type), and deciding whether to create a new vocabulary vs extend an existing one. Triggers on: 'create vocabulary', 'add term', 'add synonym', 'vocabulary', 'controlled terms', 'categorical labels', 'what vocabularies exist', 'browse terms', 'extend vocabulary', 'dataset type', 'workflow type'."
+description: "ALWAYS use this skill when creating or managing controlled vocabularies in Deriva — creating vocabulary tables, adding terms with descriptions and synonyms, browsing existing vocabularies, and deciding whether to create a new vocabulary vs extend an existing one. Triggers on: 'create vocabulary', 'add term', 'add synonym', 'vocabulary', 'controlled terms', 'categorical labels', 'what vocabularies exist', 'browse terms', 'extend vocabulary'."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -9,7 +9,9 @@ disable-model-invocation: true
 
 Controlled vocabularies are the standard way to represent categorical data in Deriva. They provide consistent labeling, faceted search in Chaise, and synonym support for discoverability. Every vocabulary is a table with standard columns: Name, Description, Synonyms, ID, and URI.
 
-Vocabularies are used by features (see `create-feature`), dataset types, workflow types, asset types, and any categorical column in your domain schema.
+Vocabularies are referenced as foreign-key targets from any categorical column in your domain schema — subject species, sample type, image quality grade, instrument calibration status, and so on.
+
+> **Tier-2 (deriva-ml) only:** if you have the `deriva-ml-skills` plugin installed, DerivaML ships several built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`) and corresponding dedicated extender tools (`create_dataset_type_term`, `add_workflow_type`, `add_asset_type`). See the `dataset-lifecycle`, `create-feature`, and `work-with-assets` skills in `deriva-ml-skills` for those — they extend the same `create_vocabulary` / `add_term` machinery this skill documents. The skill you are reading covers the generic catalog vocabulary surface that works on any Deriva catalog with `deriva-mcp-core` alone.
 
 
 ## Prerequisite: Connect to a Catalog
@@ -161,5 +163,6 @@ Call `update_term_description` with `vocabulary_name`, `term_name`, and the new 
 
 ## Related Skills
 
-- **`create-feature`** — Features use vocabularies as their value domain. See this skill for creating features that reference vocabulary terms.
 - **`create-table`** — Creating domain tables with FK columns to vocabulary tables.
+- **`generate-descriptions`** — Description templates and quality guidelines for vocabulary tables and terms.
+- **`create-feature`** *(tier-2, deriva-ml-skills)* — Features use vocabularies as their value domain. See this skill if you have `deriva-ml-skills` installed and want to create features that reference vocabulary terms.
