@@ -10,6 +10,8 @@ DerivaML provides Python builder classes for constructing Deriva annotations wit
 
 **This skill covers the Python builder class approach.** For quick interactive setup using MCP tools (better for one-off tweaks and exploration), see the `customize-display` skill instead.
 
+> **Requires:** the `deriva-ml` Python package, which ships the annotation builder classes (`from deriva_ml.model.annotations import Display, VisibleColumns, ...`). The annotations themselves are core Chaise concepts that work on any Deriva catalog, but the typed Python wrappers currently live in the deriva-ml package. If you only have `deriva-py` installed, use the `customize-display` skill (MCP tools — no Python imports required) or write annotations as plain dicts.
+
 
 ## Prerequisite: Connect to a Catalog
 

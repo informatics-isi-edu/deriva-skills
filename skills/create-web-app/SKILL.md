@@ -157,5 +157,5 @@ User: "Create a chart showing the diagnosis distribution in my dataset"
 ## Related Skills
 
 - **`browse-erd`** — launches the Schema Workbench (a built-in app)
-- **`manage-storage`** — uses the Storage Manager (a built-in app)
+- **`manage-storage`** *(tier-2; deriva-ml-skills)* — uses the Storage Manager (a built-in app); install `deriva-ml-skills` for this skill
 - **`route-catalog-schema`** → `query-catalog-data` — for querying data to display

@@ -22,17 +22,25 @@ If already connected (check `deriva://catalog/connections`), skip this step.
 
 ## Entities Requiring Descriptions
 
-- **Datasets**: `create_dataset` -- description parameter
-- **Experiments**: `experiment_store()` in `configs/experiments.py` -- description parameter on `make_config()`
-- **Multiruns**: `multirun_config()` in `configs/multiruns.py` -- description parameter
-- **Executions and Workflows**: `create_execution`, Workflow configuration -- description parameter
-- **Features**: `create_feature` -- description parameter
+**Tier-1 (this plugin) — generic Deriva catalog entities:**
+
 - **Vocabularies**: `create_vocabulary` -- comment parameter
 - **Vocabulary Terms**: `add_term` -- description parameter
 - **Tables and Columns**: `create_table` (uses `comment` parameter), `set_table_description`, `set_column_description`
-- **Assets**: `exe.asset_file_path()` -- `description` parameter. Execution metadata files get automatic descriptions.
 
-For hydra-zen configuration descriptions (`with_description()` and `zen_meta`), see the `write-hydra-config` skill.
+**Tier-2 (`deriva-ml-skills`, if installed) — DerivaML domain entities:**
+
+- **Datasets**: `create_dataset` -- description parameter
+- **Workflows**: `create_workflow` -- description parameter
+- **Executions**: `create_execution` -- description parameter
+- **Features**: `create_feature` -- description parameter
+- **Assets**: `exe.asset_file_path()` -- `description` parameter; execution metadata files get automatic descriptions
+- **Experiments**: `experiment_store()` in `configs/experiments.py` -- description parameter on `make_config()`
+- **Multiruns**: `multirun_config()` in `configs/multiruns.py` -- description parameter
+
+For hydra-zen configuration descriptions (`with_description()` and `zen_meta`), see the `write-hydra-config` skill in the `deriva-ml-skills` plugin (tier-2).
+
+The description-quality guidance below applies to both tiers — what makes a good description doesn't change between catalog tables and Datasets.
 
 ## How to Generate Descriptions
 
