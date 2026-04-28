@@ -86,9 +86,9 @@ Every term must have a description that defines its meaning in context — not j
 **Bad term descriptions:**
 - "Pneumonia" or "This is the pneumonia term" or leaving it empty
 
-## Automatic Safeguards
+## Find before you create
 
-> The MCP server automatically checks for near-duplicate vocabularies when calling `create_vocabulary`. If a similar vocabulary already exists, the tool response includes a `similar_existing` field with suggestions. It also provides "did you mean?" suggestions when `add_term` or `delete_term` references a vocabulary or term that doesn't exist.
+> The current `deriva-mcp-core` + `deriva-ml-mcp` server stack does NOT perform automatic duplicate detection on `create_vocabulary` or `add_term`, and does NOT provide "did you mean?" suggestions on missing references (the legacy `deriva-mcp` server had both; neither was ported to the cut-over architecture). Restoring them is an open upstream item. Until then, the skill-level workflow is the only guardrail: before creating a vocabulary or adding a term, run `rag_search` against the catalog schema (`doc_type="catalog-schema"`) to find similar entities. Present a picker if multiple plausible matches turn up. See the `semantic-awareness` skill for the full workflow.
 
 ## Phase 2: Design
 
