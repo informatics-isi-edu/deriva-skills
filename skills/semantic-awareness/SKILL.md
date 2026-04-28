@@ -4,7 +4,7 @@ description: "ALWAYS use before creating new tables, vocabularies, features, dat
 user-invocable: false
 ---
 
-> **Note (2026-03-16):** The Deriva MCP server now performs automatic duplicate detection (Layer 3) on all creation tools (`create_table`, `create_asset_table`, `create_vocabulary`, `create_feature`). When a near-duplicate entity is detected, the tool response includes a `similar_existing` field with suggestions and a warning message. This skill remains available as a behavioral guardrail for users on older MCP server versions that lack built-in duplicate detection.
+> **Note (2026-04-28):** This skill is currently the SOLE guardrail against duplicate-entity creation on the new `deriva-mcp-core` + `deriva-ml-mcp` server stack. The legacy `deriva-mcp` server performed automatic Layer-3 duplicate detection on creation tools (returning a `similar_existing` field on the tool response), but that feature was NOT ported to the cut-over architecture. Restoring it is an open upstream item — see `informatics-isi-edu/deriva-mcp-core` issues. Until then: follow this skill's "find before you create" workflow on every entity creation. The MCP tool layer will not warn you about a near-duplicate name on its own.
 
 # Catalog Semantic Awareness — Find Before You Create
 

@@ -34,7 +34,7 @@
     {
       "id": 6,
       "prompt": "I'm not sure if a vocabulary called 'Stain_Type' or 'Staining_Protocol' already exists. How do I check, and what if something similar exists under a different name?",
-      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should mention that the semantic-awareness skill and create_vocabulary both check for near-duplicates automatically. Should suggest using rag_search for semantic matching if the name isn't an exact match. Should advise extending the existing vocabulary rather than creating a duplicate.",
+      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should mention that the semantic-awareness skill is the guardrail (the new MCP server does not perform automatic duplicate detection on create_vocabulary; the legacy server's similar_existing field was not ported to deriva-mcp-core). Should suggest using rag_search for semantic matching if the name isn't an exact match. Should advise extending the existing vocabulary rather than creating a duplicate.",
       "files": []
     }
   ]
