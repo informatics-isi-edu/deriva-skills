@@ -12,10 +12,11 @@ Read this on cold-start (first time touching a Deriva catalog in a session) or w
 4. [RID — Resource Identifier](#rid--resource-identifier)
 5. [Vocabulary](#vocabulary)
 6. [Foreign keys](#foreign-keys)
-7. [Display annotations (Chaise)](#display-annotations-chaise)
-8. [Asset tables and Hatrac (object store)](#asset-tables-and-hatrac-object-store)
-9. [Catalog snapshots and provenance](#catalog-snapshots-and-provenance)
-10. [Naming conventions (pointer)](#naming-conventions-pointer)
+7. [Association tables](#association-tables)
+8. [Display annotations (Chaise)](#display-annotations-chaise)
+9. [Asset tables and Hatrac (object store)](#asset-tables-and-hatrac-object-store)
+10. [Catalog snapshots and provenance](#catalog-snapshots-and-provenance)
+11. [Naming conventions (pointer)](#naming-conventions-pointer)
 
 ---
 
@@ -147,6 +148,56 @@ See the `manage-vocabulary` skill for full CRUD patterns and the `entity-naming`
 **Composite FKs** (multi-column) are supported but rare; most Deriva FKs are single-column → RID.
 
 **Visible FKs in Chaise** — by default Chaise shows incoming FKs (rows that reference *this* row) on a record's detail page. The `customize-display` skill covers how to turn these on/off and reorder them.
+
+---
+
+## Association tables
+
+An **association table** (also called a "linking table" or "junction table") models a many-to-many relationship between two other tables. It's a table whose primary purpose is to hold pairs of foreign keys, each pointing at one side of the relationship.
+
+The minimum shape is two FK columns:
+
+| Column | What |
+|---|---|
+| `<LeftTable>` | FK to the RID of a row in the left side of the relationship. |
+| `<RightTable>` | FK to the RID of a row in the right side of the relationship. |
+| Plus the system columns (`RID`, `RCT`, `RMT`, `RCB`, `RMB`) | |
+
+Each row in the association table represents one link: "this left-side row is associated with this right-side row." Many-to-many is achieved by allowing multiple rows that share a left-side or right-side value.
+
+### When to use an association table
+
+| Cardinality | How to model it |
+|---|---|
+| **One-to-one** | A single FK column on one side. |
+| **One-to-many** | A single FK column on the "many" side, pointing at the "one" side. |
+| **Many-to-many** | An association table with FKs to both sides. |
+
+The association table is the standard relational answer for many-to-many; it lets a single row on either side participate in multiple relationships without duplicating data.
+
+### Examples
+
+- `Subject_Study` — a Subject can be enrolled in many Studies, and a Study has many Subjects. The association table has `Subject` and `Study` FK columns.
+- `Image_Tag` — an Image can carry many Tags, and a Tag is applied to many Images. The association table has `Image` and `Tag` FK columns.
+- `Dataset_Image` (DerivaML) — a Dataset contains many Images, and an Image can belong to many Datasets across different experiments.
+
+### Carrying extra metadata
+
+Association tables can carry **additional columns beyond the two FKs** when the relationship itself has attributes:
+
+- `Subject_Study.Enrollment_Date` — when this subject joined this study
+- `Subject_Study.Role` — FK to a vocabulary of subject roles (control, case, etc.)
+- `Image_Annotator.Confidence` — annotator's stated confidence for this image
+
+When the relationship has its own data, the association table effectively becomes a first-class entity (sometimes called an "associative entity"). The system columns alone — `RCT` (created-at), `RCB` (created-by) — are often enough that no extra columns are needed; the link's existence and provenance are already recorded.
+
+### Chaise rendering
+
+Chaise renders association tables specially: when you view a row on either side of the relationship, Chaise can show the related rows from the other side as a list, hiding the intermediate association rows. This is controlled by the `pure-and-binary` annotation pattern (an association table is "pure and binary" if its only non-system columns are the two FKs). For details, see the `customize-display` skill.
+
+### Naming convention
+
+Association tables are typically named `<LeftTable>_<RightTable>` in alphabetical order (e.g., `Image_Tag`, not `Tag_Image`). For deeper conventions, see the `entity-naming` skill.
 
 ---
 
