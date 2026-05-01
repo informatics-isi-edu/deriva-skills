@@ -16,7 +16,6 @@
       "skills": [
         "./skills/browse-erd",
         "./skills/check-deriva-versions",
-        "./skills/coding-guidelines",
         "./skills/create-table",
         "./skills/create-web-app",
         "./skills/customize-display",

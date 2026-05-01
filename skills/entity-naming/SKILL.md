@@ -1,6 +1,6 @@
 ---
 name: entity-naming
-description: "Use this skill when naming or renaming any data-modeling entity in a Deriva catalog: schemas, tables, columns, foreign-key columns, vocabulary tables, or vocabulary terms. Triggers on: 'what should I name', 'naming convention', 'PascalCase', 'singular or plural', 'rename a table', 'rename a column', 'should this be one word or two', 'good name for', 'bad name', 'is this name OK', 'specific enough', and on any catalog-design discussion where naming is being proposed. Do NOT use for Python code style (use coding-guidelines), DerivaML Dataset_Type composition (use dataset-lifecycle in deriva-ml-skills), or general project file naming."
+description: "Use this skill when naming or renaming any data-modeling entity in a Deriva catalog: schemas, tables, columns, foreign-key columns, vocabulary tables, or vocabulary terms. Triggers on: 'what should I name', 'naming convention', 'PascalCase', 'singular or plural', 'rename a table', 'rename a column', 'should this be one word or two', 'good name for', 'bad name', 'is this name OK', 'specific enough', and on any catalog-design discussion where naming is being proposed. Do NOT use for Python code style or general project file naming."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -24,9 +24,8 @@ Vocabulary terms are subject to the conventions here **plus** vocabulary-specifi
 
 ## What this skill does NOT cover
 
-- **Python code style** (variable names, function names, module layout) — see the `coding-guidelines` skill.
-- **Project file naming** (script filenames, config files, directory structure) — see `coding-guidelines`.
-- **DerivaML `Dataset_Type` composition** (when a Dataset row gets multiple types like `[Training, Labeled, Fundus]`, how `deriva_ml_split_dataset` auto-assigns them) — see `dataset-lifecycle/references/type-naming-strategy.md` in the tier-2 `deriva-ml-skills` plugin.
+- **Python code style** — variable names, function names, module layout. Different concern; out of scope for this skill.
+- **Project file naming** — script filenames, config files, directory structure. Different concern; out of scope for this skill.
 
 ## Quick reference: the four conventions
 
@@ -123,5 +122,3 @@ Practical rule: **rename within the first day of an entity's existence, or not a
 
 - **`manage-vocabulary`** — Vocabulary CRUD operations (`add_term`, `add_synonym`, `create_vocabulary`). For vocabulary-term-specific naming concerns beyond the general rules here (synonyms, anti-patterns, substitution test, semantic checking), see `manage-vocabulary/references/term-naming-strategy.md`.
 - **`create-table`** — Table and column CRUD operations.
-- **`coding-guidelines`** — Python code style, project layout, uv conventions. Different concern; do not confuse with entity naming.
-- **`dataset-lifecycle`** *(tier-2, deriva-ml-skills)* — DerivaML `Dataset_Type` composition (multi-tag reading, built-in dimensions). Builds on the conventions in this skill plus the vocabulary-specific guidance in `manage-vocabulary`.
