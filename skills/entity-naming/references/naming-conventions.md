@@ -23,7 +23,7 @@ A Deriva catalog is read far more often than written. Every name is referenced f
 - **Tool calls** — every MCP tool takes `schema=`, `table=`, sometimes `column=` arguments. Misspelling a name produces a "not found" error rather than a silent fallback.
 - **Bag manifests** — exported BDBags include schema and table names in the data layout. Old bags reference old names indefinitely.
 - **Chaise UI** — column headers, facet labels, and entity titles render the literal name (with optional display annotations layered on top).
-- **Hydra-zen configs** (DerivaML) — `DatasetSpecConfig` and similar reference vocabulary terms by name.
+- **Application configs** that reference catalog entities by name (any framework that captures entity names in version-controlled config files).
 - **Scripts and notebooks** — anything that uses `pathBuilder` or hand-constructs ERMrest URLs hardcodes names.
 - **Audit logs** — every mutation event records the schema/table/column names involved.
 
@@ -36,7 +36,7 @@ A bad name doesn't fail loudly. It accumulates references, and each reference is
 Schemas are the top-level namespace. Their names appear in every URL path and every tool argument.
 
 - **Lowercase** because Chaise's URL routing treats schema names case-insensitively in some path constructors but case-sensitively in others; lowercase eliminates the bug class entirely. Lowercase URLs are also more readable and more conventional for path components.
-- **No underscores or hyphens** because schemas are short by convention; multi-word schemas indicate a missing layer of organization (use multiple schemas instead). The historical exception is `deriva-ml`, which predates the convention and is grandfathered.
+- **No underscores or hyphens** because schemas are short by convention; multi-word schemas indicate a missing layer of organization (use multiple schemas instead). Some pre-existing catalogs may carry hyphenated schema names from earlier eras; accept those rather than rename.
 - **Stable** because schema names appear in the most places. A schema rename touches every script, every config, every bookmark — the cost is roughly N times the cost of a table rename, where N is the table count in that schema.
 
 ### Tables: PascalCase with underscores, singular

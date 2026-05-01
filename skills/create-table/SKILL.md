@@ -17,11 +17,11 @@ Tables are the foundation of a Deriva catalog schema. Choose the right table typ
 | Standard table | `create_table` | Regular data with columns and foreign keys |
 | Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data |
 
-> **Asset tables:** the legacy `deriva-mcp` server had a dedicated `create_asset_table` tool. The new `deriva-mcp-core` does not — asset tables are created via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) and then the `Asset_Type` FK column added separately. This is a **known gap** vs the legacy convenience tool; tracked as upstream issue (TODO: file). For ML asset workflows, see the `work-with-assets` skill in `deriva-ml-skills` (tier-2) — it documents the standard hatrac column shape.
+> **Asset tables:** create asset tables via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) and then add the `Asset_Type` FK column separately. There is no dedicated single-call asset-table convenience tool in `deriva-mcp-core`.
 
 ## Find before you create
 
-> The current `deriva-mcp-core` + `deriva-ml-mcp` server stack does NOT perform automatic duplicate detection on `create_table` (the legacy `deriva-mcp` server's `similar_existing` response field was not ported to the cut-over architecture; restoring it is an open upstream item). The skill-level workflow is the only guardrail. Before calling `create_table`, run the "find before you create" workflow from the `semantic-awareness` skill: search via `rag_search` for similar tables, present a picker if multiple plausible matches turn up, and only fall through to creation if the user confirms a new table is needed.
+> The MCP server does NOT perform automatic duplicate detection on `create_table`. The skill-level workflow is the only guardrail. Before calling `create_table`, run the "find before you create" workflow from the `semantic-awareness` skill: search via `rag_search` for similar tables, present a picker if multiple plausible matches turn up, and only fall through to creation if the user confirms a new table is needed.
 
 For detailed guidance on interpreting search hits and deciding whether to reuse, extend, or create a new table, see the `semantic-awareness` skill.
 

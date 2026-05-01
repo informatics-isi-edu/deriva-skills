@@ -17,8 +17,8 @@ rag_search("Image tables and features", doc_type="catalog-schema")
 # What vocabulary terms are available?
 rag_search("classification categories", doc_type="catalog-schema")
 
-# What datasets exist? (tier-2; requires deriva-ml-mcp loaded)
-rag_search("training labeled dataset", doc_type="catalog-data")
+# What records match a description?
+rag_search("subjects with diabetes diagnosis", doc_type="catalog-data")
 ```
 
 RAG search avoids dumping large schema JSON into context and finds relevant results semantically.
@@ -56,7 +56,7 @@ get_table_sample_data(
 
 ### Query All Rows
 
-Use `query_attribute` (the new replacement for the legacy `preview_table`):
+Use `query_attribute`:
 
 ```python
 query_attribute(
@@ -167,8 +167,6 @@ result = get_entities(
 exists = bool(result)
 ```
 
-For ML-domain RIDs (Datasets, Workflows, Executions, Features, Assets), the tier-2 `deriva-ml-mcp` plugin provides typed get tools (`deriva_ml_get_dataset`, `deriva_ml_get_execution`, etc.) that return `None` cleanly when the RID doesn't exist; prefer those when you have `deriva-ml-skills` installed.
-
 ## Aggregations
 
 For COUNT, SUM, AVG, MIN, MAX queries, use `query_aggregate`:
@@ -218,7 +216,7 @@ query_attribute(
 )
 ```
 
-For multi-table denormalized views (joining Image + Subject + Diagnosis into one wide table), use the **tier-2 `deriva-ml-mcp`** tool `deriva_ml_denormalize_dataset` (requires `deriva-ml-skills` installed). The `deriva-mcp-core` surface deliberately does not include denormalization — that's a DerivaML-specific concept.
+For multi-table denormalized views (joining several tables into one wide table), construct the join in Python using deriva-py's pathBuilder API or use the underlying ERMrest path syntax directly. The `deriva-mcp-core` MCP surface returns one table at a time; multi-table joining is a client-side concern.
 
 ## Common Query Patterns
 
@@ -272,15 +270,12 @@ A typical workflow for exploring and extracting data from a catalog:
 
 6. **Find related data**: `query_attribute(..., schema="myproject", table="Image", filter={"Subject": "2-A1B2"})`.
 
-7. **For dataset / ML workflows**: switch to the tier-2 `dataset-lifecycle` skill in `deriva-ml-skills` — datasets, denormalization, bag downloads, version pinning all live in `deriva-ml-mcp`.
-
 ## Tips and Troubleshooting
 
 - **Schema names are mandatory**: every tool that operates on a table needs `schema=` AND `table=`. There is no `set_default_schema` in the new surface.
 - **Large tables**: always use `limit` and `offset` for tables with more than a few hundred rows. Fetching the entire table can be slow and may time out.
 - **Column names are case-sensitive**: use the exact column names from the schema. `"Species"` is not the same as `"species"`.
 - **RID format**: RIDs look like `2-B4C8` (a number, a dash, and an alphanumeric string). They are unique within a catalog.
-- **Foreign keys**: many columns contain RIDs referencing other tables. For ML-domain denormalization (resolving FK chains into readable values), use the tier-2 `deriva_ml_denormalize_dataset` tool. For one-off FK lookups, use `get_entities` on the referenced table.
+- **Foreign keys**: many columns contain RIDs referencing other tables. For one-off FK lookups, use `get_entities` on the referenced table.
 - **Empty results**: if a query returns no rows, double-check the filter values. Use `query_attribute` without filters first to verify the table has data, then add filters incrementally.
 - **Schema mismatch**: if a table is not found, verify you are using the correct `schema=` argument. The MCP server's response includes a `suggestions` field with "did you mean?" candidates if the name is misspelled.
-- **Stale data**: catalog data can change. For ML reproducibility, use versioned datasets (tier-2 `deriva-ml-skills`).

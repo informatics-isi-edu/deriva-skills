@@ -11,8 +11,6 @@ Controlled vocabularies are the standard way to represent categorical data in De
 
 Vocabularies are referenced as foreign-key targets from any categorical column in your domain schema — subject species, sample type, image quality grade, instrument calibration status, and so on.
 
-> **Note (deriva-ml environments):** if the `deriva-ml-mcp` plugin is loaded in this catalog, DerivaML ships several built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`) under the `deriva-ml` schema. Use the generic `add_term` / `delete_term` / `add_synonym` tools documented here to manage these vocabularies — pass `schema="deriva-ml"` and `table="Dataset_Type"` (etc.) to the standard tools. The `deriva-ml-mcp` plugin used to ship dedicated extender tools (`create_dataset_type_term`, `add_workflow_type`, `add_asset_type`) but those were removed in favor of the generic vocabulary surface; the new tools handle the same business logic transparently because vocabulary tables are managed by `deriva-mcp-core` directly. See the `dataset-lifecycle`, `create-feature`, and `work-with-assets` skills in `deriva-ml-skills` for the broader DerivaML domain workflows.
-
 
 ## Phase 1: Assess
 
@@ -78,7 +76,7 @@ For the canonical guidance on writing term descriptions — including good/bad e
 
 ## Find before you create
 
-> The current `deriva-mcp-core` + `deriva-ml-mcp` server stack does NOT perform automatic duplicate detection on `create_vocabulary` or `add_term`, and does NOT provide "did you mean?" suggestions on missing references (the legacy `deriva-mcp` server had both; neither was ported to the cut-over architecture). Restoring them is an open upstream item. Until then, the skill-level workflow is the only guardrail: before creating a vocabulary or adding a term, run `rag_search` against the catalog schema (`doc_type="catalog-schema"`) to find similar entities. Present a picker if multiple plausible matches turn up. See the `semantic-awareness` skill for the full workflow.
+> The MCP server does NOT perform automatic duplicate detection on `create_vocabulary` or `add_term`, and does NOT provide "did you mean?" suggestions on missing references. The skill-level workflow is the only guardrail: before creating a vocabulary or adding a term, run `rag_search` against the catalog schema (`doc_type="catalog-schema"`) to find similar entities. Present a picker if multiple plausible matches turn up. See the `semantic-awareness` skill for the full workflow.
 
 ## Phase 2: Design
 
@@ -201,4 +199,3 @@ update_term_description(
 - **`entity-naming`** — Canonical naming conventions for all data-modeling entities (schemas, tables, columns, vocabulary tables, vocabulary terms). Read first when designing a new vocabulary or its terms; this skill (`manage-vocabulary`) covers vocabulary mechanics and `references/term-naming-strategy.md` adds vocabulary-term-specific concerns on top of the general rules.
 - **`create-table`** — Creating domain tables with FK columns to vocabulary tables.
 - **`generate-descriptions`** — Description templates and quality guidelines for vocabulary tables and terms.
-- **`create-feature`** *(tier-2, deriva-ml-skills)* — Features use vocabularies as their value domain. See this skill if you have `deriva-ml-skills` installed and want to create features that reference vocabulary terms.

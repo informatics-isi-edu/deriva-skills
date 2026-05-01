@@ -15,10 +15,8 @@ This skill covers how to find, filter, and explore data in a Deriva catalog usin
 | Query type | RAG call |
 |------------|----------|
 | Tables, columns, relationships | `rag_search("...", doc_type="catalog-schema")` |
-| Feature definitions and columns | `rag_search("...", doc_type="catalog-schema")` |
 | Vocabulary terms and meanings | `rag_search("...", doc_type="catalog-schema")` |
-| Datasets by purpose or type *(tier-2; deriva-ml-skills)* | `rag_search("...", doc_type="catalog-data")` |
-| Executions by workflow or status *(tier-2; deriva-ml-skills)* | `rag_search("...", doc_type="catalog-data")` |
+| Records by description or content | `rag_search("...", doc_type="catalog-data")` |
 
 **Only use raw schema tools when you need the complete, machine-readable output** — e.g., for programmatic processing or when RAG results don't answer the question:
 
@@ -118,13 +116,11 @@ query_aggregate(
 - Always use `limit` for large tables to avoid timeouts.
 - Schema and column names are case-sensitive — check schema first via `rag_search` or `get_schema`.
 - If a table or column name is misspelled, the MCP server's response includes a `suggestions` field with "did you mean?" candidates — check for that before retrying.
-- For dataset-aware querying (denormalized wide-table views, dataset member listing), use the tier-2 `dataset-lifecycle` skill in `deriva-ml-skills` — the new dataset tools live in `deriva-ml-mcp`, not in core.
 
 ## Related Skills
 
 - **`/deriva:route-catalog-schema`** — router for catalog structure / data exploration tasks
 - **`/deriva:create-table`** — schema operations (creating domain tables, columns, FKs)
 - **`/deriva:manage-vocabulary`** — vocabulary CRUD on any Deriva catalog
-- **`/deriva-ml:dataset-lifecycle`** *(tier-2, deriva-ml-skills)* — dataset operations including `deriva_ml_denormalize_dataset` for ML-ready wide-table views
 
 For the full guide with query patterns, vocabulary queries, and troubleshooting, read `references/workflow.md`.

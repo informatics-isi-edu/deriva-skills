@@ -11,25 +11,13 @@ Every catalog entity that accepts a description MUST have one. If the user doesn
 
 ## Entities Requiring Descriptions
 
-**Tier-1 (this plugin) — generic Deriva catalog entities:**
+Catalog entities that accept a description:
 
 - **Vocabularies**: `create_vocabulary` -- comment parameter
 - **Vocabulary Terms**: `add_term` -- description parameter
 - **Tables and Columns**: `create_table` (uses `comment` parameter), `set_table_description`, `set_column_description`
 
-**Tier-2 (`deriva-ml-skills`, if installed) — DerivaML domain entities:**
-
-- **Datasets**: `create_dataset` -- description parameter
-- **Workflows**: `create_workflow` -- description parameter
-- **Executions**: `create_execution` -- description parameter
-- **Features**: `create_feature` -- description parameter
-- **Assets**: `exe.asset_file_path()` -- `description` parameter; execution metadata files get automatic descriptions
-- **Experiments**: `experiment_store()` in `configs/experiments.py` -- description parameter on `make_config()`
-- **Multiruns**: `multirun_config()` in `configs/multiruns.py` -- description parameter
-
-For hydra-zen configuration descriptions (`with_description()` and `zen_meta`), see the `write-hydra-config` skill in the `deriva-ml-skills` plugin (tier-2).
-
-The description-quality guidance below applies to both tiers — what makes a good description doesn't change between catalog tables and Datasets.
+The description-quality guidance below applies uniformly across all of these — what makes a good description doesn't change between vocabularies, terms, tables, and columns.
 
 ## How to Generate Descriptions
 

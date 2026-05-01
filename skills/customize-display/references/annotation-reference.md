@@ -12,7 +12,6 @@
 - [Faceted Search](#faceted-search)
 - [Handlebars Templates](#handlebars-templates)
 - [Template Variables](#template-variables)
-- [Python Annotation Builders](#python-annotation-builders)
 - [Common Recipes](#common-recipes)
 
 ---
@@ -51,30 +50,6 @@ set_column_description(table_name="Image", column_name="URL", description="Direc
 set_table_description(table_name="Image", description="Microscopy images with metadata")
 ```
 
-### Python API
-
-```python
-from deriva_ml.model import Display, NameStyle
-
-# Simple display name
-handle.set_annotation(Display(name="Research Subjects"))
-
-# With markdown name (mutually exclusive with name)
-handle.set_annotation(Display(markdown_name="**Bold** Name"))
-
-# With description/tooltip
-handle.set_annotation(Display(name="Subjects", comment="Individuals in the study"))
-
-# Name styling (convert underscores to spaces, apply title case)
-handle.set_annotation(Display(name_style=NameStyle(underline_space=True, title_case=True)))
-
-# Show/hide null values per context
-display = Display(name="Value", show_null={
-    "compact": False,           # Hide nulls in lists
-    "detailed": '"N/A"'         # Show "N/A" in detail view
-})
-```
-
 ## Visible Columns
 
 Control which columns appear and in what order per context.
@@ -111,31 +86,6 @@ set_visible_columns(
 )
 ```
 
-### Python API
-
-```python
-from deriva_ml.model import VisibleColumns, PseudoColumn, fk_constraint
-
-vc = VisibleColumns()
-vc.compact(["RID", "Name", "Status"])
-vc.detailed(["RID", "Name", "Status", "Description", "Created"])
-vc.entry(["Name", "Status", "Description"])
-
-# Include FK references
-vc.compact(["RID", "Name", fk_constraint("domain", "Subject_Species_fkey")])
-
-# Include pseudo-columns (computed values)
-vc.detailed(["RID", "Name", PseudoColumn(source="Description", markdown_name="Notes")])
-
-# Default for all contexts
-vc.default(["RID", "Name"])
-
-# Reference another context
-vc.set_context("compact/brief", "compact")
-
-handle.set_annotation(vc)
-```
-
 ## Visible Foreign Keys
 
 Control which related tables appear as sections on the detail page.
@@ -146,21 +96,21 @@ Control which related tables appear as sections on the detail page.
 # Add
 add_visible_foreign_key(
     table_name="Subject", context="detailed",
-    foreign_key=["deriva-ml", "Image_Subject_fkey"]
+    foreign_key=["myproject", "Image_Subject_fkey"]
 )
 
 # Remove
 remove_visible_foreign_key(
     table_name="Subject", context="detailed",
-    foreign_key=["deriva-ml", "Image_Subject_fkey"]
+    foreign_key=["myproject", "Image_Subject_fkey"]
 )
 
 # Reorder
 reorder_visible_foreign_keys(
     table_name="Subject", context="detailed",
     new_order=[
-        ["deriva-ml", "Image_Subject_fkey"],
-        ["deriva-ml", "Sample_Subject_fkey"]
+        ["myproject", "Image_Subject_fkey"],
+        ["myproject", "Sample_Subject_fkey"]
     ]
 )
 
@@ -168,23 +118,10 @@ reorder_visible_foreign_keys(
 set_visible_foreign_keys(
     table_name="Subject",
     annotation={"detailed": [
-        {"source": [{"inbound": ["deriva-ml", "Image_Subject_fkey"]}, "RID"]},
-        {"source": [{"inbound": ["deriva-ml", "Sample_Subject_fkey"]}, "RID"]}
+        {"source": [{"inbound": ["myproject", "Image_Subject_fkey"]}, "RID"]},
+        {"source": [{"inbound": ["myproject", "Sample_Subject_fkey"]}, "RID"]}
     ]}
 )
-```
-
-### Python API
-
-```python
-from deriva_ml.model import VisibleForeignKeys, fk_constraint
-
-vfk = VisibleForeignKeys()
-vfk.detailed([
-    fk_constraint("domain", "Image_Subject_fkey"),
-    fk_constraint("domain", "Diagnosis_Subject_fkey"),
-])
-handle.set_annotation(vfk)
 ```
 
 ## Table Display
@@ -212,37 +149,6 @@ set_table_display(
 )
 ```
 
-### Python API
-
-```python
-from deriva_ml.model import TableDisplay, TableDisplayOptions, SortKey, TemplateEngine
-
-td = TableDisplay()
-
-# Simple row name
-td.row_name("{{{Name}}}")
-
-# Multi-column row name
-td.row_name("{{{Name}}} - {{{RID}}}")
-
-# Explicit template engine
-td.row_name("{{{Name}}} ({{{Species}}})", template_engine=TemplateEngine.HANDLEBARS)
-
-# Compact view options
-td.compact(TableDisplayOptions(
-    row_order=[SortKey("Name"), SortKey("Created", descending=True)],
-    page_size=50
-))
-
-# Detailed view options
-td.detailed(TableDisplayOptions(
-    collapse_toc_panel=True,
-    hide_column_headers=False
-))
-
-handle.set_annotation(td)
-```
-
 ## Column Display
 
 Controls how column values are rendered.
@@ -261,65 +167,9 @@ set_column_display(
 )
 ```
 
-### Python API
-
-```python
-from deriva_ml.model import ColumnDisplay, ColumnDisplayOptions, PreFormat
-
-cd = ColumnDisplay()
-
-# Number formatting
-cd.default(ColumnDisplayOptions(pre_format=PreFormat(format="%.2f")))
-
-# Boolean formatting
-cd.default(ColumnDisplayOptions(pre_format=PreFormat(bool_true_value="Yes", bool_false_value="No")))
-
-# Markdown pattern (clickable URL)
-cd.default(ColumnDisplayOptions(markdown_pattern="[Link]({{{_value}}})"))
-
-# Context-specific formatting
-cd.compact(ColumnDisplayOptions(markdown_pattern="[{{{_value}}}]({{{_value}}})"))
-cd.detailed(ColumnDisplayOptions(markdown_pattern="**URL**: [{{{_value}}}]({{{_value}}})"))
-
-col_handle = handle.column("URL")
-col_handle.annotations[ColumnDisplay.tag] = cd.to_dict()
-col_handle.apply()
-```
-
 ## Pseudo-Columns
 
 Display computed values, values from related tables, or custom formatting.
-
-### Foreign key traversal
-
-```python
-from deriva_ml.model import PseudoColumn, OutboundFK, InboundFK, Aggregate
-
-# Outbound: follow FK to get related value
-# Image -> Subject → get Subject name
-PseudoColumn(
-    source=[OutboundFK("domain", "Image_Subject_fkey"), "Name"],
-    markdown_name="Subject Name"
-)
-
-# Inbound: follow FK from another table
-# Subject ← Images → count images per subject
-PseudoColumn(
-    source=[InboundFK("domain", "Image_Subject_fkey"), "RID"],
-    aggregate=Aggregate.CNT,
-    markdown_name="Image Count"
-)
-
-# Multi-hop: Image -> Subject -> Species
-PseudoColumn(
-    source=[
-        OutboundFK("domain", "Image_Subject_fkey"),
-        OutboundFK("domain", "Subject_Species_fkey"),
-        "Name"
-    ],
-    markdown_name="Species"
-)
-```
 
 ### Aggregates
 
@@ -331,61 +181,9 @@ PseudoColumn(
 | `MAX` | Maximum value |
 | `ARRAY` | Array of values |
 
-### Display options
-
-```python
-from deriva_ml.model import PseudoColumnDisplay, ArrayUxMode
-
-PseudoColumn(
-    source="URL",
-    display=PseudoColumnDisplay(
-        markdown_pattern="[Download]({{{_value}}})",
-        show_foreign_key_link=False
-    )
-)
-
-# Array display
-PseudoColumn(
-    source=[InboundFK("domain", "Tag_Subject_fkey"), "Name"],
-    aggregate=Aggregate.ARRAY,
-    display=PseudoColumnDisplay(array_ux_mode=ArrayUxMode.CSV)
-)
-```
-
 ## Faceted Search
 
-Configure the filter panel in the Chaise data browser.
-
-```python
-from deriva_ml.model import Facet, FacetList, FacetRange, FacetUxMode
-
-facets = FacetList()
-
-# Simple choice facet
-facets.add(Facet(source="Status", open=True, markdown_name="Status"))
-
-# FK-based facet (filter by related table value)
-facets.add(Facet(
-    source=[OutboundFK("domain", "Subject_Species_fkey"), "Name"],
-    markdown_name="Species", open=True
-))
-
-# Range facet for numeric values
-facets.add(Facet(
-    source="Age", ux_mode=FacetUxMode.RANGES,
-    ranges=[FacetRange(min=0, max=18), FacetRange(min=18, max=65), FacetRange(min=65)],
-    markdown_name="Age Group"
-))
-
-# Check presence facet
-facets.add(Facet(source="Notes", ux_mode=FacetUxMode.CHECK_PRESENCE, markdown_name="Has Notes"))
-
-# Apply to visible columns
-vc = VisibleColumns()
-vc.compact(["RID", "Name", "Status"])
-vc._contexts["filter"] = facets.to_dict()
-handle.set_annotation(vc)
-```
+Configure the filter panel in the Chaise data browser. Set facet annotations via MCP tools (or write annotation JSON dicts directly) using the `tag:isrd.isi.edu,2018:facets` annotation namespace. The shape: `{"compact": [<facet>, ...], "filter": [<facet>, ...]}` where each `<facet>` is `{"source": "<column>" | <list-of-fk-hops>, "markdown_name": "...", "ux_mode": "ranges" | "check_presence" | ..., ...}`. See common-recipes.md for worked examples.
 
 ## Handlebars Templates
 
@@ -465,7 +263,7 @@ set_visible_columns(
     annotation={"compact": ["Name", "Age", "Sex", "Species", "Diagnosis"]}
 )
 set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
-# (changes apply immediately — no apply_annotations step in deriva-mcp-core)
+# (changes apply immediately — no separate apply step)
 ```
 
 ### Configure vocabulary table display
@@ -529,5 +327,5 @@ set_column_display(
 | `preview_handlebars_template` | Test a template against actual data |
 | `validate_template_syntax` | Check template syntax without running it |
 
-> **Architectural notes:** Annotations apply immediately when set — there is no `apply_annotations()` step in `deriva-mcp-core` (the legacy `deriva-mcp` server staged edits and required a final apply call; that pattern is gone). The `apply_catalog_annotations()` "set defaults across all tables" tool was also not ported — set defaults per-table using the `set_*` tools shown above.
+> **Architectural notes:** Annotations apply immediately when set — there is no separate apply step and no bulk "apply defaults across all tables" tool. Set defaults per-table using the `set_*` tools shown above.
 | `deriva://docs/annotations` | Full annotation guide |

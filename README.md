@@ -52,7 +52,6 @@ If you also have the deriva-ml plugin installed, run the tier-2 sibling afterwar
 | | `/deriva:route-catalog-schema` | Router for catalog structure / data exploration tasks |
 | **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) |
 | **Maintenance** | `/deriva:check-deriva-versions` | Check the core Deriva ecosystem (deriva-py, deriva-mcp-core, deriva plugin) |
-| **Visualization** | `/deriva:browse-erd` | Interactive ERD browser for catalog schemas |
 
 **Auto-invoked** — Claude loads these automatically when relevant:
 

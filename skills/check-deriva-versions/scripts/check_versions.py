@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Check and update the DerivaML ecosystem.
+"""Check and update the core Deriva ecosystem.
 
-Checks installed versions of deriva-ml, deriva-skills plugin, and the MCP
-server against the latest releases. Can optionally perform updates.
+Checks installed versions of the deriva-skills plugin and the MCP server
+against the latest releases. Can optionally perform updates.
+
+TODO: a check function for the ``deriva-py`` Python client library is
+not yet implemented; the SKILL.md describes it as in-scope but the
+script currently only handles plugin and server checks.
 
 Usage:
     python check_versions.py              # Check only
@@ -30,7 +34,7 @@ from pathlib import Path
 
 PLUGIN_CACHE_DIR = Path.home() / ".claude" / "plugins" / "cache" / "deriva-plugins" / "deriva"
 SKILLS_GITHUB_REPO = "informatics-isi-edu/deriva-skills"
-MCP_GITHUB_REPO = "informatics-isi-edu/deriva-mcp"
+MCP_GITHUB_REPO = "informatics-isi-edu/deriva-mcp-core"
 
 
 def _find_uv() -> str | None:
@@ -214,80 +218,6 @@ def version_is_outdated(installed: str, latest_tag: str) -> bool | None:
 # ---------------------------------------------------------------------------
 # Component checks
 # ---------------------------------------------------------------------------
-
-def check_deriva_ml() -> VersionStatus:
-    """Check if deriva-ml is up to date."""
-    installed = get_installed_version("deriva_ml")
-    if not installed:
-        return VersionStatus("deriva-ml", None, None, None, "Not installed")
-
-    latest_tag = get_latest_git_tag("informatics-isi-edu/deriva-ml")
-    if not latest_tag:
-        return VersionStatus("deriva-ml", installed, None, None,
-                             "Could not fetch latest version from GitHub")
-
-    outdated = version_is_outdated(installed, latest_tag)
-    if outdated is None:
-        return VersionStatus("deriva-ml", installed, latest_tag, None,
-                             "Could not compare versions")
-
-    base = extract_base_version(installed)
-    if not outdated and not is_dev_version(installed):
-        return VersionStatus("deriva-ml", installed, latest_tag, True, "Up to date")
-    elif not outdated:
-        return VersionStatus("deriva-ml", installed, latest_tag, True,
-                             f"Dev version (based on {base}, latest release is {latest_tag})")
-    else:
-        # Build update commands based on available tools
-        update_cmds = []
-        uv = _find_uv()
-        if uv:
-            update_cmds = [f"{uv} lock --upgrade-package deriva-ml", f"{uv} sync"]
-        elif shutil.which("pip"):
-            update_cmds = ["pip install --upgrade deriva-ml"]
-
-        return VersionStatus(
-            "deriva-ml", installed, latest_tag, False,
-            f"Outdated: installed {base}, latest is {latest_tag}",
-            update_commands=update_cmds,
-        )
-
-
-def update_deriva_ml(status: VersionStatus) -> VersionStatus:
-    """Update deriva-ml in the local environment."""
-    if not status.update_commands:
-        status.update_message = "No package manager found (uv or pip required)"
-        return status
-
-    print(f"  Updating deriva-ml to {status.latest}...")
-    for cmd_str in status.update_commands:
-        cmd = cmd_str.split()
-        print(f"    $ {cmd_str}")
-        try:
-            result = run_cmd(cmd, timeout=300)
-        except FileNotFoundError:
-            status.update_message = f"Command not found: {cmd[0]}"
-            return status
-        if result.returncode != 0:
-            status.update_message = f"Failed: {cmd_str}\n{result.stderr or result.stdout}"
-            return status
-
-    # Verify the update
-    new_version = get_installed_version("deriva_ml")
-    if new_version:
-        new_base = extract_base_version(new_version)
-        latest = status.latest.lstrip("v") if status.latest else ""
-        if parse_semver(new_base) >= parse_semver(latest):
-            status.updated = True
-            status.up_to_date = True
-            status.installed = new_version
-            status.update_message = f"Updated to {new_version}"
-        else:
-            status.update_message = f"Update ran but version is still {new_version}"
-    else:
-        status.update_message = "Update ran but could not verify new version"
-    return status
-
 
 def _get_cached_plugin_version() -> str | None:
     """Get the installed plugin version from the Claude Code plugin cache.
@@ -576,23 +506,21 @@ def update_mcp_server(status: VersionStatus) -> VersionStatus:
 # ---------------------------------------------------------------------------
 
 UPDATERS = {
-    "deriva-ml": update_deriva_ml,
     "skills": update_skills,
     "mcp-server": update_mcp_server,
 }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check and update DerivaML ecosystem")
+    parser = argparse.ArgumentParser(description="Check and update the core Deriva ecosystem")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument("--update", action="store_true",
                         help="Automatically update outdated components")
-    parser.add_argument("--component", choices=["deriva-ml", "skills", "mcp-server"],
+    parser.add_argument("--component", choices=["skills", "mcp-server"],
                         help="Check/update only this component")
     args = parser.parse_args()
 
     checks = {
-        "deriva-ml": check_deriva_ml,
         "skills": check_skills,
         "mcp-server": check_mcp_server,
     }

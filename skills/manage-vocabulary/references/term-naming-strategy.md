@@ -2,7 +2,7 @@
 
 Canonical guidance for designing, naming, and maintaining terms in any Deriva controlled vocabulary. Vocabularies are how the catalog organizes categorical information — getting the term-level design right makes catalogs self-describing, queries intuitive, and downstream curation tractable.
 
-This reference applies to **every** Deriva vocabulary: domain vocabularies you create yourself (`Tissue_Type`, `Image_Quality`, `Diagnosis`), and the built-in vocabularies that domain plugins ship (e.g., DerivaML's `Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`). The mechanics of `add_term` / `add_synonym` / `delete_term` live in the parent `SKILL.md`; this file covers the design questions those tools don't answer.
+This reference applies to every Deriva vocabulary: domain vocabularies you create yourself (`Tissue_Type`, `Image_Quality`, `Diagnosis`), and any built-in vocabularies that ship with the catalog. The mechanics of `add_term` / `add_synonym` / `delete_term` live in the parent `SKILL.md`; this file covers the design questions those tools don't answer.
 
 ## Table of Contents
 
@@ -144,7 +144,7 @@ Terms like `Training/Labeled/Fundus` or `Training_Labeled` smuggle a hierarchy i
 
 ### Overloaded vocabulary
 
-A single vocabulary containing terms that span multiple dimensions — for example, a `Dataset_Type` containing `Training`, `Testing`, `Labeled`, `MRI`, `Pilot`, `Expert_Reviewed`. This isn't catastrophically wrong (DerivaML's built-in `Dataset_Type` does exactly this), but it makes the vocabulary harder to reason about because some terms are alternatives and others compose.
+A single vocabulary containing terms that span multiple dimensions — for example, an `Image_Type` containing `Training`, `Testing`, `Labeled`, `MRI`, `Pilot`, `Expert_Reviewed`. This isn't catastrophically wrong, but it makes the vocabulary harder to reason about because some terms are alternatives and others compose. Document the implicit dimensions in term descriptions, or split into multiple vocabularies (one per dimension).
 
 **Fix:** document the implicit dimensions in term descriptions so users know which terms compete and which compose. Consider whether some of the dimensions deserve their own vocabulary.
 
@@ -152,7 +152,7 @@ A single vocabulary containing terms that span multiple dimensions — for examp
 
 Mixing transient states (`In_Review`, `Needs_QC`, `Awaiting_Approval`) with permanent classifications (`Training`, `Fundus`, `Hyaline_Cartilage`) in the same vocabulary. States change over a record's lifecycle; classifications describe intrinsic properties.
 
-**Fix:** use vocabulary terms for stable classifications. Track transient states in other mechanisms — a separate status column on the record, an execution-status FK (in DerivaML), or a workflow-state column.
+**Fix:** use vocabulary terms for stable classifications. Track transient states in other mechanisms — a separate status column on the record, a state-machine FK, or a workflow-state column.
 
 ### Vocabulary creep
 

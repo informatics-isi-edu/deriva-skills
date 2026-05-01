@@ -9,7 +9,7 @@ This guide covers creating standard domain tables and vocabulary tables in a Der
 | Standard table | `create_table` | Regular data table with columns and foreign keys |
 | Vocabulary table | `create_vocabulary` | Controlled vocabulary with Name, Description, Synonyms, ID, URI |
 
-> **Asset tables (gap):** the legacy `deriva-mcp` server had a `create_asset_table` convenience tool that auto-added URL/Filename/Length/MD5/Description columns + an Asset_Type FK. The new `deriva-mcp-core` does not have this — create asset tables via `create_table` with the standard hatrac column shape (see "Creating an Asset Table" below) and add the `Asset_Type` FK column separately. This is a known regression vs the legacy convenience tool. For ML asset workflows, see the `work-with-assets` skill in `deriva-ml-skills` (tier-2) — that skill documents the standard hatrac column shape and the upload/download flow.
+> **Asset tables:** create asset tables via `create_table` with the standard hatrac column shape (see "Creating an Asset Table" below) and add the `Asset_Type` FK column separately. There is no single-call asset-table convenience tool in `deriva-mcp-core`.
 
 ## Planning Your Table Structure
 
@@ -126,8 +126,6 @@ create_table(
     comment="Microscopy slide images of biological samples",
 )
 ```
-
-For ML workflows that link assets to executions, the tier-2 `work-with-assets` skill (in `deriva-ml-skills`) shows how to add the `Asset_Type` FK and integrate with `deriva_ml_*` upload/download tools.
 
 ## Verifying Your Table
 

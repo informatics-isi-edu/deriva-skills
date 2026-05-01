@@ -12,7 +12,7 @@ Deriva catalogs are browsed through the Chaise web application. The display is c
 
 ## Immediate apply
 
-The legacy `deriva-mcp` server staged annotation edits locally and required a final `apply_annotations()` call to commit them. The new `deriva-mcp-core` applies every annotation change immediately. There is no staging; there is no `apply_annotations` or `apply_catalog_annotations` tool. Each tool call you make in the steps below mutates the catalog at the moment of the call.
+The MCP tools persist annotation changes immediately. There is no staging step — each tool invocation in the steps below mutates the catalog at the moment of the call.
 
 ## Step 1: Check Current Annotations
 
@@ -253,9 +253,9 @@ set_visible_foreign_keys(
 
 ## That's it — no apply step
 
-Every tool above persists the change immediately. There is no `apply_annotations()` step in the new MCP architecture. Verify your changes by re-running `get_table_annotations(...)` and viewing the table in Chaise.
+Every tool above persists the change immediately. There is no separate apply step. Verify your changes by re-running `get_table_annotations(...)` and viewing the table in Chaise.
 
-For the full annotation reference — all contexts, pseudo-columns, faceted search, Handlebars patterns, and Python annotation builders — see `references/annotation-reference.md`. For quick recipes, see `references/common-recipes.md`.
+For the full annotation reference — all contexts, pseudo-columns, faceted search, Handlebars patterns — see `references/annotation-reference.md`. For quick recipes, see `references/common-recipes.md`.
 
 ## Reference Tools
 
@@ -265,7 +265,7 @@ For a complete picture of what's set on a table or column:
 - `get_column_annotations(hostname, catalog_id, schema, table, column)` — All annotations on a column
 - `apply_navbar_annotations(hostname, catalog_id, ...)` — Catalog-level navbar configuration
 
-The legacy `apply_catalog_annotations()` "apply sensible defaults to all tables" tool was not ported to `deriva-mcp-core` — set defaults per-table using the tools above. (If a bulk-defaults convenience is needed, file an upstream issue against `deriva-mcp-core`.)
+There is no bulk "apply sensible defaults to all tables" convenience tool — set defaults per-table using the tools above.
 
 ## Tips
 

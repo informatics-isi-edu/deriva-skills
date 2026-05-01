@@ -15,7 +15,7 @@ This skill is the canonical source for *what to name things*. It does not cover 
 
 | Entity | Scope | Where mechanics live |
 |--------|-------|----------------------|
-| **Schemas** | Per-catalog namespaces (e.g., `myproject`, `deriva-ml`) | `create-table` (schemas are typically created with the first table) |
+| **Schemas** | Per-catalog namespaces (e.g., `myproject`, `medical`) | `create-table` (schemas are typically created with the first table) |
 | **Tables** | Domain tables and vocabulary tables | `create-table` |
 | **Columns** | Including foreign-key columns | `create-table` |
 | **Vocabulary terms** | Rows in any vocabulary table | `manage-vocabulary` |
@@ -78,7 +78,7 @@ Schemas are namespaces inside a catalog. They're created once and referenced man
 - **Short.** Schemas appear in every URL and every tool call's `schema=` argument. 1-2 words is ideal; long compound names (`my_research_project_2026`) become noise.
 - **Stable.** Schemas are *much* harder to rename than tables — every tool call across every script that touches the catalog mentions the schema name. Pick one early and stick with it.
 
-The DerivaML schemas (`deriva-ml`, plus your domain schema like `cifar10_e2e`) follow this convention. The hyphen in `deriva-ml` predates the convention and is grandfathered; new schemas should not use hyphens.
+Some catalogs may have grandfathered exceptions to this convention from earlier eras (e.g., a hyphenated schema name imported from a legacy system); accept those rather than rename. New schemas should follow the lowercase-no-separator pattern.
 
 ## Foreign-key column conventions
 
@@ -107,7 +107,7 @@ Names are referenced from many places. A rename requires updating each:
 | FK constraints by name | Yes — schema migration to drop and recreate |
 | URL bookmarks (Chaise) | Break silently; users hit 404 |
 | Hardcoded references in scripts | Yes — find every script and config |
-| Hydra-zen configs (DerivaML) | Yes — update `DatasetSpecConfig` and similar |
+| Application configs that reference catalog entities by name | Yes — update each application's config |
 | Bag manifests (already exported) | Cannot update — old bags reference old names |
 | Audit logs | Cannot update — historical record |
 | RID references | Not affected (RIDs are immutable, name-independent) |

@@ -4,7 +4,7 @@ description: "ALWAYS use before creating new tables, vocabularies, features, dat
 user-invocable: false
 ---
 
-> **Note (2026-04-28):** This skill is currently the SOLE guardrail against duplicate-entity creation on the new `deriva-mcp-core` + `deriva-ml-mcp` server stack. The legacy `deriva-mcp` server performed automatic Layer-3 duplicate detection on creation tools (returning a `similar_existing` field on the tool response), but that feature was NOT ported to the cut-over architecture. Restoring it is an open upstream item — see `informatics-isi-edu/deriva-mcp-core` issues. Until then: follow this skill's "find before you create" workflow on every entity creation. The MCP tool layer will not warn you about a near-duplicate name on its own.
+> **Note:** This skill is the catalog's only guardrail against duplicate-entity creation. The MCP tool layer does not perform automatic duplicate detection or "did you mean?" suggestions on creation tools — `create_table`, `add_term`, `create_vocabulary`, etc. accept any name without complaint. Follow this skill's "find before you create" workflow on every entity creation; the MCP tool layer will not warn you about a near-duplicate name on its own.
 
 # Catalog Semantic Awareness — Find Before You Create
 
@@ -55,7 +55,6 @@ rag_search("ResNet training workflow", doc_type="catalog-data")
 ```python
 get_table(hostname=..., catalog_id=..., schema=..., table=...)        # Full table structure
 lookup_term(hostname=..., catalog_id=..., schema=..., table=..., name=...)  # Synonym-aware term lookup
-deriva_ml_get_dataset(hostname=..., catalog_id=..., dataset_rid=...)  # Tier-2: full dataset details (deriva-ml-skills)
 ```
 
 For queries that need actual data, use `query_attribute(...)` for filtered queries with column projection, `count_table(...)` for fast counts, or `get_entities(..., filter={"RID": "..."})` for a specific record by RID.
@@ -152,11 +151,9 @@ See the `generate-descriptions` skill for templates and detailed guidance.
 When creating new catalog entities, multiple skills apply. Follow this order:
 
 1. **`semantic-awareness`** — Check for duplicates first. Search for existing entities that serve the same or similar purpose before designing anything new.
-2. **Domain skill** — Design and create the entity using the appropriate skill's workflow:
-   - Tier-1 (this plugin): `manage-vocabulary`, `create-table`
-   - Tier-2 (`deriva-ml-skills`, if installed): `create-feature`, `dataset-lifecycle`, `execution-lifecycle`, `work-with-assets`
+2. **Domain skill** — Design and create the entity using the appropriate skill's workflow: `manage-vocabulary` for vocabularies and terms, `create-table` for domain tables, `entity-naming` for the naming conventions that govern all entities.
 3. **`generate-descriptions`** — Auto-generate descriptions if the user didn't provide one. Good descriptions make entities discoverable in future searches.
-4. **`maintain-experiment-notes`** *(tier-2; deriva-ml-skills)* — If installed, log the decision and rationale to `experiment-decisions.md`. Record what was created, why, and any alternatives that were considered. In a tier-1-only environment, capture the rationale in your project's normal change log or PR description instead.
+4. **Capture the decision rationale** in the project's normal change log, PR description, or design notes — what was created, why, and what alternatives were considered. The catalog itself doesn't record design rationale; that's a project-side discipline.
 
 ## The Flow
 

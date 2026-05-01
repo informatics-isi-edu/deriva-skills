@@ -1,6 +1,6 @@
 # Common Annotation Recipes and Patterns
 
-> All examples below assume `hostname="data.example.org"`, `catalog_id="1"`, and `schema="myproject"` — substitute your actual values. Every annotation tool persists the change immediately (no `apply_annotations()` step in the new MCP architecture).
+> All examples below assume `hostname="data.example.org"`, `catalog_id="1"`, and `schema="myproject"` — substitute your actual values. Every annotation tool persists the change immediately; there is no separate apply step.
 
 ## Column Display Formatting
 

@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Check whether the user's core Deriva components are up to date, then offer to update each outdated component.
 
-This skill covers the **tier-1** surface — the components in the `deriva-mcp-core` ecosystem that work on any Deriva catalog. If the user has the `deriva-ml-skills` plugin installed, also run `/deriva-ml:check-deriva-ml-versions` to verify the DerivaML-specific surface (deriva-ml Python lib, deriva-ml-mcp plugin, deriva-ml-skills plugin).
+This skill covers the core Deriva ecosystem: the `deriva-py` Python client library, the `deriva-mcp-core` MCP server, and this Claude Code plugin (`deriva-skills`). All three should be kept current together.
 
 **Important:** Skills (including this one) are a Claude Code feature. Claude Desktop does not have plugins or skills — it only has MCP servers. If running in Claude Desktop, you can only check the MCP server version.
 
@@ -16,31 +16,14 @@ This skill covers the **tier-1** surface — the components in the `deriva-mcp-c
 
 | Component | What | How to check | Who can update |
 |-----------|------|-------------|----------------|
-| **deriva-py** | Python client library in the project's `.venv` (the foundational deriva client) | Script (needs project venv) | Claude (automated) |
 | **deriva-skills** | The `deriva` Claude Code plugin (this plugin) | Script (reads plugin cache) | Automated (cache refresh + restart) |
 | **deriva-mcp-core** | Running MCP server (the core framework) | `deriva://server/version` resource | User (restart required) |
 
+> **Note:** A `deriva-py` Python-client version check is not yet implemented in this skill. Until the check function lands, verify deriva-py manually via your project's package manager (`uv pip show deriva-py` or `pip show deriva`).
+
 ## Workflow
 
-### Step 1: Check deriva-py version
-
-The script must run in the **project's Python environment**. Follow this sequence:
-
-1. **Check if CWD has a `pyproject.toml`** — if yes, run from here:
-   ```bash
-   uv run python3 <skill-dir>/scripts/check_versions.py --component deriva-py --json
-   ```
-
-2. **If no `pyproject.toml` in CWD**, ask the user:
-   > "I need to check the `deriva-py` version in your project's virtual environment. What directory is your Deriva project in?"
-
-   Then `cd` to that directory and run with `uv run python3`.
-
-3. **If the user has no local project** (MCP-only workflow), skip this component — they don't have a local `deriva-py` install to check.
-
-> **Note:** The shared `check_versions.py` script in this directory currently knows about the deriva-ml ecosystem (a legacy from before the tier-1 / tier-2 split). It is scheduled to be split into a tier-1 script (`deriva-py`, `deriva-mcp-core`, `deriva` plugin) and a tier-2 script (`deriva-ml`, `deriva-ml-mcp`, `deriva-ml` plugin) during the v1.4 MCP surface sweep (Phase 4 of the restructure). Until then, the `--component` flag is the boundary — invoke only with the components listed in this skill's table above.
-
-### Step 2: Check deriva-skills plugin version
+### Step 1: Check deriva-skills plugin version
 
 ```bash
 python3 <skill-dir>/scripts/check_versions.py --component skills --json
@@ -50,15 +33,15 @@ This reads the plugin cache at `~/.claude/plugins/cache/deriva-plugins/` and com
 
 **Skip this in Claude Desktop** — Desktop doesn't have plugins.
 
-### Step 3: Check MCP server version
+### Step 2: Check MCP server version
 
 Read the `deriva://server/version` resource. This returns the running server's version directly — no Docker inspection or pip needed. **Note:** This requires an active MCP connection to the Deriva MCP server. If the MCP server is not configured or not running, this resource will not be available.
 
-For a tier-1-only environment the running server is `deriva-mcp-core`; if `deriva-ml-mcp` is loaded as a plugin alongside, the same `deriva://server/version` resource still returns the core framework version (the ML plugin's version is reported separately by `/deriva-ml:check-deriva-ml-versions`).
+The running server is `deriva-mcp-core`; loaded plugins are listed separately in the same response. Each plugin reports its own version through its own channels and is not part of this skill's scope.
 
 If the MCP server is not reachable (resource read fails), report as "UNKNOWN — MCP server not running".
 
-### Step 4: Present results
+### Step 3: Present results
 
 Show a summary table:
 
@@ -70,7 +53,7 @@ Show a summary table:
 
 If everything is up to date, say so and stop. Otherwise, proceed to Step 5.
 
-### Step 5: Offer updates for outdated components
+### Step 4: Offer updates for outdated components
 
 #### deriva-py (automated)
 
@@ -101,13 +84,9 @@ The MCP server cannot be updated by Claude because restarting it breaks the MCP 
 - **Docker** (most common): `docker pull ghcr.io/informatics-isi-edu/deriva-mcp-core:latest && docker restart deriva-mcp-core`
 - **Native install**: `cd <project-dir> && uv lock --upgrade-package deriva-mcp-core && uv sync`, then restart the server
 
-### Step 6: Confirm
+### Step 5: Confirm
 
 After updates, re-run the relevant checks to confirm everything is current.
-
-## Tier-2 ecosystem checks
-
-If you have `deriva-ml-skills` installed, also run `/deriva-ml:check-deriva-ml-versions` to verify deriva-ml + deriva-ml-mcp + deriva-ml-skills(plugin) versions. The two skills are designed to be run in sequence: tier-1 first to confirm the foundation is current, then tier-2 to confirm the ML layer.
 
 ## Status Values
 
