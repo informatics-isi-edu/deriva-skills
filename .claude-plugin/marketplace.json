@@ -17,7 +17,6 @@
         "./skills/browse-erd",
         "./skills/check-deriva-versions",
         "./skills/create-table",
-        "./skills/create-web-app",
         "./skills/customize-display",
         "./skills/deriva-context",
         "./skills/entity-naming",
@@ -26,8 +25,7 @@
         "./skills/query-catalog-data",
         "./skills/route-catalog-schema",
         "./skills/semantic-awareness",
-        "./skills/troubleshoot-deriva-errors",
-        "./skills/use-annotation-builders"
+        "./skills/troubleshoot-deriva-errors"
       ]
     }
   ]

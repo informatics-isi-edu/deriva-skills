@@ -24,7 +24,6 @@ Analyze the user's intent and read the matching skill:
 
 ### Customizing display
 - **Setting visible columns, display names, row name patterns, column ordering, Chaise UI configuration using MCP tools** → Read and follow `../customize-display/SKILL.md`
-- **Writing Python scripts with annotation builders (ColumnAnnotation, TableAnnotation, VisibleColumns, FacetList, PseudoColumn)** → Read and follow `../use-annotation-builders/SKILL.md`
 
 ### API reference (DerivaML naming)
 - **Understanding DerivaML method naming conventions (lookup_ vs find_ vs list_ vs get_ vs create_ vs add_)** *(tier-2; deriva-ml-skills)* → If the `deriva-ml-skills` plugin is installed, read and follow `/deriva-ml:api-naming-conventions`. These conventions are specific to the deriva-ml Python API; the deriva-py and deriva-mcp-core surfaces use plain CRUD verbs.

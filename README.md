@@ -47,11 +47,9 @@ If you also have the deriva-ml plugin installed, run the tier-2 sibling afterwar
 |----------|-------|-------------|
 | **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
 | | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools |
-| | `/deriva:use-annotation-builders` | Python type-safe annotation builder classes |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
 | | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog |
 | | `/deriva:route-catalog-schema` | Router for catalog structure / data exploration tasks |
-| **Web apps** | `/deriva:create-web-app` | Scaffold a Chaise-based web app for a catalog |
 | **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) |
 | **Maintenance** | `/deriva:check-deriva-versions` | Check the core Deriva ecosystem (deriva-py, deriva-mcp-core, deriva plugin) |
 | **Visualization** | `/deriva:browse-erd` | Interactive ERD browser for catalog schemas |

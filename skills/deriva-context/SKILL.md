@@ -18,7 +18,7 @@ These concepts come from `deriva-mcp-core` itself and apply to every Deriva cata
 | **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `create-table`, `route-catalog-schema` |
 | **Vocabulary** | A controlled-term table with standard columns (Name, Description, Synonyms, ID, URI). FK targets for categorical columns. | `manage-vocabulary` |
 | **RID** | Resource Identifier — every row in every Deriva table has a unique RID (e.g., `1-A2B3`). | `query-catalog-data`, `troubleshoot-deriva-errors` |
-| **Display annotations** | Per-table and per-column annotations that drive the Chaise web UI. | `customize-display`, `use-annotation-builders` |
+| **Display annotations** | Per-table and per-column annotations that drive the Chaise web UI. | `customize-display` |
 
 ## Relationship to the deriva-ml plugin
 
@@ -46,7 +46,7 @@ Reach for the skills documented in *this* plugin only for catalog objects that a
 - **Custom domain tables** — `Subject`, `Sample`, `Image`, anything specific to your project's data model → `/deriva:create-table`, `/deriva:query-catalog-data`
 - **Generic vocabularies** — anything that isn't `Dataset_Type` / `Workflow_Type` / `Asset_Type` / `Execution_Status_Type`. For example `Sample_Type`, `Tissue_Type`, `Image_Quality`, `Stain_Protocol` → `/deriva:manage-vocabulary`
 - **Schema introspection** — listing tables, browsing columns, reading the ERD → `/deriva:browse-erd`, `/deriva:query-catalog-data`
-- **Display customization** — Chaise annotations on any table → `/deriva:customize-display`, `/deriva:use-annotation-builders`
+- **Display customization** — Chaise annotations on any table → `/deriva:customize-display`
 - **Generic catalog errors** — auth, permissions, invalid RIDs, missing records, generic vocab term not found → `/deriva:troubleshoot-deriva-errors`
 
 ## Stateless model

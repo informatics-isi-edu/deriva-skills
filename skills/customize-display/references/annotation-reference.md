@@ -442,31 +442,9 @@ preview_handlebars_template(
 )
 ```
 
-## Python Annotation Builders
+## Plain-dict annotations in Python
 
-For production use (scripts, notebooks, version-controlled configurations), the Python API provides type-safe annotation builders. **These builders currently live in the `deriva-ml` Python package** (`from deriva_ml.model import ...`) — the annotations themselves are core Chaise concepts that work on any Deriva catalog, but the typed Python wrappers ride along with deriva-ml. If you only have `deriva-py` installed and don't want the deriva-ml dependency, write annotations as plain dicts using the JSON shapes documented in the sections above. See the dedicated `use-annotation-builders` skill for the full builder workflow.
-
-```python
-from deriva_ml.model import (
-    TableHandle, Display, VisibleColumns, VisibleForeignKeys,
-    TableDisplay, TableDisplayOptions, ColumnDisplay, ColumnDisplayOptions,
-    PseudoColumn, OutboundFK, InboundFK, Facet, FacetList,
-    fk_constraint, SortKey, Aggregate, FacetUxMode, PreFormat,
-    CONTEXT_COMPACT, CONTEXT_DETAILED
-)
-
-# Get table handle
-table = ml.model.name_to_table("Subject")
-handle = TableHandle(table)
-
-# Set annotations
-handle.set_annotation(Display(name="Research Subjects"))
-handle.set_annotation(td)   # TableDisplay
-handle.set_annotation(vc)   # VisibleColumns
-handle.set_annotation(vfk)  # VisibleForeignKeys
-```
-
-For the interactive MCP tool approach (recommended for iterative customization), use the SKILL.md directly.
+Annotations are JSON objects; any Python code can construct them as plain dicts using the shapes documented in the sections above and write them via the standard catalog model write APIs (the same shapes the MCP tools accept). The MCP tools documented in `SKILL.md` are the recommended path for iterative customization; plain-dict construction in Python is the path for code-driven customization without additional library dependencies.
 
 ## Common Recipes
 

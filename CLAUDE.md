@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the deriva-skills c
 
 ## Project Overview
 
-Claude Code plugin providing 14 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
+Claude Code plugin providing 12 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
 
 This plugin is the **tier-1** surface — skills that work on any Deriva catalog. The companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2) adds the DerivaML domain skills (Datasets, Workflows, Executions, Features, Asset_Type vocabularies). The two plugins are independently versioned and released; users with DerivaML workflows install both. See `docs/superpowers/plans/2026-04-27-skills-restructure.md` for the rationale and migration history.
 
@@ -42,8 +42,8 @@ MCP tool is also supported.
 ```
 ├── .claude-plugin/
 │   ├── plugin.json           # Plugin metadata (name, version, description)
-│   └── marketplace.json      # Marketplace registration (lists all 14 tier-1 skills)
-├── skills/                   # 14 tier-1 skills, each in its own directory
+│   └── marketplace.json      # Marketplace registration (lists all 12 tier-1 skills)
+├── skills/                   # 12 tier-1 skills, each in its own directory
 │   ├── {skill-name}/
 │   │   ├── SKILL.md          # Frontmatter (YAML) + skill content (Markdown)
 │   │   ├── scripts/          # Optional Python helper scripts
@@ -69,13 +69,12 @@ The tier-1 skills cover the core Deriva surface — what works on any Deriva cat
 | `browse-erd` | Launch interactive ERD browser |
 | `check-deriva-versions` | Version checking for deriva-py / deriva-mcp-core / deriva plugin |
 | `create-table` | Create domain tables with columns + foreign keys |
-| `create-web-app` | Scaffold a Chaise-based web app for a catalog |
 | `customize-display` | Chaise display annotations via MCP tools |
-| `manage-vocabulary` | Vocabulary CRUD (works on any Deriva catalog; ML-specific vocab content cross-referenced to deriva-ml-skills) |
+| `entity-naming` | Naming conventions for schemas, tables, columns, vocabulary terms |
+| `manage-vocabulary` | Vocabulary CRUD |
 | `query-catalog-data` | Querying / browsing catalog data |
 | `route-catalog-schema` | Router for catalog structure / data exploration |
 | `troubleshoot-deriva-errors` | Generic catalog troubleshooting (auth, RIDs, missing records, generic vocab terms) |
-| `use-annotation-builders` | Python type-safe annotation builder classes |
 
 **Always-on (auto-invoked, no `/command`):**
 

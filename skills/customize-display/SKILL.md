@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Deriva catalogs are browsed through the Chaise web application. The display is controlled by annotations -- JSON metadata attached to schemas, tables, and columns. MCP tools provide a high-level interface for setting these annotations without writing raw JSON.
 
-**This skill covers the interactive MCP tool approach.** For production Python code using type-safe builder classes (better for scripts, notebooks, and version-controlled configurations), see the `use-annotation-builders` skill instead.
+**This skill covers the interactive MCP tool approach.** Production Python code can write annotations as plain dicts using the JSON shapes documented in `references/annotation-reference.md`.
 
 ## Immediate apply
 
