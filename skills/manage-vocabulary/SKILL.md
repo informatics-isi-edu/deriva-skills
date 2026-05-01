@@ -14,11 +14,6 @@ Vocabularies are referenced as foreign-key targets from any categorical column i
 > **Note (deriva-ml environments):** if the `deriva-ml-mcp` plugin is loaded in this catalog, DerivaML ships several built-in vocabularies (`Dataset_Type`, `Workflow_Type`, `Asset_Type`, `Execution_Status_Type`) under the `deriva-ml` schema. Use the generic `add_term` / `delete_term` / `add_synonym` tools documented here to manage these vocabularies — pass `schema="deriva-ml"` and `table="Dataset_Type"` (etc.) to the standard tools. The `deriva-ml-mcp` plugin used to ship dedicated extender tools (`create_dataset_type_term`, `add_workflow_type`, `add_asset_type`) but those were removed in favor of the generic vocabulary surface; the new tools handle the same business logic transparently because vocabulary tables are managed by `deriva-mcp-core` directly. See the `dataset-lifecycle`, `create-feature`, and `work-with-assets` skills in `deriva-ml-skills` for the broader DerivaML domain workflows.
 
 
-## Stateless model
-
-The new MCP server is stateless — every tool below takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
-
-
 ## Phase 1: Assess
 
 Before creating or modifying a vocabulary, determine whether one is needed and whether it already exists.

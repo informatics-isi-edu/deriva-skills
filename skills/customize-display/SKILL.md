@@ -10,12 +10,9 @@ Deriva catalogs are browsed through the Chaise web application. The display is c
 
 **This skill covers the interactive MCP tool approach.** For production Python code using type-safe builder classes (better for scripts, notebooks, and version-controlled configurations), see the `use-annotation-builders` skill instead.
 
-## Stateless model + immediate apply
+## Immediate apply
 
-Two architectural notes about the new MCP server:
-
-1. **Stateless** — every tool below takes `hostname=` and `catalog_id=` arguments. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
-2. **Immediate apply** — the legacy `deriva-mcp` server staged annotation edits locally and required a final `apply_annotations()` call to commit them. The new `deriva-mcp-core` applies every annotation change immediately. There is no staging; there is no `apply_annotations` or `apply_catalog_annotations` tool.
+The legacy `deriva-mcp` server staged annotation edits locally and required a final `apply_annotations()` call to commit them. The new `deriva-mcp-core` applies every annotation change immediately. There is no staging; there is no `apply_annotations` or `apply_catalog_annotations` tool. Each tool call you make in the steps below mutates the catalog at the moment of the call.
 
 ## Step 1: Check Current Annotations
 

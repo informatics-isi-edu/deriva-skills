@@ -2,8 +2,6 @@
 
 This guide covers how to query, filter, and explore data in a Deriva catalog using the `deriva-mcp-core` MCP tools and resources.
 
-> **Stateless model:** the new MCP server is stateless. Every tool below takes `hostname=` and `catalog_id=` arguments — there is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show them.
-
 ## Understanding the Schema
 
 Before querying, understand what tables and columns are available.
@@ -278,7 +276,6 @@ A typical workflow for exploring and extracting data from a catalog:
 
 ## Tips and Troubleshooting
 
-- **Always pass `hostname=` and `catalog_id=`**: the new MCP server is stateless; there is no implicit "active catalog" or "default schema". Every call needs both.
 - **Schema names are mandatory**: every tool that operates on a table needs `schema=` AND `table=`. There is no `set_default_schema` in the new surface.
 - **Large tables**: always use `limit` and `offset` for tables with more than a few hundred rows. Fetching the entire table can be slow and may time out.
 - **Column names are case-sensitive**: use the exact column names from the schema. `"Species"` is not the same as `"species"`.

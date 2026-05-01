@@ -2,8 +2,6 @@
 
 This guide covers creating standard domain tables and vocabulary tables in a Deriva catalog using the `deriva-mcp-core` MCP tools, including column types, foreign keys, and documentation best practices.
 
-> **Stateless model:** every tool below takes `hostname=` and `catalog_id=` arguments — there is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show them.
-
 ## Table Types
 
 | Type | Tool | Description |

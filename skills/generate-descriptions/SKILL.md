@@ -9,11 +9,6 @@ user-invocable: false
 Every catalog entity that accepts a description MUST have one. If the user doesn't provide a description, generate a meaningful one based on context from the repository, conversation, and catalog state. Descriptions support GitHub-flavored Markdown which renders in the Chaise web UI.
 
 
-## Stateless model
-
-The new MCP server is stateless — every tool described here takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step.
-
-
 ## Entities Requiring Descriptions
 
 **Tier-1 (this plugin) — generic Deriva catalog entities:**

@@ -53,6 +53,8 @@ Reach for the skills documented in *this* plugin only for catalog objects that a
 
 The new `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and `catalog_id=` arguments — there is no `connect_catalog` step, no implicit "active catalog", no "default schema". Every example in every skill in this plugin shows the full parameter set; substitute your catalog's hostname and ID.
 
+This framing applies plugin-wide and is documented here once. Per-skill `SKILL.md` files and reference docs should not restate it — the always-on `deriva-context` skill ensures the LLM has this context before any other skill triggers, and repeating the boilerplate in every file creates maintenance liability without adding signal.
+
 ## In a non-deriva-ml catalog
 
 If you're connected to a Deriva catalog where the `deriva-ml-mcp` plugin is **not** loaded (a plain-Deriva research catalog, a FaceBase-style data warehouse, or an internal IT-style catalog), the DerivaML abstractions don't exist — there's no `Dataset` table, no `Execution` row, no `Feature` machinery. The skills in this plugin are then your full surface; the steering principle above doesn't apply because there's no alternative to defer to.

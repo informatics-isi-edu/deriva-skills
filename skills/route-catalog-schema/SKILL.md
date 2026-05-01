@@ -8,11 +8,6 @@ description: "Use this skill for Deriva catalog structure and data exploration. 
 You are a router skill. Based on the user's request, load the appropriate specialized skill.
 
 
-## Stateless model
-
-The new MCP server is stateless — every tool routed-to from this skill takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID in every tool call.
-
-
 ## Routing Rules
 
 Analyze the user's intent and read the matching skill:

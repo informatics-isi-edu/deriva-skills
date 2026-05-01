@@ -13,11 +13,6 @@ Before creating ANY new catalog entity (table, vocabulary term, feature, dataset
 This skill also applies when looking up any entity by name — catalog entities are created by different people at different times, so the same concept often appears under different names, spellings, or structures.
 
 
-## Stateless model
-
-The new MCP server is stateless — every tool below takes `hostname=` and `catalog_id=` arguments explicitly. There is no `connect_catalog` step. Substitute your catalog's hostname and catalog ID wherever the examples show them.
-
-
 ## Why This Matters
 
 Deriva catalogs are shared, long-lived systems. When someone creates a "Diagnosis" feature without noticing that "Disease_Classification" already exists on the same table, data gets split, queries become ambiguous, and downstream consumers don't know which to use. A two-minute search before creation prevents hours of cleanup later.

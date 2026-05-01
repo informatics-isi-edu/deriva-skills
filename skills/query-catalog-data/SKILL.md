@@ -8,8 +8,6 @@ disable-model-invocation: true
 
 This skill covers how to find, filter, and explore data in a Deriva catalog using the `deriva-mcp-core` MCP tools and resources.
 
-> **Stateless model:** the new MCP server is stateless. Every tool call below takes `hostname=` and `catalog_id=` arguments explicitly — there is no `connect_catalog` step. Substitute your catalog's hostname (e.g., `"data.example.org"`) and catalog ID (e.g., `"1"`) wherever the examples show `hostname=...` and `catalog_id=...`.
-
 ## Discovery: Start with RAG Search
 
 **Always use `rag_search` first** for discovery and exploration questions — "what tables exist", "what features are available", "how are images classified", "what datasets are there". RAG search indexes the catalog schema, vocabulary terms, feature definitions, datasets, and executions, and returns focused, relevant results without flooding context.
@@ -117,7 +115,6 @@ query_aggregate(
 
 ## Tips
 
-- Always pass `hostname=` and `catalog_id=` to every tool — there is no implicit "active catalog" in the stateless server.
 - Always use `limit` for large tables to avoid timeouts.
 - Schema and column names are case-sensitive — check schema first via `rag_search` or `get_schema`.
 - If a table or column name is misspelled, the MCP server's response includes a `suggestions` field with "did you mean?" candidates — check for that before retrying.
