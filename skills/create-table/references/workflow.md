@@ -17,10 +17,7 @@ This guide covers creating standard domain tables and vocabulary tables in a Der
 
 ### Naming Conventions
 
-- **Schemas**: short, lowercase, no underscores (`myproject`, `medical`, `genomics`). Pass to every tool as `schema=`.
-- **Table names**: Singular nouns with underscores (e.g., `Subject`, `Image_Annotation`, `Blood_Sample`)
-- **Column names**: Descriptive with underscores (e.g., `Age_At_Enrollment`, `Sample_Date`, `Cell_Count`)
-- **Foreign key columns**: Match the referenced table name (e.g., `Subject` column references `Subject` table)
+Naming for schemas, tables, columns, and FK columns is documented canonically in the `entity-naming` skill. Read its `SKILL.md` for the quick-reference table (the four conventions side-by-side) and `references/naming-conventions.md` for rationale, character restrictions, FK column patterns in detail, and the renaming-cost breakdown. The conventions are stable across all Deriva catalogs; following them keeps tables interoperable with the rest of the ecosystem and avoids the rename-cascade problem when names get hardcoded into bookmarks, scripts, and exports.
 
 ### Column Types
 

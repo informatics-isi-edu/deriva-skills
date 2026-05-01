@@ -50,23 +50,11 @@ The FK to the vocabulary table enables dropdown selection in the Chaise entry fo
 
 ## Writing Good Descriptions
 
-Every term should have a description. Descriptions appear as tooltips in the Chaise UI and help collaborators understand exactly what each term means. Avoid descriptions that just restate the name.
-
-| Term | Bad | Good |
-|---|---|---|
-| Grade I | "Grade one" | "Well-differentiated, low mitotic rate, favorable prognosis" |
-| Normal | "Normal tissue" | "No pathological findings, intact cellular architecture" |
-| Artifact | "An artifact" | "Non-biological element (air bubble, fold, ink mark) in image" |
+Term-level description guidance — what a good description answers, good/bad examples, and the relationship to vocabulary table comments — moved to `term-naming-strategy.md` ("Term Descriptions" section). That file is the single source of truth for term-level design conventions across all Deriva vocabularies.
 
 ## Synonyms vs New Terms
 
-| Situation | Action |
-|---|---|
-| Same concept, different spelling ("X-ray" vs "Xray") | Add synonym |
-| Same concept, different language ("Hund" for "Dog") | Add synonym |
-| Common abbreviation ("CT" for "Connective Tissue") | Add synonym |
-| Related but distinct concept ("Cartilage" vs "Connective") | Add new term |
-| More specific version ("Hyaline Cartilage") | Add new term |
+The decision between "add a synonym" and "add a new term" — including the candidate-by-candidate table (variant spelling → synonym, abbreviation → synonym, related-but-distinct concept → new term, etc.) — moved to `term-naming-strategy.md` ("Synonyms" section).
 
 ## Tips
 

@@ -77,14 +77,9 @@ For description templates and quality guidelines, see the `generate-descriptions
 
 ### Vocabulary Terms
 
-Every term must have a description that defines its meaning in context — not just restating the name. Explain when to use the term, and how it relates to other terms.
+Every term must have a description that defines its meaning in context — explaining what the term means, when to apply it, and how it relates to neighboring terms. Bare restatements of the name (`"Pneumonia"`) or meta-commentary (`"This is the pneumonia term"`) are not sufficient and produce empty Chaise tooltips.
 
-**Good term descriptions:**
-- "Pneumonia detected in chest X-ray. Use when radiological signs of pneumonia are present regardless of etiology. Mutually exclusive with 'normal'"
-- "Borderline image quality — minor artifacts present but image is usable for training with caution. Review if model performance on this subset is unexpectedly poor"
-
-**Bad term descriptions:**
-- "Pneumonia" or "This is the pneumonia term" or leaving it empty
+For the canonical guidance on writing term descriptions — including good/bad examples, the relationship between term descriptions and table comments, and what a description should answer — see `references/term-naming-strategy.md` ("Term Descriptions" section).
 
 ## Find before you create
 
@@ -110,6 +105,8 @@ Prefer separate, orthogonal vocabularies over one large vocabulary that combines
 
 Orthogonal vocabularies compose — you can filter by modality AND quality independently. Combined vocabularies create a combinatorial explosion.
 
+This same principle applies *within* a vocabulary: terms should describe a single conceptual dimension, never compounded dimensions. The same anti-patterns (compound tags, hierarchical encoding, vocabulary creep) and the substitution test for catching them are documented in `references/term-naming-strategy.md`. Read it before adding terms that you suspect might overlap with existing ones.
+
 ## Phase 3: Create
 
 ```python
@@ -123,10 +120,7 @@ create_vocabulary(
 
 This creates a table in the named schema with the standard vocabulary columns (Name, Description, Synonyms, ID, URI).
 
-**Naming conventions:**
-- Use `PascalCase` with underscores between words: `Tissue_Type`, `Image_Quality`, `Stain_Protocol`
-- Name should be the singular form of what the terms represent
-- Keep names concise but specific
+**Naming conventions** for vocabulary tables and the terms they hold split across two skills: the general entity-naming rules (PascalCase with underscores, singular form, short and specific — applies to all tables, columns, and terms) live in the `entity-naming` skill; vocabulary-term-specific elaborations (don't embed the dimension, the substitution test for catching duplicates, anti-patterns) live in `references/term-naming-strategy.md` here. Read both before naming the vocabulary or its first terms — choices made here are hard to change later because existing records reference terms by name. Renaming a vocabulary or term is significantly more expensive than renaming a non-FK-target table; see `entity-naming/references/naming-conventions.md` ("Renaming" section) for the cost breakdown.
 
 ## Adding Terms
 
@@ -155,7 +149,7 @@ add_synonym(
 )
 ```
 
-Synonyms are searchable via `lookup_term(...)` (the new MCP surface's synonym-aware lookup). For guidance on when to use synonyms vs creating new terms, see `references/patterns.md`.
+Synonyms are searchable via `lookup_term(...)` (the new MCP surface's synonym-aware lookup). For guidance on when to use synonyms vs creating new terms — including the test for whether two candidate names are the same concept under different formatting versus genuinely separate concepts — see `references/term-naming-strategy.md` ("Synonyms" section).
 
 ## Removing Terms and Synonyms
 
@@ -204,10 +198,12 @@ update_term_description(
 - `update_term_description(hostname, catalog_id, schema, table, name, description)` — Description-only update
 - `list_vocabulary_terms(hostname, catalog_id, schema, table)` — Browse all terms
 - `lookup_term(hostname, catalog_id, schema, table, name)` — Synonym-aware term lookup
-- `references/patterns.md` — Domain examples, FK patterns, description guidance, tips
+- `references/term-naming-strategy.md` — Canonical guidance for term-level design: orthogonal tagging, dimension identification, naming conventions, term descriptions, synonyms, anti-patterns, the substitution test, semantic checking. Read before adding any new term.
+- `references/patterns.md` — Domain examples, FK patterns, common usage tips. (Term-level descriptions, naming, and synonym design have moved to `term-naming-strategy.md`.)
 
 ## Related Skills
 
+- **`entity-naming`** — Canonical naming conventions for all data-modeling entities (schemas, tables, columns, vocabulary tables, vocabulary terms). Read first when designing a new vocabulary or its terms; this skill (`manage-vocabulary`) covers vocabulary mechanics and `references/term-naming-strategy.md` adds vocabulary-term-specific concerns on top of the general rules.
 - **`create-table`** — Creating domain tables with FK columns to vocabulary tables.
 - **`generate-descriptions`** — Description templates and quality guidelines for vocabulary tables and terms.
 - **`create-feature`** *(tier-2, deriva-ml-skills)* — Features use vocabularies as their value domain. See this skill if you have `deriva-ml-skills` installed and want to create features that reference vocabulary terms.

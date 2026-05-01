@@ -32,9 +32,7 @@ For detailed guidance on interpreting search hits and deciding whether to reuse,
 ## Key Decisions
 
 ### Naming Conventions
-- **Tables**: Singular nouns with underscores (`Subject`, `Blood_Sample`)
-- **Columns**: Descriptive with underscores (`Age_At_Enrollment`, `Cell_Count`)
-- **FK columns**: Match the referenced table name (`Subject` column → `Subject` table)
+Names for tables, columns, and FK columns follow the canonical conventions documented in the `entity-naming` skill (PascalCase with underscores, singular tables, descriptive columns, FK columns match the referenced table). Read it before creating a new table — names are hard to change later because every reference (URLs, FK constraints, scripts, configs, bag exports) carries the literal name.
 
 ### Column Type Selection
 - Prefer `float8` over `float4` for scientific data (precision matters)

@@ -21,6 +21,7 @@
         "./skills/create-web-app",
         "./skills/customize-display",
         "./skills/deriva-context",
+        "./skills/entity-naming",
         "./skills/generate-descriptions",
         "./skills/manage-vocabulary",
         "./skills/query-catalog-data",
