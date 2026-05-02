@@ -134,13 +134,56 @@ The mental model that works: this is the same problem you'd have in code if you 
 
 **Default to the second pattern** (parent + small specialization child) when the row really is a specialization of an existing one. It's the cleanest in Deriva, scales well as more variants accrue, and avoids both the null-sprawl risk of the first pattern and the duplication risk of the third.
 
-### Two ways this question goes wrong
+### The two extremes to avoid — and what the middle looks like
 
-These are the antipatterns to watch for in the user's intuition (or in your own draft response):
+There are two opposite ways the "how do I model this?" question goes wrong. Both of them feel reasonable in the moment. Both of them produce schemas that fight you for years afterward. The middle ground is what Deriva is built for: **controlled vocabularies for values, association tables for many-to-many relationships, FKs as the connective tissue.** Knowing the two extremes makes it easier to recognize when you're sliding toward one of them and to redirect to the proper Deriva-native pattern.
 
-1. **The "let's make it generic" escape hatch.** Faced with the difficulty of "should I extend or should I split?", a designer is sometimes tempted to create a generic `Attribute` table with columns `Row_RID, Attribute_Name, Attribute_Value` and then have every variant stuff its specialized fields in there as rows rather than columns. **Don't propose this.** It moves the problem from "schema design" to "your queries become impossible" — Chaise faceted search stops working, joins to vocabularies break, types become opaque, and every consumer of the data has to reconstruct a schema from the values. Pick one of the three patterns above instead. (For data scientists: this is the schema equivalent of stuffing every model's outputs into a single "results" dict and never knowing what fields exist where. The flexibility looks appealing right up until you have to write a real query against it.)
+#### Extreme 1: too generic ("EAV" — entity-attribute-value)
 
-2. **Parallel "almost-duplicate" tables that quietly drift over time.** The path of least resistance — "this is *kind of* like Image but it's for the new project, so let's just make `Image_v2`" — produces a catalog that within a year has `Image`, `Image_2024`, `Image_For_Study_X`, `Image_For_Study_Y`. Each one started as a copy of an existing table and then evolved independently. Now they have 80% column overlap, no shared queries possible, and any cross-project analysis has to reconcile four schemas. The right move at the start was the second pattern (parent + variant-specific child). The right move now is a painful migration. **When you spot the user heading toward this, name it explicitly:** "I'd push back on creating a parallel table here — that pattern tends to fragment data as the project grows. Two cleaner alternatives are…"
+Faced with the difficulty of "should I extend or split or what?", a designer is sometimes tempted to dodge the question by making everything a key-value pair. They create a generic `Attribute` table with columns like `Row_RID, Attribute_Name, Attribute_Value`, and now any new field anyone wants is just an insert into that table — no schema change needed.
+
+This *looks* maximally flexible. It's actually the schema equivalent of stuffing every model's outputs into one untyped dict and hoping you remember what fields exist where. The cost shows up as soon as you try to use the data:
+
+- **Chaise faceted search stops working.** A facet on "Diagnosis" can't aggregate values that are stored as 50,000 rows in an `Attribute` table.
+- **Types become opaque.** Was the `Age` row stored as a string `"42"` or an integer? An EAV `Value` column is one type for all attributes, so everything ends up as text and downstream consumers have to parse and re-type each value.
+- **Joins to vocabularies break.** A categorical column should FK to a vocabulary so the legal values are enforced and discoverable. EAV bypasses this entirely — every value is just text in a generic column, with no way to constrain it.
+- **Every reader has to reconstruct the schema from the data itself.** "What attributes exist on Subject?" becomes a `SELECT DISTINCT Attribute_Name FROM Attribute WHERE Row_RID IN (...)` — a query that's slow, expensive, and tells you only what's *been used*, not what's *legal*.
+
+**The Deriva-native answer to the same problem:** if the field is categorical, model it as a **controlled vocabulary** with the column as a FK to it. The vocabulary table lists every legal value once, with descriptions and synonyms; the column carries the meaning explicitly; Chaise renders it as a faceted filter; cross-catalog interoperability works because "the same value" is literally the same row. (See `/deriva:manage-vocabulary` for vocabulary CRUD; this is pillar 3 of the modeling philosophy in `deriva-context`.)
+
+If the field really is sparse and unstructured (the rare attributes that won't fit any column), the right move is a single `jsonb` column on the existing table — not an EAV table. You retain the per-row structure for the common columns; the rare-attributes blob lives in one place per row, queryable when needed, ignorable when not.
+
+#### Extreme 2: too denormalized (one wide table, everything stuffed in)
+
+The opposite mistake is to put everything into one giant table. The user has subjects, the subjects have observations, the observations have measurements, the measurements have annotations — so the "simplest" thing is one big table with every column flattened: `Subject_Name, Subject_Age, Observation_Date, Observation_Site, Measurement_Value, Measurement_Unit, Annotation_Label, Annotator, ...`
+
+This *looks* maximally simple. It's actually the schema equivalent of one giant CSV with 200 columns where most rows are mostly null. The cost shows up as soon as the data has any structure beyond a single flat list:
+
+- **Repeated values everywhere.** Each subject's name, age, and site repeats on every measurement row. Update a subject's age and you're updating thousands of rows; miss one and your data is now inconsistent with itself.
+- **Multi-valued relationships break.** What if a subject has three diagnoses, or an image has multiple annotators with different labels? You can't represent it. You either pick one (losing the others) or duplicate the whole row N times (multiplying everything).
+- **Many-to-many relationships are impossible.** A study contains many subjects; a subject participates in many studies. There is no shape of single table that captures this without massive duplication or lying about cardinality.
+- **Adding a new field type means migrating millions of rows** instead of inserting a few rows in a new linked table.
+- **Chaise faceted search becomes useless.** A facet on `Annotator` aggregates over rows-as-measurements, not rows-as-annotators, so the counts are meaningless.
+
+**The Deriva-native answer to the same problem:** **normalize into multiple tables linked by foreign keys**, with **association tables** for the genuinely many-to-many relationships. A subject is one row in `Subject`; an observation is one row in `Observation` with a FK to `Subject`; a measurement is one row in `Measurement` with a FK to `Observation`; an annotation is one row in an association table `Image_Annotator` linking an `Image` row to an `Annotator` row, with the label as a FK to a vocabulary. Each row exists once. Updates touch one row. Multi-valued relationships are expressible. Faceted search works. (See the "Association tables" entry in `deriva-context/references/concepts.md` for the standard many-to-many pattern, and pillar 3 of the modeling philosophy for the broader "structure carries meaning" frame.)
+
+#### The middle, where Deriva lives
+
+The two extremes share a root cause: a designer trying to avoid the work of modeling. EAV avoids it by making everything generic; the wide-table approach avoids it by flattening everything into one shape. The proper middle is to **do the modeling work**: figure out which entities exist, what their attributes are, what relationships connect them, and what values are categorical vs. free-form. Then express that as Deriva primitives:
+
+- **Each entity gets its own table.** One row per Subject, one row per Image, one row per Annotation. Each table holds the columns specific to *that* entity.
+- **Categorical columns FK to vocabularies.** Diagnosis, Tissue_Type, Image_Quality — the values are constrained to a vocabulary table, the legal values are documented and queryable, synonyms absorb historical spellings.
+- **One-to-many relationships use a FK on the "many" side.** A Sample row has a `Subject` column that FKs to the parent Subject's RID.
+- **Many-to-many relationships use an association table.** Two FKs, one to each side, with optional extra columns for relationship-level data (enrollment date, role, confidence). The association table is itself a first-class entity in the catalog.
+- **Bulk bytes go to Hatrac via asset tables**, not into catalog columns.
+
+When you find yourself reaching for "let me just stuff everything into one big table" or "let me make a generic key-value table for flexibility," stop and ask: what entities are actually here, what relationships connect them, and which values are categorical? The proper Deriva answer is almost always recognizable from those three questions.
+
+#### One more antipattern: parallel "almost-duplicate" tables
+
+Distinct from the two extremes above, but worth flagging because it's the most common way the column-shape question goes wrong: the path of least resistance — "this is *kind of* like Image but it's for the new project, so let's just make `Image_v2`" — produces a catalog that within a year has `Image`, `Image_2024`, `Image_For_Study_X`, `Image_For_Study_Y`. Each started as a copy of an existing table and then evolved independently. Now they have 80% column overlap, no shared queries possible, and any cross-project analysis has to reconcile four schemas. The right move at the start was the second pattern from the table above (parent + variant-specific child). The right move now is a painful migration.
+
+**When you spot the user heading toward this, name it explicitly:** "I'd push back on creating a parallel table here — that pattern tends to fragment data as the project grows. Two cleaner alternatives are…"
 
 ### 5. Decide: reuse, extend, or create
 

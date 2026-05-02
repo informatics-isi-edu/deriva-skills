@@ -41,7 +41,14 @@ If you're not sure whether a vocabulary already exists, search first with `rag_s
 2. **Keep the existing table; add a small "extra fields" table that FKs back to it** — the cleanest move when the user is describing a specialization (e.g., the existing `Image` plus a new `CT_Image_Detail` that carries CT-specific fields). The base table accumulates all rows; the specialization carries only the variant-specific data; queries that need everything join base + specialization. Maps directly to RID-based FKs.
 3. **Create a separate parallel table** — only when the new entity is genuinely disjoint from the existing one (no useful shared queries, no need to treat both as "the same kind of thing" anywhere). Most "I think we need a new table" intuitions are actually option 2 in disguise.
 
-For the column-overlap detection heuristic, the three-pattern decision guide with worked ML-flavored examples (`Image` → `CT_Image_Detail`, etc.), and the antipatterns to avoid (the "let's make it generic" escape hatch, parallel almost-duplicate tables that drift over time), see `semantic-awareness/references/find-before-you-create.md`.
+For the column-overlap detection heuristic, the three-pattern decision guide with worked ML-flavored examples (`Image` → `CT_Image_Detail`, etc.), and the antipatterns to avoid, see `semantic-awareness/references/find-before-you-create.md`.
+
+**Two extremes to steer away from when designing the table:**
+
+- **EAV (everything in a generic key-value table):** when modeling feels hard, it's tempting to dodge by creating a table like `Entity_RID, Attribute_Name, Attribute_Value` and stuffing every "flexible" field into it as rows. This breaks faceted search, kills type safety, makes vocabulary FKs impossible, and forces every reader to reconstruct the schema from the data. **Don't.** If a column is categorical, model it as a controlled vocabulary FK (`/deriva:manage-vocabulary`). If a column is genuinely sparse and unstructured, use a single `jsonb` column on the existing table — not an EAV side table.
+- **One giant wide table:** the opposite mistake — flatten every related entity into one big table with every field as a column. This forces repeated values (each subject's data repeats on every measurement row), breaks multi-valued relationships (you can't represent "this image has three annotators"), and makes many-to-many impossible (study × subject). **Normalize into multiple tables linked by FKs**, with **association tables** (a table with two FKs, one to each side, plus optional relationship-level columns) for many-to-many. See `deriva-context/references/concepts.md` for the association-table pattern.
+
+The Deriva-native middle is what the platform is built for: one table per entity, controlled vocabularies for categorical values, FKs for one-to-many, association tables for many-to-many. When you find yourself sliding toward either extreme, the answer is almost always one of those four primitives.
 
 ## Key Decisions
 
