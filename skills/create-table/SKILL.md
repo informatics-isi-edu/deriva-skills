@@ -36,6 +36,23 @@ Names for tables, columns, and FK columns follow the canonical conventions docum
 - Prefer `jsonb` over `json` (better query performance)
 - Use `markdown` only when you need rich text rendering in the UI
 
+#### `text` is for textual content, not for values
+
+`text` (and `markdown`) columns are for genuinely free-form textual content: descriptions, notes, comments, abstracts, narrative fields. **They are not for recording values from a known set.**
+
+If the column's purpose is to record a *value* — a category, a status, a type, a controlled label, a member of any enumerable set, even if the set is small or seems obvious — **use a controlled vocabulary instead.** Create a vocabulary table with the legal values and FK the column to it. This is one of Deriva's load-bearing modeling opinions (pillar 3 in the design philosophy: "controlled vocabularies and foreign keys, not free-form values").
+
+Why it matters in practice:
+
+- Free-text categorical columns drift over time. `Stage` as `text` will accumulate `"Stage I"`, `"stage 1"`, `"I"`, `" Stage I "` — all meaning the same thing. A vocabulary FK enforces one canonical spelling and lets `add_synonym` absorb the rest.
+- Chaise renders vocabulary-backed columns as faceted filters (clickable, aggregable). Free-text columns become text-search boxes that don't aggregate.
+- The vocabulary table itself documents the legal values — each term has a `Description` that lives in the catalog, queryable, not in a side document.
+- Cross-catalog interoperability requires that "the same value" is literally the same row in a shared vocabulary, not two free-text strings that happen to spell the same thing.
+
+The "even if the set is small" caveat matters: it's tempting to use `text` for a 2-3-value field ("active"/"inactive", "draft"/"published") because creating a vocabulary feels like overkill. Don't. The vocabulary cost is small and one-time; the drift cost of the alternative compounds over the catalog's lifetime.
+
+For vocabulary CRUD (creating the table, adding terms, managing synonyms), see the `manage-vocabulary` skill (`/deriva:manage-vocabulary`).
+
 ### Foreign Key on_delete
 - `CASCADE` — Delete children when parent is deleted (strong ownership)
 - `SET NULL` — Nullify FK when parent is deleted (optional relationship)
