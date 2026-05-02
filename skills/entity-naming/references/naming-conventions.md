@@ -1,15 +1,15 @@
 # Naming Conventions for Deriva Entities — Deeper Reference
 
-This file provides the rationale, character-level restrictions, and edge-case guidance behind the four conventions documented in the parent `SKILL.md`. Read the SKILL.md for the rules; read this file when you need to understand *why* a rule exists, want to test a borderline name, or are planning a rename.
+This file provides the rationale, character-level restrictions, and edge-case guidance behind the conventions documented in the parent `SKILL.md`. The rules themselves live in SKILL.md; this file explains *why* each rule exists, helps you test borderline names, and walks through the full renaming-migration procedure when a rename is unavoidable.
 
 ## Table of contents
 
 - [Why naming matters in catalogs](#why-naming-matters-in-catalogs)
-- [Per-entity rationale](#per-entity-rationale)
+- [Why each convention is what it is](#why-each-convention-is-what-it-is)
 - [Foreign-key column conventions in detail](#foreign-key-column-conventions-in-detail)
 - [Character restrictions and length](#character-restrictions-and-length)
 - [The specificity test](#the-specificity-test)
-- [Renaming: what breaks and how to migrate](#renaming-what-breaks-and-how-to-migrate)
+- [Renaming: what breaks and the migration procedure](#renaming-what-breaks-and-the-migration-procedure)
 - [Edge cases](#edge-cases)
 
 ---
@@ -29,59 +29,52 @@ A Deriva catalog is read far more often than written. Every name is referenced f
 
 A bad name doesn't fail loudly. It accumulates references, and each reference is a tiny migration cost the catalog will pay forever. The conventions exist to keep that cost low.
 
-## Per-entity rationale
+## Why each convention is what it is
 
-### Schemas: lowercase, no separators
-
-Schemas are the top-level namespace. Their names appear in every URL path and every tool argument.
+### Schemas: lowercase, no separators, short
 
 - **Lowercase** because Chaise's URL routing treats schema names case-insensitively in some path constructors but case-sensitively in others; lowercase eliminates the bug class entirely. Lowercase URLs are also more readable and more conventional for path components.
-- **No underscores or hyphens** because schemas are short by convention; multi-word schemas indicate a missing layer of organization (use multiple schemas instead). Some pre-existing catalogs may carry hyphenated schema names from earlier eras; accept those rather than rename.
-- **Stable** because schema names appear in the most places. A schema rename touches every script, every config, every bookmark — the cost is roughly N times the cost of a table rename, where N is the table count in that schema.
+- **No separators** because schemas should be short by convention; multi-word schemas usually indicate a missing layer of organization (use multiple schemas instead). Some pre-existing catalogs may carry hyphenated schema names from earlier eras; accept those rather than rename.
+- **Short and stable** because schema names appear in the most places. A schema rename touches every script, every config, every bookmark — the cost is roughly N times the cost of a table rename, where N is the table count in that schema.
 
 ### Tables: PascalCase with underscores, singular
-
-Tables are *things*; their rows are individuals.
 
 - **PascalCase** because ERMrest preserves case in stored names and in API responses. Chaise displays table names in titles and breadcrumbs verbatim — `Subject` reads as a proper title; `subject` looks like a mistake.
 - **Singular** because each row is one of the named thing. `Subject` table → "this row is a Subject." If the name were `Subjects`, every reading would be off-by-one ("this row is a Subjects" doesn't parse).
 - **Underscores between words** because PascalCase's word boundaries get ambiguous with longer compound names. `BloodSample` and `Blood_Sample` are both legal; underscores win for readability of multi-word names. Pick one convention per catalog and apply it consistently.
 
-### Columns: PascalCase with underscores, descriptive
+### Columns: PascalCase with underscores, descriptive, non-redundant
 
-Columns describe properties of their row.
-
-- **Same casing rules as tables** — PascalCase with underscores. Chaise displays column headers verbatim.
-- **Descriptive** because columns are read in isolation in faceted search, in CSV exports, in API responses where the table context is implicit. A column named `Count` could mean anything; `Cell_Count` is unambiguous.
-- **Don't repeat the table name** in the column name. Inside a `Subject` table, the column should be `Name`, not `Subject_Name` — the table context is implicit. The exception is when a column references *another* table (FK columns), where the column should be named after the referenced table; see the next section.
+- **Same casing as tables** — PascalCase with underscores. Chaise displays column headers verbatim.
+- **Descriptive** because columns are read in isolation in faceted search, in CSV exports, and in API responses where the table context is implicit. A column named `Count` could mean anything; `Cell_Count` is unambiguous.
+- **Don't repeat the table name** in the column name. Inside a `Subject` table, the column should be `Name`, not `Subject_Name` — the table context is implicit. The exception is FK columns, where the column is named after the *referenced* table; see the FK section below.
 
 ### Vocabulary terms: PascalCase with underscores, singular, no embedded dimension
 
-Vocabulary terms are values that records get tagged with.
-
-- **PascalCase with underscores, singular** — same rules as tables. `Hyaline_Cartilage` not `hyaline cartilage` or `hyalineCartilage` or `Hyaline-Cartilage`. The term names a kind of thing; one record carries one tag.
-- **No embedded dimension** because the vocabulary table the term belongs to already names the dimension. `Tissue_Type` table contains `Hyaline_Cartilage`, not `Tissue_Hyaline_Cartilage` or `Hyaline_Cartilage_Tissue_Type`. Repeating the dimension is noise.
-- **No compound dimensions** because that's the compound-tag anti-pattern, documented in detail in `manage-vocabulary/references/term-naming-strategy.md`.
+- **Same casing rules as tables** because terms render in Chaise the same way table names do (and because consistency reduces the surface area of "is this PascalCase or that PascalCase?" decisions).
+- **Singular** because a record carries one tag at a time. The term names a kind of thing; the record *is* one of these things.
+- **No embedded dimension** because the vocabulary table the term belongs to already names the dimension. `Tissue_Type` table contains `Hyaline_Cartilage`, not `Tissue_Hyaline_Cartilage`. Repeating the dimension is noise.
+- **No compound dimensions** — that's the compound-tag anti-pattern. Use multiple tags or multiple columns instead. Documented at depth in the `manage-vocabulary` skill's `references/term-naming-strategy.md`.
 
 ## Foreign-key column conventions in detail
 
-The rule: **FK column name matches the referenced table name.** Reasoning:
+The rule (in SKILL.md): **FK column name matches the referenced table name.** The reasoning at depth:
 
-1. **Path-builder API ergonomics.** ERMrest's `pathBuilder` chains joins by FK target table name. When the FK column has the same name as the target table, joins read like English: `pb.Image.link(pb.Subject)` joins through whatever Image column points at Subject.
+1. **Self-documenting schemas.** Reading a table's column list tells you immediately which other tables it links to. A `Sample` table with columns `[Sample_ID, Subject, Collection_Date]` clearly references `Subject`. The column names *are* the schema diagram.
 
 2. **Chaise display.** Chaise's compact view renders the FK column's *value* as a clickable reference to the target row. The column header is the column name, which (under this convention) is the target table name — so the header reads as the type of thing being linked to.
 
-3. **Self-documenting schemas.** Reading a table's column list tells you immediately which other tables it links to. A `Sample` table with columns `[Sample_ID, Subject, Collection_Date]` clearly references `Subject`.
+3. **`pathBuilder` ergonomics.** ERMrest's `pathBuilder` follows FKs by named constraint, so the join logic doesn't strictly require the column name to match — but when the column name does match the target, the FK constraint name is typically auto-derived in a readable form (`Sample_Subject_fkey`) and the resulting joins read naturally to the human writing the script.
 
 ### When a table has multiple FKs to the same target
 
 The convention bends to accommodate disambiguation. If a `Pedigree` table references `Subject` twice (one for parent, one for child), the columns are `Parent_Subject` and `Child_Subject`. Each declares its FK to `Subject` with an explicit constraint name; Chaise can render both as Subject references with the role label inline.
 
-The pattern is: `<Role>_<TargetTableName>`. Keep the target table name as the suffix so the reference relationship is still readable from the column name.
+The pattern: `<Role>_<TargetTableName>`. Keep the target table name as the suffix so the reference relationship is still readable from the column name.
 
 ### When the FK target is a vocabulary table
 
-A column referencing a vocabulary table follows the same rule: the column name matches the vocabulary table name. A `Subject` table with a species column references `Species` (the vocab table) via a column named `Species`. The column type is `text` (vocabulary terms are looked up by name); Chaise renders the FK as a dropdown of the vocabulary's terms.
+A column referencing a vocabulary table follows the same rule: the column name matches the vocabulary table name. A `Subject` table with a species column references `Species` (the vocab table) via a column named `Species`. Chaise renders the FK as a dropdown of the vocabulary's terms.
 
 This gives the catalog a uniform shape: every column whose value is constrained to a controlled set is an FK to a vocabulary table, and the column name is the vocabulary name.
 
@@ -129,9 +122,7 @@ The test fails most often in two directions:
 - **Too generic** (`Image`, `Count`, `Type`, `Data`) — the name doesn't distinguish from neighbors and forces every reader to consult context.
 - **Too specific** (`Image_Captured_With_External_Photographic_Equipment_For_Analysis`) — the name is a sentence rather than a label. Move the detail to the description.
 
-## Renaming: what breaks and how to migrate
-
-Renaming touches everything that references the entity by name:
+## Renaming: what breaks and the migration procedure
 
 ### What breaks immediately on rename
 
