@@ -59,7 +59,9 @@ MCP tool is also supported.
 
 The tier-1 skills cover the core Deriva surface — what works on any Deriva catalog.
 
-**User-invocable (`/deriva:<name>`):**
+The 10 skills divide into two shapes — user commands (what a person invokes) and auto-invoked behaviors (what Claude triggers on its own to enforce a discipline). The split matters when editing: command-shaped skills can assume the user typed `/deriva:<name>` and should produce a useful response on their own; behavior-shaped skills run as background context and should never produce a standalone "here's what I did" message.
+
+**User commands (`/deriva:<name>`)** — `user-invocable: true` in frontmatter:
 
 | Skill | Covers |
 |-------|--------|
@@ -71,13 +73,15 @@ The tier-1 skills cover the core Deriva surface — what works on any Deriva cat
 | `query-catalog-data` | Querying / browsing catalog data (also the cold-start exploration entry point) |
 | `troubleshoot-deriva-errors` | Generic catalog troubleshooting (auth, RIDs, missing records, generic vocab terms) — also carries the versioning-and-updates guidance for deriva-py / deriva-mcp-core / deriva plugin |
 
-**Always-on (auto-invoked, no `/command`):**
+**Auto-invoked behaviors (no slash command)** — `user-invocable: false` in frontmatter; should NOT be surfaced in user-facing skill lists as if they were tools:
 
-| Skill | Purpose |
-|-------|---------|
-| `deriva-context` | Plugin-wide context: concept index, modeling checklist, pointers |
-| `generate-descriptions` | Auto-generate descriptions for new catalog entities |
-| `semantic-awareness` | Check for duplicates before creating entities |
+| Skill | When Claude triggers it |
+|-------|-------------------------|
+| `deriva-context` | Always — establishes plugin context, concept index, and modeling checklist on every conversation |
+| `semantic-awareness` | Before any catalog-entity creation — enforces the find-before-you-create discipline |
+| `generate-descriptions` | When a catalog entity is being created without a user-supplied description — auto-drafts one |
+
+These three are disciplines, not commands. They appear in `marketplace.json` so Claude Code loads them into the plugin, but a user typing `/deriva:semantic-awareness` is using the plugin wrong — those skills are designed to fire from Claude's own decision-making, not from user invocation. Documentation surfaces (README, marketing copy, help blurbs) should keep them in a clearly-separated section so users don't reach for them.
 
 
 ### Skill Anatomy (`SKILL.md`)
