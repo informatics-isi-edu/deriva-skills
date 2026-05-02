@@ -119,7 +119,6 @@ query_aggregate(
 
 ## Related Skills
 
-- **`/deriva:route-catalog-schema`** — router for catalog structure / data exploration tasks
 - **`/deriva:create-table`** — schema operations (creating domain tables, columns, FKs)
 - **`/deriva:manage-vocabulary`** — vocabulary CRUD on any Deriva catalog
 

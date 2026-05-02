@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the deriva-skills c
 
 ## Project Overview
 
-Claude Code plugin providing 11 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
+Claude Code plugin providing 10 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
 
 This plugin is the **tier-1** surface — skills that work on any Deriva catalog. The companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2) adds the DerivaML domain skills (Datasets, Workflows, Executions, Features, Asset_Type vocabularies). The two plugins are independently versioned and released; users with DerivaML workflows install both. See `docs/superpowers/plans/2026-04-27-skills-restructure.md` for the rationale and migration history.
 
@@ -42,8 +42,8 @@ MCP tool is also supported.
 ```
 ├── .claude-plugin/
 │   ├── plugin.json           # Plugin metadata (name, version, description)
-│   └── marketplace.json      # Marketplace registration (lists all 11 tier-1 skills)
-├── skills/                   # 11 tier-1 skills, each in its own directory
+│   └── marketplace.json      # Marketplace registration (lists all 10 tier-1 skills)
+├── skills/                   # 10 tier-1 skills, each in its own directory
 │   ├── {skill-name}/
 │   │   ├── SKILL.md          # Frontmatter (YAML) + skill content (Markdown)
 │   │   ├── scripts/          # Optional Python helper scripts
@@ -71,18 +71,17 @@ The tier-1 skills cover the core Deriva surface — what works on any Deriva cat
 | `customize-display` | Chaise display annotations via MCP tools |
 | `entity-naming` | Naming conventions for schemas, tables, columns, vocabulary terms |
 | `manage-vocabulary` | Vocabulary CRUD |
-| `query-catalog-data` | Querying / browsing catalog data |
-| `route-catalog-schema` | Router for catalog structure / data exploration |
+| `query-catalog-data` | Querying / browsing catalog data (also the cold-start exploration entry point) |
 | `troubleshoot-deriva-errors` | Generic catalog troubleshooting (auth, RIDs, missing records, generic vocab terms) |
 
 **Always-on (auto-invoked, no `/command`):**
 
 | Skill | Purpose |
 |-------|---------|
+| `deriva-context` | Plugin-wide context: concept index, modeling checklist, pointers |
 | `generate-descriptions` | Auto-generate descriptions for new catalog entities |
 | `semantic-awareness` | Check for duplicates before creating entities |
 
-(A future `deriva-context` always-on skill — Phase 2 Task 2.7 of the migration plan — will add a plugin-level context blurb explaining the tier-1 / tier-2 boundary.)
 
 ### Skill Anatomy (`SKILL.md`)
 

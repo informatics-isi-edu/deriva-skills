@@ -48,8 +48,8 @@ If you also have the deriva-ml plugin installed, run the tier-2 sibling afterwar
 | **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
 | | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
-| | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog |
-| | `/deriva:route-catalog-schema` | Router for catalog structure / data exploration tasks |
+| | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (use this first to explore an existing catalog) |
+| | `/deriva:entity-naming` | Naming conventions for schemas, tables, columns, and vocabulary terms |
 | **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) |
 | **Maintenance** | `/deriva:check-deriva-versions` | Check the core Deriva ecosystem (deriva-py, deriva-mcp-core, deriva plugin) |
 
@@ -57,6 +57,7 @@ If you also have the deriva-ml plugin installed, run the tier-2 sibling afterwar
 
 | Skill | When it activates |
 |-------|-------------------|
+| `deriva-context` | Always — establishes plugin context, concept index, and modeling checklist |
 | `semantic-awareness` | Before creating any new catalog entity |
 | `generate-descriptions` | When creating entities without descriptions |
 

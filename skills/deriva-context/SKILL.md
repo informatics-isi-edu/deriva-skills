@@ -10,7 +10,7 @@ disable-model-invocation: false
 
 Deriva is a data-centric platform for managing scientific data: structured metadata (in a versioned, queryable catalog) plus bulk objects (in an object store) plus a configurable web UI (Chaise) plus a complete HTTP API. Think Wikipedia for structured data — every change recorded, every state recoverable, every entity citable, accessible from any tool. The `deriva` plugin lets you work with any Deriva catalog through the `deriva-mcp-core` MCP server and the `deriva-py` Python client.
 
-**First time touching a Deriva catalog this session?** Start with `/deriva:route-catalog-schema` to explore an existing catalog before you mutate anything. Hit an auth or permission error? Go straight to `/deriva:troubleshoot-deriva-errors`.
+**First time touching a Deriva catalog this session?** Start with `/deriva:query-catalog-data` to explore an existing catalog before you mutate anything (it covers `rag_search` for "what tables exist?" / "what vocabularies are there?" plus row-level queries). Hit an auth or permission error? Go straight to `/deriva:troubleshoot-deriva-errors`.
 
 **Out of scope for this plugin:** domain-specific abstractions that build *on top of* a catalog (project-specific concepts like "experiment," "sample lineage," "ML execution"). Those layered models live in their own plugins or libraries (e.g., the companion `deriva-ml` plugin handles ML workflows). When a user mentions a concept that's specific to a domain layer rather than the catalog primitives below, hand off to the relevant domain plugin if one is loaded.
 
@@ -20,8 +20,8 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 
 | Concept | What it is | Skill |
 |---|---|---|
-| **Catalog** | A versioned namespace of schemas, tables, vocabularies, and rows. Identified by hostname + catalog ID (or alias). | `/deriva:query-catalog-data`, `/deriva:route-catalog-schema` |
-| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `/deriva:create-table`, `/deriva:route-catalog-schema` |
+| **Catalog** | A versioned namespace of schemas, tables, vocabularies, and rows. Identified by hostname + catalog ID (or alias). | `/deriva:query-catalog-data` |
+| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `/deriva:create-table`, `/deriva:query-catalog-data` |
 | **Vocabulary** | A controlled-term table with standard columns (Name, Description, Synonyms, ID, URI). FK target for categorical columns. | `/deriva:manage-vocabulary` |
 | **RID** | Resource Identifier — every row in every Deriva table has a unique, server-minted, resolvable RID (e.g., `1-A2B3`). | `/deriva:query-catalog-data`, `/deriva:troubleshoot-deriva-errors` |
 | **Foreign keys** | The relational glue. FKs target RID columns; FKs to vocabularies model categorical values. | `/deriva:create-table` |

@@ -22,7 +22,6 @@
         "./skills/generate-descriptions",
         "./skills/manage-vocabulary",
         "./skills/query-catalog-data",
-        "./skills/route-catalog-schema",
         "./skills/semantic-awareness",
         "./skills/troubleshoot-deriva-errors"
       ]
