@@ -15,9 +15,21 @@ Tables are the foundation of a Deriva catalog schema. Choose the right table typ
 | Type | Tool | When to Use |
 |------|------|-------------|
 | Standard table | `create_table` | Regular data with columns and foreign keys |
-| Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data |
+| Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data — **vocabulary CRUD lives in `/deriva:manage-vocabulary`**; come back here only for non-vocabulary tables |
 
 > **Asset tables:** create asset tables via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) and then add the `Asset_Type` FK column separately. There is no dedicated single-call asset-table convenience tool in `deriva-mcp-core`.
+
+### Vocabularies first when a categorical column needs one
+
+If the table you're creating has a categorical column (anything that records a value from a known set — diagnosis, status, type, label) and the vocabulary it should FK to **doesn't exist yet**, create the vocabulary *before* you create the table. The sequence:
+
+1. Plan all categorical columns up front. For each, identify the vocabulary it should reference.
+2. For every vocabulary that doesn't already exist in the catalog, hand off to `/deriva:manage-vocabulary` to create it (and populate at least the initial terms).
+3. Come back to this skill to create the table, declaring each categorical column as a FK to its vocabulary.
+
+Doing it in this order avoids two-pass schema mutation (create table with `text` columns → realize you wanted vocabularies → drop the columns and re-add as FKs). The drift cost of even briefly using `text` for what should be a vocabulary FK is non-trivial: any rows inserted in the interim carry free-text values that have to be normalized later.
+
+If you're not sure whether a vocabulary already exists, search first with `rag_search("<concept>", doc_type="catalog-schema")` — same find-before-you-create discipline as for tables.
 
 ## Find before you create
 
@@ -101,3 +113,15 @@ add_column(
 - `catalog_tables(hostname, catalog_id)` — All tables with row counts
 
 For the full guide with column types table, FK specification, common patterns, and examples, read `references/workflow.md`.
+
+## Related Skills
+
+- **`/deriva:manage-vocabulary`** — Vocabulary CRUD (`create_vocabulary`, `add_term`, `add_synonym`). Use this first when a categorical column needs a vocabulary that doesn't exist yet (see "Vocabularies first" above), and after table creation when you need to extend a vocabulary.
+- **`/deriva:entity-naming`** — Naming conventions for schemas, tables, columns, and FK columns (PascalCase, singular, FK columns match the referenced table). Read before naming a new table — names are hard to change later.
+- **`/deriva:semantic-awareness`** — Find-before-you-create workflow. The MCP server does NOT auto-detect duplicate tables; this skill is the only guardrail.
+- **`/deriva:generate-descriptions`** — Auto-drafted descriptions for tables and columns (always-on; runs when you create something without a description).
+- **`/deriva:query-catalog-data`** — After you create the table, this is how you read from it (and how you should explore the existing schema before adding to it).
+- **`/deriva:customize-display`** — Chaise display annotations on the table you just created (visible columns, row name patterns, foreign-key display). Treat the UI as part of the data model — see pillar 6 in the design philosophy.
+- **`/deriva:troubleshoot-deriva-errors`** — When `create_table` or `add_column` fails with auth, RID, or connection errors.
+
+The plugin-wide modeling checklist (when to use FKs, vocabularies, asset tables, snapshots, display annotations) lives in the always-on `deriva-context` skill; the full design rationale is in `deriva-context/references/philosophy.md`.
