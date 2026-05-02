@@ -35,7 +35,13 @@ If you're not sure whether a vocabulary already exists, search first with `rag_s
 
 > The MCP server does NOT perform automatic duplicate detection on `create_table`. The skill-level workflow is the only guardrail. Before calling `create_table`, run the "find before you create" workflow from the `semantic-awareness` skill: search via `rag_search` for similar tables, present a picker if multiple plausible matches turn up, and only fall through to creation if the user confirms a new table is needed.
 
-For detailed guidance on interpreting search hits and deciding whether to reuse, extend, or create a new table, see the `semantic-awareness` skill.
+**Search by name AND by column shape.** A new table that carries similar columns to an existing one is often a duplicate even if the names differ — `Image` and `Scan` and `Photograph` can all be the same kind of row. Pick 2-3 distinctive columns from the user's intended schema (e.g., `Tissue_Type`, `Acquisition_Date` rather than generic ones like `Name`), `rag_search` for them, and compare column lists with any matches. When the column overlap is high, present the user with three options before creating:
+
+1. **Add the user's new columns to the existing table** (with `add_column`) — the simplest move when the new columns are naturally optional for non-specialized rows. Preserves all existing labels, asset uploads, and Chaise display work on the existing table.
+2. **Keep the existing table; add a small "extra fields" table that FKs back to it** — the cleanest move when the user is describing a specialization (e.g., the existing `Image` plus a new `CT_Image_Detail` that carries CT-specific fields). The base table accumulates all rows; the specialization carries only the variant-specific data; queries that need everything join base + specialization. Maps directly to RID-based FKs.
+3. **Create a separate parallel table** — only when the new entity is genuinely disjoint from the existing one (no useful shared queries, no need to treat both as "the same kind of thing" anywhere). Most "I think we need a new table" intuitions are actually option 2 in disguise.
+
+For the column-overlap detection heuristic, the three-pattern decision guide with worked ML-flavored examples (`Image` → `CT_Image_Detail`, etc.), and the antipatterns to avoid (the "let's make it generic" escape hatch, parallel almost-duplicate tables that drift over time), see `semantic-awareness/references/find-before-you-create.md`.
 
 ## Key Decisions
 
