@@ -96,15 +96,13 @@ A **column** has a name, a type (text, int, float, timestamp, boolean, jsonb, an
 
 A **RID** is a short, opaque, catalog-wide-unique string that identifies a row. Examples: `1-A2B3`, `2-XYZ9`. The format is roughly `<catalog-prefix>-<encoded-counter>`; the exact internal structure isn't meant to be parsed by clients.
 
-Properties:
+Mechanics:
 
 - **Server-minted at insert time.** You don't construct RIDs; the server assigns one when a row is created.
-- **Stable.** Editing the row, renaming columns, even moving the row between schemas does not change the RID.
-- **Resolvable.** A catalog's RID resolves to a permanent URL: `https://<host>/id/<catalog>/<rid>`. Pasting that URL into a browser opens the row in Chaise.
-- **Universal.** Every row in every table in every Deriva catalog has a RID. There are no RID-less rows.
-- **The canonical FK target.** When table A references table B, the FK column in A points at B's RID column.
+- **Universal.** Every row in every table in every Deriva catalog has a RID. There are no RID-less rows. The RID is each table's primary key.
+- **Resolvable URL form.** Each RID resolves to a permanent URL: `https://<host>/id/<catalog>/<rid>`. Pasting that URL into a browser opens the row in Chaise.
 
-**RID vs. domain key:** RIDs are for the system's identity layer; domain keys (accessions, sample IDs, file paths) are for human/external identity. Both can exist on the same row. FKs should use the RID; humans search by domain key.
+For *why* RIDs are the canonical identity (and why you should FK to RIDs rather than domain keys), see the "RIDs are the canonical identity" pillar in the SKILL.md design philosophy section.
 
 ---
 
@@ -123,12 +121,7 @@ A **vocabulary** is a special-shaped table that holds a controlled list of terms
 | `URI` | Optional canonical URL for the term in an external ontology. |
 | Plus the system columns (`RID`, `RCT`, `RMT`, `RCB`, `RMB`) | |
 
-**Why use a vocabulary instead of a `text` column:**
-
-- The vocabulary table lists every legal value in one place — easy to discover, easy to update, easy to add synonyms when historical data shows up with non-canonical spellings.
-- Categorical columns FK to the vocabulary's RID, so consistency is enforced at the database layer.
-- Chaise renders categorical columns as faceted filters; free-text columns become free-text search boxes that don't aggregate well.
-- The term's `Description` lives in the catalog, not in a side document — the data is self-documenting.
+For *why* you'd use a vocabulary rather than a free-text column, see the "Controlled vocabularies, not text columns" pillar in the SKILL.md design philosophy section.
 
 **Adding a term:** `add_term(schema, table, name, description, ...)`. The MCP server normalizes to canonical Name, validates the description is non-empty, and assigns a RID.
 
@@ -237,12 +230,7 @@ An **asset table** is a regular catalog table with extra columns that describe a
 
 Asset tables are how the catalog "knows about" files in Hatrac. Queries, FKs, faceted search all work on asset rows the same as on any other table — the difference is that the row also points at bulk bytes via its URL column.
 
-### Why the split
-
-- **Different scaling.** Postgres handles millions of small structured rows well but is bad at petabytes of binary blobs. Object stores handle bulk bytes well but are bad at relational queries. Each tool does what it's good at.
-- **Content addressing.** Uploading the same bytes twice produces one Hatrac object — deduplication is automatic.
-- **Independent ACLs.** Metadata can be world-readable while bytes remain restricted (or vice versa).
-- **Stream-friendly.** Bulk download, range requests, and resumable uploads work directly against Hatrac without going through the catalog.
+For *why* the split exists and the modeling implications (don't put bulk bytes in catalog columns; don't bury metadata in file headers), see the "Bulk bytes belong in the object store" pillar in the SKILL.md design philosophy section.
 
 The `create-table` skill covers the asset-table column pattern; `customize-display` covers how Chaise renders asset columns (download links, image previews).
 
@@ -263,11 +251,7 @@ Querying with a snaptime returns rows as they existed at that moment, through th
 - See column values as they were then, not as they were later edited.
 - Use the schema in effect then — added columns aren't visible, removed columns are.
 
-### Why this matters
-
-- **Reproducibility.** A pipeline that pins to a snaptime reads the same bytes on rerun, even if the catalog has moved on.
-- **Citability.** A paper that references `catalog/1@2T-...` references a frozen result; "the catalog" without a snaptime is a moving target.
-- **Audit.** Every change is recoverable. There is no "I accidentally overwrote it" — the previous value is still queryable.
+For *why* this matters — reproducibility, citability, audit, the "don't overwrite history" modeling stance — see the "Don't overwrite history" pillar in the SKILL.md design philosophy section.
 
 ### Provenance via system columns
 
