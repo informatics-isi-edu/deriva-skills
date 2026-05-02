@@ -27,18 +27,6 @@ For DerivaML workflows, additionally:
 /plugin install deriva
 ```
 
-Or check the entire core Deriva ecosystem:
-
-```
-/deriva:check-deriva-versions
-```
-
-If you also have the deriva-ml plugin installed, run the tier-2 sibling afterward:
-
-```
-/deriva-ml:check-deriva-ml-versions
-```
-
 ## Available Skills
 
 **User-invocable** — invoke with `/deriva:<skill-name>`:
@@ -50,8 +38,7 @@ If you also have the deriva-ml plugin installed, run the tier-2 sibling afterwar
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
 | | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (use this first to explore an existing catalog) |
 | | `/deriva:entity-naming` | Naming conventions for schemas, tables, columns, and vocabulary terms |
-| **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) |
-| **Maintenance** | `/deriva:check-deriva-versions` | Check the core Deriva ecosystem (deriva-py, deriva-mcp-core, deriva plugin) |
+| **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) — also covers the version-and-update path for deriva-py / deriva-mcp-core / deriva plugin |
 
 **Auto-invoked** — Claude loads these automatically when relevant:
 

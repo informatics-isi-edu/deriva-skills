@@ -14,7 +14,6 @@
         "name": "ISI Informatics"
       },
       "skills": [
-        "./skills/check-deriva-versions",
         "./skills/create-table",
         "./skills/customize-display",
         "./skills/deriva-context",

@@ -1,6 +1,6 @@
 ---
 name: troubleshoot-deriva-errors
-description: "Use when any Deriva catalog operation fails with auth, permissions, missing record, invalid RID, vocabulary term not found, or generic catalog connection / state errors. Triggers on: 'permission denied', 'auth error', 'globus login', 'invalid RID', 'record not found', 'wrong catalog', 'vocabulary term missing', 'connect failed', 'catalog connection', 'unauthorized'."
+description: "Use when any Deriva catalog operation fails with auth, permissions, missing record, invalid RID, vocabulary term not found, or generic catalog connection / state errors. Also covers checking and updating the three core Deriva components (deriva-py, deriva-mcp-core MCP server, deriva plugin) — version mismatches between them are a common cause of confusing errors. Triggers on: 'permission denied', 'auth error', 'globus login', 'invalid RID', 'record not found', 'wrong catalog', 'vocabulary term missing', 'connect failed', 'catalog connection', 'unauthorized', 'check versions', 'am I up to date', 'update deriva', 'what version', 'upgrade packages'."
 user-invocable: false
 disable-model-invocation: true
 ---
@@ -114,7 +114,41 @@ The MCP server is stateless — there is no "active catalog". Every tool call ta
 
 If errors are inconsistent (some reads work, some don't), or operations were working in an earlier session and are now failing, re-run `deriva-globus-auth-utils login --host <hostname>` and reconnect. Token expiry is the single most common cause of mid-session failures.
 
+## Versioning and updates
+
+When errors start happening "out of nowhere," a version mismatch between the three core Deriva components is a common cause. Each component has its own update path; there is no unified update command.
+
+### Check installed versions
+
+| Component | How to check installed version |
+|---|---|
+| **deriva-mcp-core** (the MCP server) | `server_status(hostname=...)` — returns the running framework version plus the list of loaded plugins. Or read the `deriva://server/version` resource directly. |
+| **deriva-py** (the Python client) | `uv pip show deriva-py` (in your project venv), or `python -c "import deriva; print(deriva.__version__)"` |
+| **`deriva` plugin** (this Claude Code plugin) | `cat ~/.claude/plugins/cache/deriva-plugins/deriva/*/plugin.json` — the `version` field |
+
+### Check whether a newer version exists
+
+The latest release of each component is the most recent tag at:
+
+- deriva-mcp-core: https://github.com/informatics-isi-edu/deriva-mcp-core/releases
+- deriva-py: https://pypi.org/project/deriva/ (or the GitHub releases page)
+- deriva-skills (this plugin): https://github.com/informatics-isi-edu/deriva-skills/releases
+
+### Update each component
+
+| Component | Update path |
+|---|---|
+| **`deriva` plugin** | Enable `"autoUpdate": true` in `~/.claude/settings.json` for the `deriva-plugins` marketplace, then restart Claude Code. The new version is picked up automatically. (The interactive `/plugin` menu also works for one-off updates.) |
+| **deriva-mcp-core (Docker, most common)** | `docker pull ghcr.io/informatics-isi-edu/deriva-mcp-core:latest && docker restart deriva-mcp-core`. The MCP connection drops mid-restart; reconnect from Claude after the server comes back. |
+| **deriva-mcp-core (native install)** | In the project where the server is installed: `uv lock --upgrade-package deriva-mcp-core && uv sync`, then restart the server. |
+| **deriva-py** | In your project: `uv lock --upgrade-package deriva-py && uv sync` |
+
+### Why no single "update everything" command
+
+The three components live in different worlds: the plugin updates through Claude Code's marketplace machinery, the MCP server updates through whatever deployment owns it (Docker, native install, etc.), and the Python library updates through standard Python tooling. The MCP server can't be restarted from inside Claude (the connection is stateful and would die mid-update), so MCP updates are inherently a user-driven step. Keep all three reasonably current together; bumping just one occasionally produces "this tool exists in the server but the plugin doesn't know about it" errors.
+
+If errors started right after an update of one component, the most useful next step is to verify the other two are also current — a server upgrade may have introduced a tool the plugin's docs don't yet cover, or vice versa.
+
 ## Related Skills
 
 - **`manage-vocabulary`** — When the fix is "add the missing vocabulary term", this is the skill that owns the vocabulary CRUD surface.
-- **`check-deriva-versions`** — If errors started after an update, this skill verifies the deriva-py / deriva-mcp-core / deriva plugin versions match what's expected.
