@@ -129,10 +129,10 @@ Use this for "I have one image to attach to this Subject" or "let me try the ass
 
 ### Path 2 — `deriva-upload-cli` with an upload spec (production)
 
-`deriva-upload-cli` is the canonical tool for bulk asset loading. You point it at a directory tree and an upload spec; it discovers files, uploads each one to Hatrac, and inserts/updates the corresponding asset-table rows in a single coordinated pass. It's the right tool for ingesting an entire image collection, a sequencing run, a microscopy dataset, etc.
+`deriva-upload-cli` is the canonical tool for bulk asset loading. You point it at a directory tree and an upload spec (a JSON file with an `asset_mappings` array); it discovers files, uploads each one to Hatrac, and inserts/updates the corresponding asset-table rows in a single coordinated pass. It's the right tool for ingesting an entire image collection, a sequencing run, a microscopy dataset, etc. It is idempotent on re-run.
 
 ```bash
-# Install deriva-py if you don't already have it (provides the CLI)
+# Install (provides the CLI)
 uv pip install deriva
 
 # Run the upload
@@ -143,64 +143,9 @@ deriva-upload-cli \
     /path/to/data/directory
 ```
 
-The CLI:
+The spec is the part that takes thought. Each entry in `asset_mappings` tells the uploader: "files matching *this* path regex get uploaded to *this* Hatrac URI and inserted into *this* catalog table with *these* column values, and we check for duplicates with *this* query." Real-world specs typically have one asset-mapping entry per directory layout the project uses, all targeting the same asset table.
 
-- Walks the directory tree
-- Matches each file against the patterns in the upload spec (regex on the path/filename)
-- Computes MD5 + size + content type
-- Uploads to Hatrac at the namespace path the spec resolves
-- Inserts (or updates) the asset-table row with the URL + metadata + the FK columns the spec extracts from the path
-
-It's idempotent: re-running on the same directory after a partial failure resumes correctly because Hatrac is content-addressed and the spec's `Update` mode skips files whose checksums already match.
-
-### Upload spec (`asset_mappings`)
-
-The upload spec is a JSON file with an `asset_mappings` array. Each entry tells the uploader: "files matching *this* pattern get uploaded to *this* Hatrac namespace and inserted into *this* catalog table with *these* columns extracted from the filename." A minimal spec for a per-Subject image folder layout:
-
-```json
-{
-  "version_compatibility": [[">=1.7.0", "<2.0.0"]],
-  "asset_mappings": [
-    {
-      "asset_type": "file",
-      "default_columns": ["RID", "RCB", "RCT", "RMB", "RMT"],
-      "ext_pattern": "^.*[.](?P<file_ext>jpg|jpeg|png)$",
-      "file_pattern": "^.*/(?P<subject>[A-Z0-9]+)/(?P<filename>[^/]+)[.](?P<file_ext>jpg|jpeg|png)$",
-      "target_table": ["myproject", "Image"],
-      "hatrac_templates": {
-        "hatrac_uri": "/hatrac/myproject/images/{subject}/{filename}.{file_ext}"
-      },
-      "record_query_template": "/entity/myproject:Image/MD5={md5}",
-      "metadata_query_templates": [
-        "/entity/myproject:Subject/Name={subject}"
-      ],
-      "column_map": {
-        "URL": "{URI}",
-        "Filename": "{filename}.{file_ext}",
-        "Length": "{file_size}",
-        "MD5": "{md5}",
-        "Content_Type": "{content_type}",
-        "Subject": "{Subject_RID}"
-      }
-    }
-  ]
-}
-```
-
-What each piece does:
-
-| Field | Purpose |
-|---|---|
-| `file_pattern` | Regex over the local file path; named groups become variables (`{subject}`, `{filename}`) |
-| `target_table` | `[schema, table]` of the asset table that gets the row |
-| `hatrac_templates.hatrac_uri` | Where in Hatrac the file lands; resolves the named groups |
-| `metadata_query_templates` | Look up FK targets (here: find the `Subject` row whose `Name` matches the path) |
-| `column_map` | Mapping from extracted variables and computed metadata (`{md5}`, `{file_size}`, `{content_type}`, `{URI}`) into asset-table columns |
-| `record_query_template` | How the uploader checks whether a row already exists for this file (idempotency key) |
-
-Spec authoring is an iterative process: write the simplest spec that loads one file correctly, then expand it to cover more patterns. Validate the regex with a few representative paths before running over a large tree.
-
-For longer worked spec examples (multi-table loads, computed columns, Asset_Type FK extraction, directory layouts that don't match the catalog's grouping), see `references/workflow.md`.
+For the full spec format — every field's purpose, the variable namespace, execution order, regex authoring patterns, idempotency / update semantics, multi-pattern and multi-table layouts, worked examples, common errors, and the iterative development workflow — see **`references/upload-spec.md`**. That reference is where to go before authoring a real spec; this skill body covers when to use the CLI path but not how to write the spec at depth.
 
 ### Path 3 — `DerivaUpload` Python class (custom processors)
 
@@ -281,9 +226,9 @@ Loads frequently get re-run (the script crashed halfway, the input was wrong, yo
 
 - `deriva-upload-cli` — Command-line tool that walks a directory tree, matches files against an upload spec, uploads bytes to Hatrac, and inserts/updates the corresponding asset-table rows in one coordinated pass. Idempotent on re-run. Install via `uv pip install deriva` (or `pip install deriva`); the CLI is provided by the `deriva-py` package.
 - `deriva.transfer.upload.deriva_upload.GenericUploader` — Python class behind the CLI. Use directly when you need custom processors (metadata extraction, format conversion) or to embed asset loading in a larger pipeline.
-- **Upload spec format** (`asset_mappings` JSON) — The file-discovery + table-mapping declarative config that drives both the CLI and the Python class. See the "Asset upload (file + row)" section above for a worked example; `references/workflow.md` has spec patterns for multi-table loads, computed columns, and complex directory layouts.
+- **Upload spec format** (`asset_mappings` JSON) — The file-discovery + table-mapping declarative config that drives both the CLI and the Python class. See **`references/upload-spec.md`** for the full format reference: every field, the variable namespace, execution order, idempotency semantics, worked patterns, common errors, and the iterative development workflow.
 
-For load-script templates (CSV with pandas, JSON, asset-batch upload via the CLI, upsert) and longer worked examples, read `references/workflow.md`.
+For row-load script templates (CSV with pandas, JSON, upsert), read `references/workflow.md`.
 
 ## Related Skills
 
