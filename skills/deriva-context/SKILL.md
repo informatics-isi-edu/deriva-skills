@@ -30,6 +30,7 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 | **Catalog snapshots** | Time-travelable history. Any past state is queryable by snaptime; pin a snaptime for reproducibility. | (resource: `concepts.md`) |
 | **Display annotations** | Per-table / per-column JSON that drives the Chaise web UI. | `/deriva:customize-display` |
 | **Naming conventions** | PascalCase, singular nouns, descriptive — for schemas, tables, columns, and vocabulary terms. | `/deriva:entity-naming` |
+| **Loading data** | Row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class with an upload spec), updates, deletes. | `/deriva:load-data` |
 | **Catalog errors** | Auth, permissions, invalid RIDs, missing records, vocab term not found. | `/deriva:troubleshoot-deriva-errors` |
 | **Server reachability** | `server_status(hostname=...)` returns the running framework version and loaded plugins. | (no skill — direct tool call) |
 
@@ -51,7 +52,7 @@ When you're creating a new table or evaluating an existing model, work through t
 | Is the shape really tabular? | If it's truly graph-shaped or document-shaped, reconsider the platform. | 4. Deliberately relational |
 | Will the data be cited or used in published results? | Pin to a snapshot, not just the catalog. | 5. Evolve, don't overwrite |
 | How will the data be browsed? | Plan display annotations alongside the schema. | 6. Configured UI |
-| How will data get in and out? | Through the API, not around it. | 7. Full HTTP interface |
+| How will data get in and out? | Through the API, not around it — see `/deriva:load-data` for the load side and `/deriva:query-catalog-data` for the read side. | 7. Full HTTP interface |
 
 Together, these choices make a Deriva catalog FAIR (Findable, Accessible, Interoperable, Reusable) by construction. Read `references/philosophy.md` when designing a new schema, evaluating whether Deriva fits a project, or explaining the platform's worldview to a collaborator.
 

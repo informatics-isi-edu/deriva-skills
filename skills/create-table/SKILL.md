@@ -120,6 +120,7 @@ For the full guide with column types table, FK specification, common patterns, a
 - **`/deriva:entity-naming`** — Naming conventions for schemas, tables, columns, and FK columns (PascalCase, singular, FK columns match the referenced table). Read before naming a new table — names are hard to change later.
 - **`/deriva:semantic-awareness`** — Find-before-you-create workflow. The MCP server does NOT auto-detect duplicate tables; this skill is the only guardrail.
 - **`/deriva:generate-descriptions`** — Auto-drafted descriptions for tables and columns (always-on; runs when you create something without a description).
+- **`/deriva:load-data`** — After you create the table, this is how you populate it: row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (via the MCP tool, `deriva-upload-cli`, or the `DerivaUpload` Python class), updates, and the rare cases where deletion is the right move.
 - **`/deriva:query-catalog-data`** — After you create the table, this is how you read from it (and how you should explore the existing schema before adding to it).
 - **`/deriva:customize-display`** — Chaise display annotations on the table you just created (visible columns, row name patterns, foreign-key display). Treat the UI as part of the data model — see pillar 6 in the design philosophy.
 - **`/deriva:troubleshoot-deriva-errors`** — When `create_table` or `add_column` fails with auth, RID, or connection errors.

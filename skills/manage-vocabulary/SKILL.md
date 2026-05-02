@@ -196,6 +196,7 @@ update_term_description(
 
 ## Related Skills
 
-- **`entity-naming`** — Canonical naming conventions for all data-modeling entities (schemas, tables, columns, vocabulary tables, vocabulary terms). Read first when designing a new vocabulary or its terms; this skill (`manage-vocabulary`) covers vocabulary mechanics and `references/term-naming-strategy.md` adds vocabulary-term-specific concerns on top of the general rules.
-- **`create-table`** — Creating domain tables with FK columns to vocabulary tables.
-- **`generate-descriptions`** — Description templates and quality guidelines for vocabulary tables and terms.
+- **`/deriva:entity-naming`** — Canonical naming conventions for all data-modeling entities (schemas, tables, columns, vocabulary tables, vocabulary terms). Read first when designing a new vocabulary or its terms; this skill (`manage-vocabulary`) covers vocabulary mechanics and `references/term-naming-strategy.md` adds vocabulary-term-specific concerns on top of the general rules.
+- **`/deriva:create-table`** — Creating domain tables with FK columns to vocabulary tables.
+- **`/deriva:load-data`** — Loading rows into tables that FK to vocabularies. The terms must exist before any row can reference them; load vocabulary terms first, then the FK targets, then the rows that reference both.
+- **`/deriva:generate-descriptions`** — Description templates and quality guidelines for vocabulary tables and terms.

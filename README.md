@@ -36,8 +36,9 @@ For DerivaML workflows, additionally:
 | **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
 | | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
-| | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (use this first to explore an existing catalog) |
 | | `/deriva:entity-naming` | Naming conventions for schemas, tables, columns, and vocabulary terms |
+| **Data loading** | `/deriva:load-data` | Insert rows, batch-load CSV/JSON, upload assets to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class), update, delete |
+| **Querying** | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (also the cold-start exploration entry point) |
 | **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) — also covers the version-and-update path for deriva-py / deriva-mcp-core / deriva plugin |
 
 **Auto-invoked** — Claude loads these automatically when relevant:

@@ -151,4 +151,5 @@ If errors started right after an update of one component, the most useful next s
 
 ## Related Skills
 
-- **`manage-vocabulary`** — When the fix is "add the missing vocabulary term", this is the skill that owns the vocabulary CRUD surface.
+- **`/deriva:manage-vocabulary`** — When the fix is "add the missing vocabulary term", this is the skill that owns the vocabulary CRUD surface.
+- **`/deriva:load-data`** — When inserts, updates, asset uploads, or `deriva-upload-cli` runs fail with FK / vocab-term / asset-mapping errors, the load-side discipline (FK targets first, vocabulary terms first, idempotency, dry-run) usually catches the cause.

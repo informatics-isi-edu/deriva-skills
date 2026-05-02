@@ -120,6 +120,7 @@ query_aggregate(
 ## Related Skills
 
 - **`/deriva:create-table`** — schema operations (creating domain tables, columns, FKs)
+- **`/deriva:load-data`** — populate the tables you've queried: row inserts, CSV/JSON imports, asset uploads, updates, and the rare delete
 - **`/deriva:manage-vocabulary`** — vocabulary CRUD on any Deriva catalog
 
 For the full guide with query patterns, vocabulary queries, and troubleshooting, read `references/workflow.md`.
