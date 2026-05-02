@@ -10,7 +10,7 @@ The `deriva` plugin provides skills for working with any Deriva catalog via `der
 
 **First time touching a Deriva catalog this session?** Start with `/deriva:route-catalog-schema` to explore the structure of an existing catalog before you mutate anything. Hit an auth or permission error early on? Go straight to `/deriva:troubleshoot-deriva-errors`.
 
-**Out of scope for this plugin:** the DerivaML domain layer — Datasets, Workflows, Executions, Features, and Asset_Type vocabularies — lives in the companion `deriva-ml` plugin. If a user mentions any of those, hand off to the `/deriva-ml:` skills.
+**Out of scope for this plugin:** domain-specific abstractions that build *on top of* a Deriva catalog. Many Deriva deployments layer their own domain model on the catalog primitives — for example, a project may define its own concepts of "experiment," "sample lineage," "annotation pipeline," or "ML execution," each with its own tables, vocabularies, and conventions. Those layered models live in their own plugins, libraries, or projects (e.g., the companion `deriva-ml` plugin handles ML workflows, Datasets, Workflows, Executions, Features). When a user mentions a concept that's specific to a domain layer rather than the catalog primitives below, hand off to the relevant domain plugin if one is loaded.
 
 ## Concept index
 
@@ -49,7 +49,7 @@ The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and
 
 ## Deriva design philosophy
 
-Deriva is an opinionated platform for managing scientific data, not just a relational database with a web UI. Four load-bearing opinions shape what is easy and what fights the grain. (For *what each concept is* — RID format, vocabulary column shape, snaptime mechanics, asset-table columns — see `references/concepts.md`. This section is about the modeling opinions.)
+Four load-bearing modeling opinions. Apply them when designing tables, choosing column types, or evaluating whether an existing model fits the platform.
 
 ### RIDs are the canonical identity
 
