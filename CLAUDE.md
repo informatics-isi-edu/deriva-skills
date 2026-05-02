@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the deriva-skills c
 
 ## Project Overview
 
-Claude Code plugin providing 10 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
+Claude Code plugin providing 11 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
 
 This plugin is the **tier-1** surface — skills that work on any Deriva catalog. The companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2) adds the DerivaML domain skills (Datasets, Workflows, Executions, Features, Asset_Type vocabularies). The two plugins are independently versioned and released; users with DerivaML workflows install both. See `docs/superpowers/plans/2026-04-27-skills-restructure.md` for the rationale and migration history.
 
@@ -39,8 +39,8 @@ MCP tool is also supported.
 ```
 ├── .claude-plugin/
 │   ├── plugin.json           # Plugin metadata (name, version, description)
-│   └── marketplace.json      # Marketplace registration (lists all 10 tier-1 skills)
-├── skills/                   # 10 tier-1 skills, each in its own directory
+│   └── marketplace.json      # Marketplace registration (lists all 11 tier-1 skills)
+├── skills/                   # 11 tier-1 skills, each in its own directory
 │   ├── {skill-name}/
 │   │   ├── SKILL.md          # Frontmatter (YAML) + skill content (Markdown)
 │   │   ├── scripts/          # Optional Python helper scripts
@@ -68,9 +68,10 @@ The 10 skills divide into two shapes — user commands (what a person invokes) a
 | `create-table` | Create domain tables with columns + foreign keys |
 | `customize-display` | Chaise display annotations via MCP tools |
 | `entity-naming` | Naming conventions for schemas, tables, columns, vocabulary terms |
+| `getting-started` | Five-step new-user onboarding walkthrough; routes through the per-task skills |
 | `load-data` | Loading data into tables: row inserts, batch CSV/JSON, asset uploads via deriva-upload-cli or MCP, updates, deletes |
 | `manage-vocabulary` | Vocabulary CRUD |
-| `query-catalog-data` | Querying / browsing catalog data (also the cold-start exploration entry point) |
+| `query-catalog-data` | Querying / browsing catalog data (cold-start exploration via rag_search; row-level reads) |
 | `troubleshoot-deriva-errors` | Generic catalog troubleshooting (auth, RIDs, missing records, generic vocab terms) — also carries the versioning-and-updates guidance for deriva-py / deriva-mcp-core / deriva plugin |
 
 **Auto-invoked behaviors (no slash command)** — `user-invocable: false` in frontmatter; should NOT be surfaced in user-facing skill lists as if they were tools:

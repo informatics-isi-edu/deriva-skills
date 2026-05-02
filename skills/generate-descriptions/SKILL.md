@@ -1,106 +1,45 @@
 ---
 name: generate-descriptions
-description: "ALWAYS use when creating any Deriva catalog entity (table, column, vocabulary, vocabulary term) and the user hasn't provided a description. Auto-generate a meaningful description from context."
+description: "ALWAYS use when creating any Deriva catalog entity (table, column, vocabulary, vocabulary term) and the user hasn't provided a description. Auto-generate a meaningful description from context (the user's request, repository structure, conversation history, existing catalog entities) and present it for confirmation before creating the entity."
 user-invocable: false
 ---
 
 # Generate Descriptions for Catalog Entities
 
-Every catalog entity that accepts a description MUST have one. If the user doesn't provide a description, generate a meaningful one based on context from the repository, conversation, and catalog state. Descriptions support GitHub-flavored Markdown which renders in the Chaise web UI.
+Every catalog entity that accepts a description should have one. Descriptions appear in Chaise (so users browsing the catalog can understand what each table / column / vocabulary / term means without consulting external documentation), drive `rag_search` discovery (so future `semantic-awareness` searches find the entity by concept and not just by name), and support GitHub-flavored Markdown for richer rendering.
 
-## Entities Requiring Descriptions
+When the user creates an entity without supplying a description, draft one from context, present it for confirmation, then proceed with creation. **Never create with a missing or empty description; never silently auto-generate without confirmation.**
 
-Catalog entities that accept a description:
+## Entities that take a description
 
-- **Vocabularies**: `create_vocabulary` -- comment parameter
-- **Vocabulary Terms**: `add_term` -- description parameter
-- **Tables and Columns**: `create_table` (uses `comment` parameter), `set_table_description`, `set_column_description`
+| Entity | Where the description is set |
+|---|---|
+| **Tables** | `create_table` — `comment` parameter; or `set_table_description` afterward |
+| **Columns** | `create_table` columns — `comment` parameter; or `set_column_description` afterward |
+| **Vocabularies** | `create_vocabulary` — `comment` parameter |
+| **Vocabulary terms** | `add_term` — `description` parameter |
 
-The description-quality guidance below applies uniformly across all of these — what makes a good description doesn't change between vocabularies, terms, tables, and columns.
+The quality criteria are the same across all four — what makes a good description doesn't change between vocabularies, terms, tables, and columns.
 
-## How to Generate Descriptions
+## Drafting workflow
 
-Gather context from:
+1. **Check whether the user provided a description.** If they did, evaluate against the quality criteria below; if it's good, use as-is. If it's vague or unit-omits, surface the issue rather than silently rewriting.
+2. **If no description was provided, gather context** from the user's request and stated intent, the repository (README, configs, related code), conversation history, and existing catalog entities of the same type (for tone and style consistency).
+3. **Draft a description** that answers four questions: **What** is this entity? **Why** does it exist? **How** is it used? **What does it contain** (for tables and vocabularies)?
+4. **Present the draft for confirmation** before creating the entity. Descriptions are persistent and become hard to change later (they're referenced from Chaise, from `rag_search` results, from anywhere a downstream consumer reads catalog metadata) — get them right before they harden.
+5. **Create the entity with the approved description.**
 
-1. The user's request and stated intent
-2. Repository structure (README, config files, existing code)
-3. Existing catalog entities and their descriptions (for consistency)
-4. Conversation history and decisions made
+## What good looks like
 
-Create a description that answers:
+A description should let a reader who has never seen the catalog understand what the entity is, what kind of values or rows it carries, and when they would interact with it. Two sentences usually suffice; markdown is for tables and vocabularies whose descriptions genuinely need structure.
 
-- **What** is this entity?
-- **Why** does it exist?
-- **How** is it used?
-- **What does it contain** (for tables)?
+**Bad:** "Images" / "Table for storing image data" / "Various information about subjects"
+**Good:** "Individual chest X-ray images with associated metadata. Links to Subject (patient) and Study (imaging session) tables. Primary asset table for the imaging archive."
 
-Always confirm the generated description with the user before creating the entity.
+The good example: specific (chest X-ray images, not "images"), names the relationships, names the use case. Searchable by `rag_search` because it mentions Subject and Study explicitly.
 
-## Templates by Entity Type
+## Per-entity templates and depth
 
-### Vocabularies
+For per-entity templates (vocabularies, vocabulary terms, tables, columns), worked examples that explain *why* each example works, markdown-formatting guidance for when structure helps vs. when plain text is better, the full quality checklist, common failure modes to watch for in drafts, and workflow guidance for the case where the user already provided a description — see **`references/templates.md`**.
 
-Vocabulary table descriptions explain the classification scheme and its scope:
-
-```
-<What this vocabulary classifies>. <Domain context>. <How terms relate to each other>.
-```
-
-Example: "Classification of chest X-ray diagnostic findings. Terms are mutually exclusive primary diagnoses. Used as the value domain for the Image_Diagnosis foreign-key column."
-
-### Vocabulary Terms
-
-Term descriptions define the term's meaning in context — not just restating the name. Include when to use (and when not to), and how the term relates to other terms in the vocabulary.
-
-```
-<Definition>. <When to use>. <Relationship to other terms>.
-```
-
-Example: "Pneumonia detected in chest X-ray. Use when radiological signs of pneumonia are present regardless of etiology. Mutually exclusive with 'normal'; may co-occur with 'pleural effusion'."
-
-### Tables
-
-```
-<What records represent>. <Key relationships>. <Primary use case>.
-```
-
-Example: "Individual chest X-ray images with associated metadata. Links to Subject (patient) and Study (imaging session) tables. Primary asset table for the imaging archive."
-
-### Columns
-
-```
-<What value represents>. <Format/units>. <Constraints or valid values>.
-```
-
-Example: "Patient age at time of imaging in years. Integer value, range 0-120. Required for demographic stratification."
-
-## Formatting with Markdown
-
-Descriptions support **GitHub-flavored Markdown** which renders in the Chaise web UI. Use markdown to make descriptions more readable, especially for longer or structured content:
-
-- **Bold** and *italic* for emphasis
-- Bulleted or numbered lists for multi-part descriptions
-- `code` formatting for RIDs, column names, or config values
-- Markdown tables for parameter summaries or comparisons
-- Headers for long descriptions that cover multiple aspects
-
-Keep simple descriptions as plain text — markdown is most useful for tables and vocabularies whose descriptions need to convey several facets at once.
-
-## Quality Checklist
-
-Before finalizing any description, verify it is:
-
-- **Specific**: Avoids generic language like "a table" or "some values"
-- **Informative**: Provides enough context for someone unfamiliar with the project
-- **Accurate**: Correctly reflects the entity's actual contents and purpose
-- **Concise**: No unnecessary words, but complete enough to be useful
-- **Consistent**: Matches the tone and style of existing descriptions in the catalog
-- **Actionable**: Helps users understand how to use the entity
-
-## Workflow
-
-1. Check if the user provided a description
-2. If not, gather context from all available sources
-3. Draft a description using the appropriate template
-4. Present the draft to the user for confirmation
-5. Create the entity with the approved description
+Read the reference whenever you're actually drafting a description for a specific entity type. The body above is the trigger logic and quality framing that earns always-on weight; the templates are depth that only matters when a description is being written.

@@ -19,6 +19,7 @@
         "./skills/deriva-context",
         "./skills/entity-naming",
         "./skills/generate-descriptions",
+        "./skills/getting-started",
         "./skills/load-data",
         "./skills/manage-vocabulary",
         "./skills/query-catalog-data",

@@ -35,12 +35,13 @@ These are the skills you invoke directly by typing `/deriva:<name>` or by asking
 
 | Category | Command | Description |
 |----------|-------|-------------|
+| **Onboarding** | `/deriva:getting-started` | Five-step orientation for a new user or a new catalog: connection → explore schema → look at data → small safe mutation → load data |
 | **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
 | | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
 | | `/deriva:entity-naming` | Naming conventions for schemas, tables, columns, and vocabulary terms |
 | **Data loading** | `/deriva:load-data` | Insert rows, batch-load CSV/JSON, upload assets to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class), update, delete |
-| **Querying** | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (also the cold-start exploration entry point) |
+| **Querying** | `/deriva:query-catalog-data` | Query and explore data in a Deriva catalog (cold-start exploration via `rag_search`, then row-level queries) |
 | **Troubleshooting** | `/deriva:troubleshoot-deriva-errors` | Generic catalog errors (auth, permissions, invalid RID, missing record, generic vocab term) — also covers the version-and-update path for deriva-py / deriva-mcp-core / deriva plugin |
 
 ### Auto-invoked behaviors (not commands)
