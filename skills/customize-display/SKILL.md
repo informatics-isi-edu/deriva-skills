@@ -1,6 +1,6 @@
 ---
 name: customize-display
-description: "Customize the Chaise web UI display for Deriva catalog tables using MCP annotation tools. Use when setting visible columns, reordering columns, changing display names, configuring row name patterns, or adjusting how tables and records appear in the browser UI."
+description: "ALWAYS use this skill when adjusting how Deriva catalog data appears in the Chaise web UI: setting or reordering visible columns, changing display names, configuring row name patterns, controlling foreign-key reference rendering, hiding columns from list/detail/edit views, rendering columns as images/links/markdown, or adding any of the standard Chaise annotations (visible-columns, table-display, column-display, foreign-key, source-definitions, etc.). Triggers on: 'chaise', 'chaise display', 'chaise annotation', 'visible columns', 'column order', 'reorder columns', 'display name', 'pretty name', 'row name', 'row name pattern', 'hide column', 'show column in detail view', 'foreign key display', 'mark down a column', 'render as image', 'render as link', 'visible-columns annotation', 'tag:isrd.isi.edu', 'how this table looks in the browser', 'fix the chaise UI', 'customize the web UI'."
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: query-catalog-data
-description: "ALWAYS use this skill when querying, filtering, searching, or browsing data in a Deriva catalog. Triggers on: 'query table', 'find records', 'filter by', 'how many records', 'look up RID', 'what tables exist', 'show me the data', 'explore the catalog', 'get record by RID', 'wide table', 'flat table', 'denormalize', 'join tables'."
+description: "ALWAYS use this skill when querying, filtering, searching, browsing, or exploring data and schema in a Deriva catalog — including the cold-start case of 'I just connected to a catalog, what's in it?' Use this skill *before* any catalog mutation so you understand what already exists. The skill leads with `rag_search` for natural-language discovery (the recommended starting point for almost any exploration question) and falls through to ERMrest queries for precise / programmatic reads. Triggers on: 'query table', 'find records', 'filter by', 'how many records', 'count rows', 'look up RID', 'get record by RID', 'show me the data', 'explore the catalog', 'discover schema', 'discover the schema', 'what tables exist', 'what vocabularies exist', 'what columns does this table have', 'rag_search', 'semantic search the catalog', 'natural language search the catalog', 'find by description', 'wide table', 'flat table', 'denormalize', 'join tables', 'select columns', 'project columns', 'first time looking at this catalog', 'cold start exploration'."
 disable-model-invocation: true
 ---
 
