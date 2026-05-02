@@ -1,27 +1,51 @@
 ---
 name: deriva-context
-description: "ALWAYS load this context when the deriva plugin is active. Establishes what the deriva plugin provides (Deriva catalog operations via deriva-mcp-core) and the core concepts that apply to every Deriva catalog: catalogs, schemas, tables, vocabularies, RIDs, and Chaise display annotations. Triggers on: 'deriva', 'catalog', 'schema', 'vocabulary', 'rid', 'ermrest'."
+description: "ALWAYS load this context when the deriva plugin is active. Establishes what the deriva plugin provides (Deriva catalog operations via deriva-mcp-core), the core concepts that apply to every Deriva catalog (catalogs, schemas, tables, vocabularies, RIDs, foreign keys, asset tables, snapshots, Chaise display annotations), and Deriva's modeling philosophy (RIDs as identity, controlled vocabularies, audit-preserving history, metadata/object-store split — the choices that make a Deriva catalog FAIR). Triggers on: 'deriva', 'catalog', 'schema', 'vocabulary', 'rid', 'ermrest', 'hatrac', 'chaise', 'data modeling', 'controlled vocabulary'."
 disable-model-invocation: false
 ---
 
 # Deriva Plugin Context
 
-The `deriva` plugin provides skills for working with any Deriva catalog via `deriva-mcp-core`: querying tables, creating schemas / tables / columns, managing vocabularies and terms, customizing display annotations, and troubleshooting catalog errors. The skills work on any Deriva catalog and depend only on the core `deriva-mcp-core` MCP server and the `deriva-py` Python client library.
+The `deriva` plugin provides skills for working with any Deriva catalog via `deriva-mcp-core`. The skills cover catalog-side operations that apply to any Deriva deployment and depend only on `deriva-mcp-core` and the `deriva-py` Python client library.
 
-## Core Deriva concepts (always available)
+**First time touching a Deriva catalog this session?** Start with `/deriva:route-catalog-schema` to explore the structure of an existing catalog before you mutate anything. Hit an auth or permission error early on? Go straight to `/deriva:troubleshoot-deriva-errors`.
 
-These concepts come from `deriva-mcp-core` itself and apply to every Deriva catalog you connect to:
+**Out of scope for this plugin:** the DerivaML domain layer — Datasets, Workflows, Executions, Features, and Asset_Type vocabularies — lives in the companion `deriva-ml` plugin. If a user mentions any of those, hand off to the `/deriva-ml:` skills.
 
-| Concept | What | Skill |
+## Concept index
+
+These concepts come from `deriva-mcp-core` itself and apply to every Deriva catalog. Each row points at the skill that handles operations on it; deeper definitions live in `references/concepts.md`.
+
+| Concept | What it is | Skill |
 |---|---|---|
-| **Catalog** | A versioned namespace of schemas, tables, vocabularies, and rows. Identified by hostname + catalog ID (or alias). | `query-catalog-data`, `route-catalog-schema` |
-| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `create-table`, `route-catalog-schema` |
-| **Vocabulary** | A controlled-term table with standard columns (Name, Description, Synonyms, ID, URI). FK targets for categorical columns. | `manage-vocabulary` |
-| **RID** | Resource Identifier — every row in every Deriva table has a unique RID (e.g., `1-A2B3`). | `query-catalog-data`, `troubleshoot-deriva-errors` |
-| **Display annotations** | Per-table and per-column annotations that drive the Chaise web UI. | `customize-display` |
-| **Naming conventions** | Standard naming for schemas, tables, columns, and vocabulary terms (PascalCase, singular, descriptive). | `entity-naming` |
+| **Catalog** | A versioned namespace of schemas, tables, vocabularies, and rows. Identified by hostname + catalog ID (or alias). | `/deriva:query-catalog-data`, `/deriva:route-catalog-schema` |
+| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `/deriva:create-table`, `/deriva:route-catalog-schema` |
+| **Vocabulary** | A controlled-term table with standard columns (Name, Description, Synonyms, ID, URI). FK target for categorical columns. | `/deriva:manage-vocabulary` |
+| **RID** | Resource Identifier — every row in every Deriva table has a unique, server-minted, resolvable RID (e.g., `1-A2B3`). | `/deriva:query-catalog-data`, `/deriva:troubleshoot-deriva-errors` |
+| **Foreign keys** | The relational glue. FKs target RID columns; FKs to vocabularies model categorical values. | `/deriva:create-table` |
+| **Association tables** | The standard pattern for many-to-many relationships: a table with two FKs, one to each side. | `/deriva:create-table` |
+| **Asset tables + Hatrac** | Catalog rows that bridge to objects in Deriva's object store (filename, size, checksum, URL). | `/deriva:create-table`, `/deriva:customize-display` |
+| **Catalog snapshots** | Time-travelable history. Any past state is queryable by snaptime; pin a snaptime for reproducibility. | (resource: `concepts.md`) |
+| **Display annotations** | Per-table / per-column JSON that drives the Chaise web UI. | `/deriva:customize-display` |
+| **Naming conventions** | PascalCase, singular nouns, descriptive — for schemas, tables, columns, and vocabulary terms. | `/deriva:entity-naming` |
 
-For deeper definitions of each concept — what a catalog actually is, how RIDs are minted, the anatomy of a vocabulary table, how the metadata catalog and the object store fit together — see `references/concepts.md`. Read it on cold-start (first time touching a Deriva catalog in a session) or whenever a skill assumes a concept the LLM doesn't already have a working model of.
+> **When to read `references/concepts.md`:** on cold-start (first Deriva-related action of the session), or any time you encounter a concept above whose mechanics you don't have a working model of — RID format, vocabulary column shape, snaptime semantics, asset-table column shape, association-table conventions. The reference is mechanics-focused (what each thing *is* and how it works); the design philosophy below is opinion-focused (what to *do* with it).
+
+## Tasks → skills
+
+The catalog-side concerns this plugin handles:
+
+- **Custom domain tables** — `Subject`, `Sample`, `Image`, anything specific to your project's data model → `/deriva:create-table`, `/deriva:query-catalog-data`
+- **Vocabularies** — `Tissue_Type`, `Image_Quality`, `Diagnosis`, etc. → `/deriva:manage-vocabulary`
+- **Schema introspection** — listing tables, browsing columns → `/deriva:query-catalog-data`, `/deriva:route-catalog-schema`
+- **Display customization** — Chaise annotations on any table → `/deriva:customize-display`
+- **Catalog errors** — auth, permissions, invalid RIDs, missing records, vocab term not found → `/deriva:troubleshoot-deriva-errors`
+- **Naming a new entity** — the conventions for schemas, tables, columns, vocab terms → `/deriva:entity-naming`
+- **Verifying the server is reachable** — call `server_status(hostname=...)`. The response includes the running `deriva-mcp-core` framework version plus the list of loaded plugins.
+
+## Stateless model
+
+The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and `catalog_id=` arguments — there is no implicit "active catalog" or "default schema". Every example in every skill in this plugin shows the full parameter set; substitute your catalog's hostname and ID.
 
 ## Deriva design philosophy
 
@@ -33,7 +57,7 @@ Deriva is an opinionated platform for managing scientific data, not just a relat
 
 ### Controlled vocabularies, not text columns
 
-**Whenever you reach for `text` for a categorical column, build a vocabulary instead.** This costs more upfront (a small table, terms with descriptions and synonyms) but Chaise's faceted search, cross-catalog interoperability, and self-documenting term descriptions all depend on the categorical column being a FK to a vocabulary rather than free text. Use `add_synonym` to absorb historical spellings without rewriting data. See `manage-vocabulary` and `entity-naming`.
+**Whenever you reach for `text` for a categorical column, build a vocabulary instead.** This costs more upfront (a small table, terms with descriptions and synonyms) but Chaise's faceted search, cross-catalog interoperability, and self-documenting term descriptions all depend on the categorical column being a FK to a vocabulary rather than free text. Use `add_synonym` to absorb historical spellings without rewriting data. See `/deriva:manage-vocabulary` and `/deriva:entity-naming`.
 
 ### Don't overwrite history
 
@@ -57,25 +81,18 @@ When you're creating a new table, ask:
 - Will the data be cited or used in published results? → Tell users to pin to a snapshot, not just the catalog.
 - Will rows have associated bulk files? → Use an asset table that bridges to Hatrac, not blob columns.
 
-These four choices are what turn a Deriva catalog from "a Postgres database with a web UI" into a FAIR (Findable, Accessible, Interoperable, Reusable) data resource.
+These four choices are what turn a Deriva catalog from a relational database with a web UI into a FAIR (Findable, Accessible, Interoperable, Reusable) data resource.
 
-## When to use this plugin's skills
+### Deliberately not pillars
 
-The skills in this plugin cover catalog-side concerns common to every Deriva catalog:
+A few important Deriva concepts aren't called out as design-philosophy pillars because they're load-bearing mechanics rather than modeling stances: **foreign keys** (the standard FK semantics — see concepts.md), **association tables** (the standard many-to-many pattern — see concepts.md), and **ACLs** (catalog and Hatrac each have their own access control, but configuring them is a deployment concern, not a modeling one). The four pillars are the choices a *modeler* makes; the rest is plumbing.
 
-- **Custom domain tables** — `Subject`, `Sample`, `Image`, anything specific to your project's data model → `/deriva:create-table`, `/deriva:query-catalog-data`
-- **Vocabularies** — `Tissue_Type`, `Image_Quality`, `Diagnosis`, etc. → `/deriva:manage-vocabulary`
-- **Schema introspection** — listing tables, browsing columns → `/deriva:query-catalog-data`, `/deriva:route-catalog-schema`
-- **Display customization** — Chaise annotations on any table → `/deriva:customize-display`
-- **Catalog errors** — auth, permissions, invalid RIDs, missing records, vocab term not found → `/deriva:troubleshoot-deriva-errors`
-- **Naming a new entity** — the conventions for schemas, tables, columns, vocab terms → `/deriva:entity-naming`
-
-## Stateless model
-
-The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and `catalog_id=` arguments — there is no implicit "active catalog" or "default schema". Every example in every skill in this plugin shows the full parameter set; substitute your catalog's hostname and ID.
-
-This framing applies plugin-wide and is documented here once. Per-skill `SKILL.md` files and reference docs should not restate it — the always-on `deriva-context` skill ensures the LLM has this context before any other skill triggers, and repeating the boilerplate in every file creates maintenance liability without adding signal.
-
-## Server status
-
-To verify the MCP server is reachable and check which plugins are loaded, call `server_status(hostname=...)` — the response includes the running `deriva-mcp-core` framework version plus the list of loaded plugins.
+<!--
+Maintainer note: this skill is the canonical home for the stateless-model
+framing and for plugin-wide context. Per-skill SKILL.md files and
+reference docs in this plugin should NOT restate either — the always-on
+load of this skill ensures the framing is in context before any other
+skill triggers, and repeating it elsewhere creates drift without adding
+signal. If you find yourself wanting to restate a pillar in another
+skill, link back here instead.
+-->
