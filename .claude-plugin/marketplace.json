@@ -24,7 +24,8 @@
         "./skills/manage-vocabulary",
         "./skills/query-catalog-data",
         "./skills/semantic-awareness",
-        "./skills/troubleshoot-deriva-errors"
+        "./skills/troubleshoot-deriva-errors",
+        "./skills/use-annotation-builders"
       ]
     }
   ]

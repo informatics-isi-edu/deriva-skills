@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Deriva catalogs are browsed through the Chaise web application. The display is controlled by annotations -- JSON metadata attached to schemas, tables, and columns. MCP tools provide a high-level interface for setting these annotations without writing raw JSON.
 
-**This skill covers the interactive MCP tool approach.** Production Python code can write annotations as plain dicts using the JSON shapes documented in `references/annotation-reference.md`.
+**This skill covers the interactive MCP tool approach.** For production Python scripts that need type-safe annotation builders with IDE autocompletion (`Display`, `VisibleColumns`, `PseudoColumn`, `FacetList`, etc.), see `/deriva:use-annotation-builders` instead. Production code can also write annotations as plain dicts using the JSON shapes documented in `references/annotation-reference.md`.
 
 ## Immediate apply
 
@@ -266,6 +266,10 @@ For a complete picture of what's set on a table or column:
 - `apply_navbar_annotations(hostname, catalog_id, ...)` — Catalog-level navbar configuration
 
 There is no bulk "apply sensible defaults to all tables" convenience tool — set defaults per-table using the tools above.
+
+## Related Skills
+
+- **`/deriva:use-annotation-builders`** — Type-safe Python builder classes for production deployment scripts and reusable catalog configuration. Use when writing Python code; this skill (interactive MCP tools) is the right choice for one-off tweaks and exploration.
 
 ## Tips
 
