@@ -531,6 +531,7 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
+    { name = "bump-my-version" },
     { name = "deriva-ml" },
 ]
 test = [
@@ -541,7 +542,10 @@ test = [
 [package.metadata]
 
 [package.metadata.requires-dev]
-dev = [{ name = "deriva-ml", git = "https://github.com/informatics-isi-edu/deriva-ml.git" }]
+dev = [
+    { name = "bump-my-version" },
+    { name = "deriva-ml", git = "https://github.com/informatics-isi-edu/deriva-ml.git" },
+]
 test = [
     { name = "pandas", specifier = ">=2.0" },
     { name = "pytest", specifier = ">=8.0" },
