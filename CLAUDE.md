@@ -126,7 +126,10 @@ After step 4 lands, users with `autoUpdate: true` pick up the new version on nex
 
 ### Bumping the meta-marketplace
 
-The [`deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins) meta-marketplace pins each plugin to a specific version (`version` field per plugin entry in its `marketplace.json`). That pin is **not** updated by this repo's release workflow — `autoUpdate` users on the meta-marketplace will not see a new release until the pin is bumped. After every `bump-version` here:
+The [`deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins) meta-marketplace must be updated **by hand** after every `bump-version` here. The update has two pieces:
+
+1. The **version pin** in `marketplace.json` — controls what `autoUpdate` users get on next install.
+2. A **`deriva--v{version}` tag** on the meta-marketplace repo — what Claude Code's `dependencies:` resolver scans (when other plugins declare a dependency on this one). The `deriva-ml` plugin already does, so this tag is load-bearing.
 
 ```bash
 # In a checkout of informatics-isi-edu/deriva-plugins:
@@ -140,12 +143,23 @@ jq '(.plugins[] | select(.name == "deriva") | .version) = "1.2.2"' \
 
 git add .claude-plugin/marketplace.json
 git commit -m "Bump deriva to 1.2.2"
-git push
+
+# Tag the commit so dependency resolution finds it.
+# The naming convention `{plugin-name}--v{version}` is required by Claude Code.
+git tag deriva--v1.2.2
+
+# Push commit + tag together
+git push --follow-tags
 ```
 
 Sanity-check the diff before pushing — `jq` rewrites the whole file, so the diff should be exactly one line changed.
 
-This step is currently manual. A future improvement (deferred for now) is a GitHub Actions workflow on this repo that fires on `v*.*.*` tag push and opens a PR against `deriva-plugins` with the version bump. Until that lands, treat the manual step as part of the release.
+**Failure modes:**
+
+- Skip the version-pin bump → `autoUpdate` users stay on the old version. No error.
+- Skip the prefixed tag → any plugin declaring `dependencies: [{name: "deriva", ...}]` fails to install with `no-matching-tag`. Error surfaces in `/plugin list` and `/doctor`.
+
+This step is currently manual. A future improvement (deferred for now) is a GitHub Actions workflow on this repo that fires on `v*.*.*` tag push and opens a PR against `deriva-plugins` with both updates. Until that lands, treat the manual step as part of the release.
 
 ## Cross-plugin coordination
 
