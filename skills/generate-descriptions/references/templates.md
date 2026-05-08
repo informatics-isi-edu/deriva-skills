@@ -54,20 +54,40 @@ Descriptions support **GitHub-flavored Markdown** which renders in the Chaise we
 
 - **Bold** and *italic* for emphasis
 - Bulleted or numbered lists for multi-part descriptions
-- `code` formatting for RIDs, column names, or config values
+- `code` formatting for column names, config values, or literal RID strings you want shown verbatim (not as a link)
+- **Markdown links to RIDs** — see below
 - Markdown tables for parameter summaries or comparisons
 - Headers for long descriptions that cover multiple aspects
 
+### Linking to RIDs
+
+Any RID can be turned into a clickable link using the catalog's `id` resolver. Use the **catalog-relative** form so the link works regardless of which host is serving the catalog (and survives catalog clones / staging-vs-prod deployments):
+
+```markdown
+[Image_Type vocabulary](/id/<catalog-id>/<rid>)
+```
+
+For example, a column description on `Image.Image_Type_RID` might read:
+
+> Foreign key to the [Image_Type](/id/1/W-ABC1) controlled vocabulary. Each image is classified by exactly one type.
+
+Notes:
+
+- **Catalog-relative, not absolute.** Don't hardcode a hostname (`https://my-host.example.org/id/...`) — descriptions live in the catalog itself, and a deployment may be served from multiple hosts. The leading `/` makes the resolver hop relative to whichever host Chaise is rendering under.
+- **Relative, not Chaise-specific.** Link via `/id/...`, not via a Chaise UI path like `/chaise/record/#1/schema:Table/RID=...`. The `id` resolver is UI-agnostic — it redirects to whatever client is appropriate. Chaise-specific URLs break if the deployment changes UIs.
+- **Use only for entities that already exist** at description-write time. A column description that links to its FK target's vocabulary is fine; a description that links to "the rows that will be added later" is not.
+- **Use `code` formatting (backticks) when you want the literal RID shown** without making it a link — e.g., when documenting a sentinel value: "Records with `Type_RID = W-ABC1` are excluded from the default view."
+
 **When to reach for markdown:**
 
-| Entity type | Markdown usage |
-|---|---|
-| Vocabulary terms | Almost always plain text — terms are atomic concepts; structure rarely helps |
-| Columns | Plain text usually; reach for `code` formatting if mentioning a literal value or a column name |
-| Tables | Mixed — short descriptions stay plain text; tables that link multiple other tables benefit from a bulleted "Links to" list |
-| Vocabularies | Often benefit from a list of subgroups when the vocabulary has internal structure (e.g., "Diagnoses are grouped into: respiratory (...), cardiac (...), other (...)") |
+| Entity type | Markdown usage | RID linking |
+|---|---|---|
+| Vocabulary terms | Almost always plain text — terms are atomic concepts; structure rarely helps | Rarely useful — terms describe themselves; linking would mostly point at the term's own row |
+| Columns | Plain text usually; reach for `code` formatting if mentioning a literal value or a column name | **Often useful for FK columns** — link to the target vocabulary or table so a reader can jump to the controlled-value list or the related entity |
+| Tables | Mixed — short descriptions stay plain text; tables that link multiple other tables benefit from a bulleted "Links to" list | **Often useful** — when the description names related tables (parents, children, asset targets), make those names links to the related table's RID rather than just code-formatting them |
+| Vocabularies | Often benefit from a list of subgroups when the vocabulary has internal structure (e.g., "Diagnoses are grouped into: respiratory (...), cardiac (...), other (...)") | Use sparingly — link to a parent vocabulary if there is one, but linking individual subgroup terms inline gets noisy fast |
 
-Keep simple descriptions as plain text — markdown is most useful for tables and vocabularies whose descriptions need to convey several facets at once. A two-sentence vocabulary-term description doesn't need bullets.
+Keep simple descriptions as plain text — markdown is most useful for tables and vocabularies whose descriptions need to convey several facets at once. A two-sentence vocabulary-term description doesn't need bullets, and a column whose description is "Subject's age in years at enrollment" doesn't need a link.
 
 ## Quality checklist
 

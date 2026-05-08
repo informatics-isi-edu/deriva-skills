@@ -40,6 +40,6 @@ The good example: specific (chest X-ray images, not "images"), names the relatio
 
 ## Per-entity templates and depth
 
-For per-entity templates (vocabularies, vocabulary terms, tables, columns), worked examples that explain *why* each example works, markdown-formatting guidance for when structure helps vs. when plain text is better, the full quality checklist, common failure modes to watch for in drafts, and workflow guidance for the case where the user already provided a description — see **`references/templates.md`**.
+For per-entity templates (vocabularies, vocabulary terms, tables, columns), worked examples that explain *why* each example works, markdown-formatting guidance for when structure helps vs. when plain text is better (including how to make catalog-relative links to other entities by RID — `[label](/id/<catalog>/<rid>)`), the full quality checklist, common failure modes to watch for in drafts, and workflow guidance for the case where the user already provided a description — see **`references/templates.md`**.
 
 Read the reference whenever you're actually drafting a description for a specific entity type. The body above is the trigger logic and quality framing that earns always-on weight; the templates are depth that only matters when a description is being written.
