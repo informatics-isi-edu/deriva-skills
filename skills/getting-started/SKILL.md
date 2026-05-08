@@ -100,7 +100,7 @@ This skill is *orientation*. It does not cover:
 - **Schema design at depth** — that's `/deriva:create-table` plus `/deriva:entity-naming` plus the modeling checklist in `deriva-context`.
 - **Production data loads** — that's `/deriva:load-data` with its references.
 - **Chaise UI customization** — that's `/deriva:customize-display`.
-- **Domain-specific abstractions on top of the catalog** (e.g., DerivaML's Datasets, Workflows, Executions) — those live in companion plugins like `deriva-ml`. If a user mentions one of those by name, hand off to the relevant plugin rather than improvising.
+- **Domain-specific abstractions on top of the catalog** (e.g., DerivaML's Datasets, Workflows, Executions, Features, Assets, Experiments) — those live in the companion [`deriva-ml`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin. If the user's work involves training models, running experiments, building or splitting datasets, recording per-row labels or metrics as features, or tracking provenance across runs, install `deriva-ml` from the same `informatics-isi-edu/deriva-plugins` marketplace (`/plugin install deriva-ml`) and start at `/deriva-ml:help`. If a user mentions one of those concepts by name and `deriva-ml` is loaded, hand off to the relevant `/deriva-ml:` skill rather than improvising.
 
 The five steps above will get a new user through their first session productively. After that, they should be able to navigate to the per-task skills on their own; this orientation has done its job.
 
