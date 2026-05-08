@@ -6,26 +6,28 @@ This is the **tier-1** skills plugin — the surface that works on any Deriva ca
 
 ## Installation
 
-```bash
-# Add the marketplace (one-time)
-/plugin marketplace add informatics-isi-edu/deriva-skills
+Install via the unified [`deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins) marketplace:
 
-# Install the deriva plugin
+```bash
+# Add the marketplace (one-time) — covers both deriva and deriva-ml
+/plugin marketplace add informatics-isi-edu/deriva-plugins
+
+# Install this plugin
 /plugin install deriva
-```
 
-For DerivaML workflows, additionally:
-
-```bash
-/plugin marketplace add informatics-isi-edu/deriva-ml-skills
+# For DerivaML workflows, also install the tier-2 plugin
 /plugin install deriva-ml
 ```
 
+> **Migrating from the old per-repo marketplace?** Earlier versions of this plugin were installed via `/plugin marketplace add informatics-isi-edu/deriva-skills`. That single-plugin marketplace has been retired in favor of the unified one above. To migrate, first remove the old cache:
+> ```
+> /plugin marketplace remove deriva-plugins
+> ```
+> (the old per-repo marketplace was *also* internally named `deriva-plugins`, so the cache name collides — removing it before re-adding ensures Claude Code re-clones from the new repo). Then run the two commands above.
+
 ## Updating
 
-```
-/plugin install deriva
-```
+Enable `"autoUpdate": true` in `~/.claude/settings.json` for the `deriva-plugins` marketplace and restart Claude Code; new versions are picked up automatically.
 
 ## Available Skills
 

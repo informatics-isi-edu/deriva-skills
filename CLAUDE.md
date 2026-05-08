@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the deriva-skills c
 
 ## Project Overview
 
-Claude Code plugin providing 11 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
+Claude Code plugin providing 12 tier-1 skills for the **core Deriva** ecosystem (`deriva-mcp-core` + `deriva-py`). Skills are organized as Markdown documents with optional Python scripts — no package build step required.
 
 This plugin is the **tier-1** surface — skills that work on any Deriva catalog. The companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2) adds the DerivaML domain skills (Datasets, Workflows, Executions, Features, Asset_Type vocabularies). The two plugins are independently versioned and released; users with DerivaML workflows install both. See `docs/superpowers/plans/2026-04-27-skills-restructure.md` for the rationale and migration history.
 
@@ -30,17 +30,19 @@ claude --plugin-dir /path/to/deriva-skills
 Versioning and updates are documented in `skills/troubleshoot-deriva-errors/SKILL.md` ("Versioning and updates" section). The three core components — deriva-py, deriva-mcp-core, the `deriva` plugin — each have their own update path; there is no unified version-checker tool in the plugin (the previous `check-deriva-versions` skill was removed once `autoUpdate: true` for plugins, the `server_status` MCP resource for the server, and `uv pip show` for the library all became reliable enough that wrapping them in a custom script no longer earned its weight).
 
 **Release mechanics:** `bump-version` triggers GitHub Actions, which
-bumps version in `plugin.json` + `marketplace.json`, commits back to
-main, and creates the release archive. `bump_version("patch")` via the
-MCP tool is also supported.
+bumps version in `plugin.json`, commits back to main, and creates the
+release archive. `bump_version("patch")` via the MCP tool is also
+supported. Note: the version field in the
+[`deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins)
+meta-marketplace's `marketplace.json` is **not** auto-bumped — see
+"Cross-plugin coordination" below.
 
 ## Architecture
 
 ```
 ├── .claude-plugin/
-│   ├── plugin.json           # Plugin metadata (name, version, description)
-│   └── marketplace.json      # Marketplace registration (lists all 11 tier-1 skills)
-├── skills/                   # 11 tier-1 skills, each in its own directory
+│   └── plugin.json           # Plugin manifest (name, version, description) — read by Claude Code after install
+├── skills/                   # 12 tier-1 skills, each in its own directory; the marketplace lives in the deriva-plugins repo and lists each one by path
 │   ├── {skill-name}/
 │   │   ├── SKILL.md          # Frontmatter (YAML) + skill content (Markdown)
 │   │   ├── scripts/          # Optional Python helper scripts
@@ -59,14 +61,15 @@ MCP tool is also supported.
 
 The tier-1 skills cover the core Deriva surface — what works on any Deriva catalog.
 
-The 10 skills divide into two shapes — user commands (what a person invokes) and auto-invoked behaviors (what Claude triggers on its own to enforce a discipline). The split matters when editing: command-shaped skills can assume the user typed `/deriva:<name>` and should produce a useful response on their own; behavior-shaped skills run as background context and should never produce a standalone "here's what I did" message.
+The 12 skills divide into two shapes — user commands (what a person invokes) and auto-invoked behaviors (what Claude triggers on its own to enforce a discipline). The split matters when editing: command-shaped skills can assume the user typed `/deriva:<name>` and should produce a useful response on their own; behavior-shaped skills run as background context and should never produce a standalone "here's what I did" message.
 
 **User commands (`/deriva:<name>`)** — `user-invocable: true` in frontmatter:
 
 | Skill | Covers |
 |-------|--------|
 | `create-table` | Create domain tables with columns + foreign keys |
-| `customize-display` | Chaise display annotations via MCP tools |
+| `customize-display` | Chaise display annotations via MCP tools (interactive path) |
+| `use-annotation-builders` | Type-safe Python builder classes for production deployment scripts (Python path) |
 | `entity-naming` | Naming conventions for schemas, tables, columns, vocabulary terms |
 | `getting-started` | Five-step new-user onboarding walkthrough; routes through the per-task skills |
 | `load-data` | Loading data into tables: row inserts, batch CSV/JSON, asset uploads via deriva-upload-cli or MCP, updates, deletes |
@@ -82,7 +85,7 @@ The 10 skills divide into two shapes — user commands (what a person invokes) a
 | `semantic-awareness` | Before any catalog-entity creation — enforces the find-before-you-create discipline |
 | `generate-descriptions` | When a catalog entity is being created without a user-supplied description — auto-drafts one |
 
-These three are disciplines, not commands. They appear in `marketplace.json` so Claude Code loads them into the plugin, but a user typing `/deriva:semantic-awareness` is using the plugin wrong — those skills are designed to fire from Claude's own decision-making, not from user invocation. Documentation surfaces (README, marketing copy, help blurbs) should keep them in a clearly-separated section so users don't reach for them.
+These three are disciplines, not commands. They live alongside the user-invocable skills under `skills/` and the meta-marketplace lists them so Claude Code loads them into the plugin, but a user typing `/deriva:semantic-awareness` is using the plugin wrong — those skills are designed to fire from Claude's own decision-making, not from user invocation. Documentation surfaces (README, marketing copy, help blurbs) should keep them in a clearly-separated section so users don't reach for them.
 
 
 ### Skill Anatomy (`SKILL.md`)
@@ -111,11 +114,12 @@ Skills with evals have files under `evals/<skill-name>/`. Workspace iteration ou
 1. Commit changes
 2. Run `bump-version patch|minor|major` (creates tag and pushes automatically)
 3. GitHub Actions automatically:
-   - Bumps version in `plugin.json` and `marketplace.json`
+   - Bumps version in `plugin.json` (the bump-my-version config in `pyproject.toml` runs as part of `bump-version`, before the tag push)
    - Commits version bump back to main
-   - Creates `deriva-skills-{VERSION}.tar.gz` (excludes `.git`, `.github`, `evals/`, `docs/superpowers`)
+   - Creates `deriva-skills-{VERSION}.tar.gz` (the tar invocation packages `.claude-plugin/` and `skills/`; everything else — `.git`, `.github`, `evals/`, `docs/`, `tests/`, `pyproject.toml`, `uv.lock` — is excluded by virtue of not being passed)
    - Publishes GitHub Release with auto-generated notes
-4. Users with `autoUpdate: true` get the new version on next Claude Code restart. First-time install uses `/plugin install deriva`.
+4. **Manual step:** open a PR (or push directly) against the [`deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins) meta-marketplace bumping the `deriva` plugin's `version` field in `marketplace.json` to match this release. Without this step, users on `autoUpdate: true` will stay pinned to the previous version.
+5. Users with `autoUpdate: true` get the new version on next Claude Code restart once step 4 lands. First-time install uses `/plugin install deriva` after `/plugin marketplace add informatics-isi-edu/deriva-plugins`.
 
 **Never create git tags manually** — always use `bump-version` from deriva-ml or the `bump_version` MCP tool.
 
@@ -126,13 +130,26 @@ The companion `deriva-ml-skills` plugin (tier-2) ships separately:
 - **Cross-references:** When a tier-1 skill needs to point at ML-domain workflows (datasets, executions, features), use the cross-reference pattern: ``> See the `dataset-lifecycle` skill in `deriva-ml-skills` (tier-2) for ...``. Don't link as if the tier-2 skill is local — users may not have it installed.
 - **Steering principle:** When BOTH plugins are loaded, the deriva-ml abstractions take precedence over the raw catalog primitives this plugin documents. The always-on `deriva-context` skill carries the principle plugin-wide; the relevant tier-1 skills (`troubleshoot-deriva-errors`, `manage-vocabulary`) carry inline steering callouts as reinforcement for users who arrive in those skills directly.
 
+### One marketplace: `deriva-plugins`
+
+The only supported install path is the unified [`informatics-isi-edu/deriva-plugins`](https://github.com/informatics-isi-edu/deriva-plugins) marketplace, which lists both `deriva` (this plugin) and `deriva-ml` (the tier-2 companion). The previous per-repo single-plugin marketplace (`informatics-isi-edu/deriva-skills` with a `.claude-plugin/marketplace.json` at the repo root, `source: ./`) was removed in May 2026 — there's now exactly one place where the skill list and version pin live.
+
+Practical implications:
+
+- This repo no longer carries a `marketplace.json`. Only `.claude-plugin/plugin.json` lives here.
+- `bump-version` only rewrites `plugin.json` (and the `[tool.bumpversion] current_version`); the `pyproject.toml` block lists no marketplace entry.
+- After bumping, the version pin in the meta-marketplace's `marketplace.json` must be updated **by hand** — there's no automated PR yet. Skip this step and `autoUpdate` users stay pinned to the previous release.
+- The skill list is **auto-discovered** by Claude Code from `skills/*/SKILL.md` in the cloned repo — no enumeration is needed in either `plugin.json` or the meta-marketplace's `marketplace.json`. Add a skill by creating `skills/<name>/SKILL.md`; it loads on the next plugin update.
+
+The companion `deriva-ml-skills` plugin (tier-2) ships its plugin manifest the same way — `plugin.json` only — and is listed alongside this plugin in the same meta-marketplace.
+
 ## Gotchas
 
 - **Description field is critical** — the `description` in SKILL.md frontmatter controls when Claude auto-invokes the skill. Poorly written descriptions cause false triggers or missed triggers.
 - **No build step** — skills are pure Markdown + optional scripts. Changes take effect immediately when loaded locally.
 - **Release requires tag** — the workflow only triggers on `v*.*.*` tags pushed to origin. Commits alone won't create a release.
-- **marketplace.json must list all skills** — if you add or remove a skill, update the skills array in `.claude-plugin/marketplace.json`.
-- **Eval workspace dirs are not skills** — `evals/<skill>/iteration-*/` directories contain eval outputs and must NOT be listed in marketplace.json.
+- **Skills are auto-discovered, not enumerated** — Claude Code walks `skills/*/SKILL.md` in the cloned plugin repo at install time. Neither this repo's `plugin.json` nor the meta-marketplace's `marketplace.json` lists individual skills. Adding a new skill is just `mkdir skills/<name> && touch skills/<name>/SKILL.md` (with valid frontmatter); it'll appear on the next plugin update without touching any manifest.
+- **Eval workspace dirs would auto-discover as skills if they had a SKILL.md** — `evals/<skill>/iteration-*/` directories live under `evals/`, not `skills/`, so auto-discovery won't pick them up. But don't accidentally drop a `SKILL.md` into `skills/` for a workspace artifact, or it will load.
 - **Scripts must handle minimal PATH** — Claude Code (especially inside the Desktop app) may not source shell profiles, so `$PATH` can be incomplete. Use `_find_uv()` pattern: try `shutil.which()` first, then check well-known locations (`~/.local/bin/`, `~/.cargo/bin/`, `/opt/homebrew/bin/`). Never assume `uv` or other tools are on PATH.
 - **Marketplace cache can break** — The local git clone at `~/.claude/plugins/marketplaces/deriva-plugins/` can become corrupted (no commits, duplicate directories like `skills 2/`). If users report stale skills after enabling `autoUpdate`, check the marketplace cache health first; the fix is to delete the cache directory and let Claude Code re-clone on next restart.
 - **MCP server version comes from the MCP resource** — Claude reads the running server version via the `deriva://server/version` resource (or `server_status(hostname=...)`). There is no Docker / pip inspection path; the server has to be reachable for the version to be visible.
