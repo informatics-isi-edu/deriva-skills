@@ -1,8 +1,8 @@
 # Deriva Skills Plugin
 
-[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs via [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp-core). Provides 14 skills covering schema operations, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting.
+[Claude Code](https://claude.ai/claude-code) skills plugin for working with [Deriva](https://github.com/informatics-isi-edu/deriva-py) catalogs via [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp-core). Provides 12 skills covering schema operations, vocabulary management, query patterns, Chaise display customization, and generic catalog troubleshooting.
 
-This is the **tier-1** skills plugin — the surface that works on any Deriva catalog. For DerivaML ML workflows (datasets, executions, features, experiments, model development), additionally install the companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin (tier-2).
+The plugin is self-contained — install it on its own and it works on any Deriva catalog. A separate companion plugin, [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills), exists for users doing DerivaML ML workflows (datasets, executions, features, experiments, model development); see [DerivaML workflows](#derivaml-workflows) below.
 
 ## Installation
 
@@ -15,7 +15,7 @@ Install via the unified [`deriva-plugins`](https://github.com/informatics-isi-ed
 # Install this plugin
 /plugin install deriva
 
-# For DerivaML workflows, also install the tier-2 plugin
+# For DerivaML workflows, also install the deriva-ml plugin
 /plugin install deriva-ml
 ```
 
@@ -61,9 +61,9 @@ You'll see their effects in Claude's behavior (it asks "did you mean this existi
 
 ## DerivaML workflows
 
-The DerivaML-specific surface (datasets, executions, features, experiments, model development, Hydra-zen configs) lives in the companion [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) plugin. It depends on this plugin as its tier-1 foundation; install both for full ML workflow support.
+DerivaML-specific work (datasets, executions, features, experiments, model development, Hydra-zen configs) is covered by a separate companion plugin, [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills), available from the same `deriva-plugins` marketplace. It builds on the same Deriva ecosystem this plugin uses; install both if your work spans both surfaces.
 
-When the deriva-ml plugin is loaded, **its abstractions take precedence over the raw catalog surface this plugin documents**: Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts (stored as Deriva tables underneath) — use the `/deriva-ml:` skills and the deriva-ml Python API for them, not the raw `insert_records` / `update_record` core tools.
+When the deriva-ml plugin is loaded alongside this one, **its abstractions take precedence over the raw catalog surface this plugin documents**: Datasets, Workflows, Executions, Features, and Asset_Type vocabularies are first-class DerivaML concepts (stored as Deriva tables underneath) — use the `/deriva-ml:` skills and the deriva-ml Python API for them, not the raw `insert_records` / `update_record` core tools. This rule only matters if you have the deriva-ml plugin installed; without it, this plugin's catalog primitives are the right surface for everything.
 
 ## Development
 
@@ -77,7 +77,7 @@ claude --plugin-dir /path/to/deriva-skills
 
 - [`deriva-mcp-core`](https://github.com/informatics-isi-edu/deriva-mcp-core) — Core MCP framework + generic Deriva catalog tools
 - [`deriva-py`](https://github.com/informatics-isi-edu/deriva-py) — Python SDK for Deriva scientific data management
-- [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) — Companion tier-2 plugin: DerivaML ML workflow skills
+- [`deriva-ml-skills`](https://github.com/informatics-isi-edu/deriva-ml-skills) — Companion plugin for DerivaML ML workflow skills (datasets, executions, features, experiments)
 - [`deriva-ml-mcp`](https://github.com/informatics-isi-edu/deriva-ml-mcp) — DerivaML MCP plugin (loaded by deriva-mcp-core)
 - [`deriva-ml`](https://github.com/informatics-isi-edu/deriva-ml) — Core library for ML workflows on Deriva
 
