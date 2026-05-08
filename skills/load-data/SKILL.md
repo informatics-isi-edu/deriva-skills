@@ -25,21 +25,21 @@ Pick the path *before* writing tool calls. Mixing paths (e.g., one `insert_entit
 
 ## Single-row and batch insert
 
-`insert_entities` takes a `records` list. **Same tool, two scales:**
+`insert_entities` takes an `entities` list (one or many records — same tool, two scales):
 
 ```python
 # Single row
 insert_entities(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table="Subject",
-    records=[{"Name": "S001", "Age": 42, "Sex": "Male"}],
+    entities=[{"Name": "S001", "Age": 42, "Sex": "Male"}],
 )
 
 # Batch (one round-trip)
 insert_entities(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table="Subject",
-    records=[
+    entities=[
         {"Name": "S001", "Age": 42, "Sex": "Male"},
         {"Name": "S002", "Age": 35, "Sex": "Female"},
         # ... up to thousands of rows in one call
@@ -69,7 +69,7 @@ System columns (`RID`, `RCT`, `RMT`, `RCB`, `RMB`) are server-minted — never i
 update_entities(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table="Subject",
-    records=[
+    entities=[
         {"RID": "1-A2B3", "Age": 43},      # only the RID and the changed columns
         {"RID": "1-A2B4", "Sex": "Female"},
     ],
@@ -113,7 +113,7 @@ result = upload_file(
 insert_entities(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table="Image",
-    records=[{
+    entities=[{
         "URL": result["URL"],
         "Filename": result["Filename"],
         "Length": result["Length"],
@@ -189,11 +189,11 @@ If deletion is genuinely the right move:
 delete_entities(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table="Subject",
-    filter={"RID": "1-A2B3"},
+    filters={"RID": "1-A2B3"},
 )
 ```
 
-`delete_entities` takes a `filter` (not a list of records) and deletes every matching row. Always preview with `query_attribute(..., filter=...)` before deleting to confirm the filter matches what you expect.
+`delete_entities` takes `filters=` (not a list of records) and deletes every matching row. Always preview with `get_entities(..., filters=...)` (or `count_table(..., filters=...)`) before deleting to confirm the filter matches what you expect.
 
 ## Idempotency and re-run safety
 
@@ -216,11 +216,12 @@ Loads frequently get re-run (the script crashed halfway, the input was wrong, yo
 
 ### MCP tools (interactive, ad-hoc loads)
 
-- `insert_entities(hostname, catalog_id, schema, table, records=[...])` — Insert one or many rows. Returns server-minted RIDs in input order.
-- `update_entities(hostname, catalog_id, schema, table, records=[...])` — Update by RID. Each record needs `RID` plus only the changed columns.
-- `delete_entities(hostname, catalog_id, schema, table, filter={...})` — Delete by filter. Preview first.
+- `insert_entities(hostname, catalog_id, schema, table, entities=[...])` — Insert one or many rows. Returns server-minted RIDs in input order.
+- `update_entities(hostname, catalog_id, schema, table, entities=[...])` — Update by RID. Each entity dict needs `RID` plus only the changed columns.
+- `delete_entities(hostname, catalog_id, schema, table, filters={...})` — Delete by filter. Preview first.
 - `upload_file(hostname, local_path, namespace)` — Upload a file to Hatrac. Returns `{URL, MD5, Length, Filename, Content_Type}` for use in an asset-table row.
-- `query_attribute(hostname, catalog_id, schema, table, filter=...)` — Use to check existence before inserting (idempotency) or to preview before deleting.
+- `get_entities(hostname, catalog_id, schema, table, filters=...)` — Use to check existence before inserting (idempotency) or to preview before deleting.
+- `query_attribute(hostname, catalog_id, path=..., attributes=...)` — Same purpose, but uses ERMrest path-expression syntax for column projection or FK-traversal queries (e.g., `path="schema:Table/Code=any(c1,c2)"`). See the `query_guide` MCP prompt.
 
 ### deriva-py uploader (production asset loads)
 

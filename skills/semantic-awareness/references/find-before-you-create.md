@@ -52,7 +52,7 @@ get_table(hostname=..., catalog_id=..., schema=..., table=...)              # Fu
 lookup_term(hostname=..., catalog_id=..., schema=..., table=..., name=...)  # Synonym-aware term lookup
 ```
 
-For queries that need actual data, use `query_attribute(...)` for filtered queries with column projection, `count_table(...)` for fast counts, or `get_entities(..., filter={"RID": "..."})` for a specific record by RID.
+For queries that need actual data, use `get_entities(..., filters=...)` for whole-row fetches from one table, `query_attribute(path=...)` when you need column projection or FK joins (path-expression syntax — see the `query_guide` MCP prompt), or `count_table(...)` for fast counts.
 
 ### 4. Score closeness across multiple signals
 

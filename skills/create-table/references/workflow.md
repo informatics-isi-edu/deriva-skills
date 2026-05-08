@@ -40,7 +40,7 @@ Naming for schemas, tables, columns, and FK columns is documented canonically in
 ```python
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Subject",
+    schema="myproject", table_name="Subject",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Full name of the subject"},
         {"name": "Age", "type": "int4", "nullok": true, "comment": "Age in years at time of enrollment"},
@@ -66,7 +66,7 @@ Foreign keys link tables together, establishing relationships.
 ```python
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Sample",
+    schema="myproject", table_name="Sample",
     columns=[
         {"name": "Sample_ID", "type": "text", "nullok": false, "comment": "Unique sample identifier"},
         {"name": "Collection_Date", "type": "date", "nullok": false, "comment": "Date sample was collected"},
@@ -105,7 +105,7 @@ In the new MCP architecture, there is no dedicated `create_asset_table` tool. Bu
 ```python
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Slide_Image",
+    schema="myproject", table_name="Slide_Image",
     columns=[
         # Standard hatrac asset columns (required for asset tables)
         {"name": "URL", "type": "text", "nullok": false, "comment": "Hatrac object store URL"},
@@ -161,7 +161,7 @@ A typical biomedical data model:
 # Level 1: Research subjects
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Subject",
+    schema="myproject", table_name="Subject",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Subject identifier"},
         {"name": "Species", "type": "text", "nullok": false, "comment": "Species"}
@@ -172,7 +172,7 @@ create_table(
 # Level 2: Samples from subjects
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Sample",
+    schema="myproject", table_name="Sample",
     columns=[
         {"name": "Sample_ID", "type": "text", "nullok": false, "comment": "Sample identifier"},
         {"name": "Collection_Date", "type": "date", "nullok": false, "comment": "Collection date"}
@@ -187,7 +187,7 @@ create_table(
 # Level 3: Measurements on samples
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Measurement",
+    schema="myproject", table_name="Measurement",
     columns=[
         {"name": "Value", "type": "float8", "nullok": false, "comment": "Measured value"},
         {"name": "Units", "type": "text", "nullok": false, "comment": "Unit of measurement"},
@@ -208,7 +208,7 @@ create_table(
 ```python
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Protocol",
+    schema="myproject", table_name="Protocol",
     columns=[
         {"name": "Name", "type": "text", "nullok": false, "comment": "Protocol name"},
         {"name": "Version", "type": "text", "nullok": false, "comment": "Protocol version string"},

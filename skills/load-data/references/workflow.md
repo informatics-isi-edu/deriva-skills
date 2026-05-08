@@ -39,7 +39,7 @@ for i in range(0, len(records), BATCH_SIZE):
         catalog_id="1",
         schema="myproject",
         table="Subject",
-        records=batch,
+        entities=batch,
     )
     print(f"Inserted batch {i // BATCH_SIZE + 1}: {len(result)} rows")
 ```
@@ -79,7 +79,7 @@ for i in range(0, len(records), BATCH_SIZE):
         catalog_id="1",
         schema="myproject",
         table="Observation",
-        records=batch,
+        entities=batch,
     )
 ```
 
@@ -106,7 +106,7 @@ for i in range(0, len(records), BATCH_SIZE):
         catalog_id="1",
         schema="myproject",
         table="Measurement",
-        records=records[i : i + BATCH_SIZE],
+        entities=records[i : i + BATCH_SIZE],
     )
 ```
 
@@ -124,20 +124,21 @@ input_records = [
     {"Code": "S003", "Name": "Subject 3", "Age": 28},
 ]
 
-# 1. Query the catalog for existing rows with these domain keys
+# 1. Query the catalog for existing rows with these domain keys.
+#    query_attribute uses an ERMrest path expression; =any(...) is the IN-list operator.
 codes = [r["Code"] for r in input_records]
+codes_csv = ",".join(codes)  # comma-separated, no spaces; URL-encode special chars if any
 existing = query_attribute(
     hostname="data.example.org",
     catalog_id="1",
-    schema="myproject",
-    table="Subject",
+    path=f"myproject:Subject/Code=any({codes_csv})",
     attributes=["RID", "Code"],
-    filter={"Code": codes},   # IN-list filter
 )
-# existing is now a list of dicts: [{"RID": "1-A2B3", "Code": "S001"}, ...]
+# existing is the result dict; the rows live under "rows":
+#   {"path": "...", "attributes": [...], "count": N, "rows": [{"RID": "1-A2B3", "Code": "S001"}, ...]}
 
 # 2. Build a Code -> RID map
-existing_map = {row["Code"]: row["RID"] for row in existing}
+existing_map = {row["Code"]: row["RID"] for row in existing["rows"]}
 
 # 3. Partition the input
 to_insert = [r for r in input_records if r["Code"] not in existing_map]
@@ -152,7 +153,7 @@ if to_insert:
     insert_entities(
         hostname="data.example.org", catalog_id="1",
         schema="myproject", table="Subject",
-        records=to_insert,
+        entities=to_insert,
     )
     print(f"Inserted {len(to_insert)} new rows")
 
@@ -160,7 +161,7 @@ if to_update:
     update_entities(
         hostname="data.example.org", catalog_id="1",
         schema="myproject", table="Subject",
-        records=to_update,
+        entities=to_update,
     )
     print(f"Updated {len(to_update)} existing rows")
 ```

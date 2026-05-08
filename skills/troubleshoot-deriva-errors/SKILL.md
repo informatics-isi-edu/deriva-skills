@@ -35,7 +35,7 @@ This guide covers errors that surface in any Deriva catalog operation — auth, 
 **Cause**: The RID is malformed, belongs to a different table than expected, or refers to a deleted record.
 
 **Solution**:
-- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filter={"RID": "..."})` to check whether the RID exists in the expected table. An empty result means the RID does not exist there. There is no single-tool cross-table RID lookup; query each candidate table.
+- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filters={"RID": "..."})` to check whether the RID exists in the expected table. An empty result means the RID does not exist there. There is no single-tool cross-table RID lookup; query each candidate table.
 - RIDs are case-sensitive alphanumeric strings (e.g., `1-A2B3`). Ensure there are no extra spaces or characters.
 - If the RID comes from a different catalog, it will not resolve in the current catalog. Pass the correct `hostname=` and `catalog_id=` to your tool call — there is no implicit "current catalog" on the MCP server.
 - If the RID was recently created, it should be visible immediately — there is no propagation delay for catalog reads.
@@ -51,8 +51,8 @@ This guide covers errors that surface in any Deriva catalog operation — auth, 
 **Solution**:
 - **Search first with `rag_search`**: Use `rag_search("description of what you want", doc_type="catalog-data")` to find records by description. This is the best way to discover the correct RID when you are unsure.
 - Verify the `hostname=` and `catalog_id=` arguments you are passing match the catalog where you expect the RID to exist.
-- Use `get_entities(..., filter={"RID": "..."})` to confirm the RID exists and belongs to the table you expect.
-- Use `query_attribute(..., filter={"RID": "..."})` if you want to project specific columns instead of all columns.
+- Use `get_entities(..., filters={"RID": "..."})` to confirm the RID exists and belongs to the table you expect.
+- Use `query_attribute(path="schema:Table/RID=...", attributes=[...])` if you want to project specific columns instead of all columns.
 
 ---
 
@@ -108,7 +108,7 @@ The MCP server is stateless — there is no "active catalog". Every tool call ta
 
 - Use the catalog schema resources to review the current schemas, tables, and vocabularies.
 - **Tool**: `get_table_sample_data(hostname=..., catalog_id=..., schema=..., table=...)` to quickly verify data exists in expected tables.
-- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filter={"RID": "..."})` to fetch a known RID and confirm the row is accessible to your credential.
+- **Tool**: `get_entities(hostname=..., catalog_id=..., schema=..., table=..., filters={"RID": "..."})` to fetch a known RID and confirm the row is accessible to your credential.
 
 ### Re-authenticate If Anything Smells Like Auth
 

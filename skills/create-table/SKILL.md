@@ -104,7 +104,7 @@ For description templates and quality guidelines, see the `generate-descriptions
 # Standard table with FK
 create_table(
     hostname="data.example.org", catalog_id="1",
-    schema="myproject", table="Sample",
+    schema="myproject", table_name="Sample",
     columns=[...], foreign_keys=[...],
     comment="...",
 )
