@@ -36,6 +36,8 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 
 > **When to read `references/concepts.md`:** on cold-start (first Deriva-related action of the session), or any time you encounter a concept above whose mechanics you don't have a working model of — RID format, vocabulary column shape, snaptime semantics, asset-table column shape, association-table conventions. The reference is mechanics-focused (what each thing *is* and how it works); the design philosophy in `references/philosophy.md` is opinion-focused (what to *do* with it).
 
+> **Linking to RIDs: use `/id/`, not Chaise URIs.** When a description, annotation, or any other piece of stored catalog content needs to link to a row, use the catalog's UI-agnostic `/id/` resolver — `/id/<catalog>/<rid>` (catalog-relative is the default; absolute `https://<host>/id/<catalog>/<rid>` is only for contexts outside the catalog). **Never** link via a Chaise-specific path like `/chaise/record/#<catalog>/schema:Table/RID=<rid>`. The `/id/` form survives UI changes and works under any host serving the catalog; the `/chaise/...` form ties the link to one particular UI and breaks if the deployment changes.
+
 ## Stateless model
 
 The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and `catalog_id=` arguments — there is no implicit "active catalog" or "default schema". Every example in every skill in this plugin shows the full parameter set; substitute your catalog's hostname and ID.

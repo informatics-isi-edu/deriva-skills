@@ -100,7 +100,7 @@ Mechanics:
 
 - **Server-minted at insert time.** You don't construct RIDs; the server assigns one when a row is created.
 - **Universal.** Every row in every table in every Deriva catalog has a RID. There are no RID-less rows. The RID is each table's primary key.
-- **Resolvable URL form.** Each RID resolves to a permanent URL: `https://<host>/id/<catalog>/<rid>`. Pasting that URL into a browser opens the row in Chaise.
+- **Resolvable via the `/id/` resolver.** Each RID has a permanent URL of the form `/id/<catalog>/<rid>` (catalog-relative) or `https://<host>/id/<catalog>/<rid>` (absolute). The `/id/` resolver is **UI-agnostic** — it redirects to whichever client is appropriate for the row (typically Chaise, but the URL itself is not Chaise-specific). **Always link to RIDs via `/id/...`, never via Chaise-specific paths** like `/chaise/record/#<catalog>/schema:Table/RID=<rid>`. The `/chaise/...` form ties the link to one particular UI; the `/id/...` form survives UI changes, deployment changes, and renders correctly anywhere the catalog is reachable. Inside the catalog (descriptions, annotations, anything stored as data), prefer the **catalog-relative** form so the link doesn't hardcode a hostname and stays correct under multi-host deployments and clones.
 
 For *why* RIDs are the canonical identity (and why you should FK to RIDs rather than domain keys), see the "RIDs are the canonical identity" pillar in the SKILL.md design philosophy section.
 

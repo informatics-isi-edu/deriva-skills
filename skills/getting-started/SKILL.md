@@ -62,7 +62,7 @@ Schema alone isn't enough — the user needs to see what the rows actually look 
 
 Then call `get_table_sample_data(hostname=..., catalog_id=..., schema=..., table=...)` to fetch a small sample (default is 10 rows, which is plenty for orientation).
 
-**Show the user what came back** — the columns, their values, anything that stands out (asset URLs, vocabulary FKs, descriptive columns). If the table has an `RID` column whose value resolves in Chaise, mention that they can paste any RID into the URL `https://<host>/id/<catalog>/<rid>` to open the row in the web UI.
+**Show the user what came back** — the columns, their values, anything that stands out (asset URLs, vocabulary FKs, descriptive columns). Mention that any RID can be opened in the browser by pasting `https://<host>/id/<catalog>/<rid>` — the catalog's `/id/` resolver redirects to the appropriate UI (typically Chaise). When linking RIDs from inside the catalog (descriptions, annotations), use the catalog-relative form `/id/<catalog>/<rid>` instead.
 
 For deeper queries (filters, joins, denormalized views), hand off to `/deriva:query-catalog-data`. The body of that skill leads with `rag_search` and covers everything from "find rows by a value" to "build a flat view across multiple tables."
 
