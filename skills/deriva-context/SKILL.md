@@ -23,13 +23,13 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 | Concept | What it is | Skill |
 |---|---|---|
 | **Catalog** | A versioned namespace of schemas, tables, vocabularies, and rows. Identified by hostname + catalog ID (or alias). | `/deriva:query-catalog-data` |
-| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `/deriva:create-table`, `/deriva:query-catalog-data` |
+| **Schema / Table / Column** | The relational structure inside a catalog. Tables can FK into other tables and into vocabularies. | `/deriva:create-table`, `/deriva:query-catalog-data`; for non-additive changes (rename, split, merge, retype, FK move) → `/deriva:evolve-schema` |
 | **Vocabulary** | A controlled-term table with standard columns (Name, Description, Synonyms, ID, URI). FK target for categorical columns. | `/deriva:manage-vocabulary` |
 | **RID** | Resource Identifier — every row in every Deriva table has a unique, server-minted, resolvable RID (e.g., `1-A2B3`). | `/deriva:query-catalog-data`, `/deriva:troubleshoot-deriva-errors` |
 | **Foreign keys** | The relational glue. FKs target RID columns; FKs to vocabularies model categorical values. | `/deriva:create-table` |
 | **Association tables** | The standard pattern for many-to-many relationships: a table with two FKs, one to each side. | `/deriva:create-table` |
 | **Asset tables + Hatrac** | Catalog rows that bridge to objects in Deriva's object store (filename, size, checksum, URL). | `/deriva:create-table`, `/deriva:customize-display` |
-| **Catalog snapshots** | Time-travelable history. Any past state is queryable by snaptime; pin a snaptime for reproducibility. | (resource: `concepts.md`) |
+| **Catalog snapshots** | Time-travelable history. Any past state is queryable by snaptime; pin a snaptime for reproducibility — and capture one before any bulk load or schema change as a rollback reference. | `/deriva:load-data` (load-side use), `/deriva:evolve-schema` (migration-side use); mechanics in `references/concepts.md` |
 | **Display annotations** | Per-table / per-column JSON that drives the Chaise web UI. | `/deriva:customize-display` |
 | **Naming conventions** | PascalCase, singular nouns, descriptive — for schemas, tables, columns, and vocabulary terms. | `/deriva:entity-naming` |
 | **Loading data** | Row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class with an upload spec), updates, deletes. | `/deriva:load-data` |
