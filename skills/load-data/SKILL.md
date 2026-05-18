@@ -204,6 +204,50 @@ Loads frequently get re-run (the script crashed halfway, the input was wrong, yo
 - **For updates**, updates are idempotent by construction (running the same update twice gives the same final state). Safe to re-run.
 - **Dry-run first** for any load > 100 rows. Print the records that would be inserted; eyeball them; then run for real.
 
+## Snapshot before any bulk mutation
+
+Before any load that touches more than a handful of rows — bulk insert, batch update, large asset import, or anything that's hard to undo by hand — capture the current catalog snaptime. A snaptime is a server-assigned, monotonic timestamp identifier; queries can address the catalog "as of" that snaptime, and the server retains the historical state needed to answer them. If the load goes wrong, the snaptime is your rollback reference point.
+
+```python
+# Capture the snaptime BEFORE the load.
+from deriva.core import DerivaServer, get_credential
+
+server = DerivaServer("https", "data.example.org",
+                      credentials=get_credential("data.example.org"))
+catalog = server.connect_ermrest("1")
+snaptime = catalog.latest_snaptime()
+print(f"Pre-load snaptime: {snaptime}")
+# → e.g. "2HG-Z4PX-XK16"
+# Record this in your load log / commit message / Slack thread.
+```
+
+After the snaptime is captured, run the load. If anything goes wrong:
+
+```python
+# Query the pre-load state of a table at the snaptime.
+from deriva.core import ErmrestCatalog
+pb = catalog.getPathBuilder()
+# The @<snaptime> suffix on the catalog path addresses the historical view.
+historical = pb.schemas["myproject"].tables["Subject"].entities()
+# Use ErmrestCatalog directly for snaptime-scoped reads:
+historical_catalog = ErmrestCatalog("https", "data.example.org", "1",
+                                     credentials=get_credential("data.example.org"),
+                                     snaptime=snaptime)
+# Then queries against historical_catalog see the pre-load state.
+```
+
+For a true "undo", read the historical rows back, diff against current, and:
+
+- For pure inserts gone wrong → `delete_entities` the new rows by RID.
+- For updates gone wrong → `update_entities` the rows back to their historical values.
+- For deletes gone wrong → re-insert the historical rows (RIDs will be new, so any FKs into those rows are still broken; see `/deriva:evolve-schema` for the dangling-FK pattern).
+
+**Why this matters even with idempotent loads.** Idempotency protects against re-running the same load; the snaptime protects against the load being *wrong in the first place* (mis-mapped columns, wrong source file, bad vocabulary term). The two disciplines are complementary, not interchangeable.
+
+**Scope.** A snaptime is per-catalog and addresses the whole catalog state. You don't need one snaptime per table — one capture before the load covers everything you might touch during it.
+
+**Where this also matters.** Schema changes are the other place this discipline is load-bearing — see `/deriva:evolve-schema` for the migration version.
+
 ## Performance notes
 
 - **Batch.** One `insert_entities` of 1000 records is ~50× faster than 1000 calls of one record each.
@@ -238,5 +282,6 @@ For row-load script templates (CSV with pandas, JSON, upsert), read `references/
 - **`/deriva:query-catalog-data`** — Verify FK targets exist before loading children, check for duplicates before bulk insert, preview deletes before running them, and read back the loaded data afterward.
 - **`/deriva:troubleshoot-deriva-errors`** — When inserts fail with auth, FK-constraint, or vocabulary-term-not-found errors.
 - **`/deriva:semantic-awareness`** — The duplicate-prevention discipline ("find before you create") applies to row loads as well as to schema entities.
+- **`/deriva:evolve-schema`** — When the load isn't just new rows but requires restructuring the existing schema (splitting a table, moving an FK, changing a column type). Schema migrations use the same snapshot-before-mutating discipline.
 
 The plugin-wide modeling checklist lives in the always-on `deriva-context` skill; pillar 5 (evolve, don't overwrite) is the load-time discipline that motivates the soft-delete preference and the snapshot-before-bulk-load pattern.
