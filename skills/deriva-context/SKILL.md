@@ -33,6 +33,7 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 | **Display annotations** | Per-table / per-column JSON that drives the Chaise web UI. | `/deriva:customize-display` |
 | **Naming conventions** | PascalCase, singular nouns, descriptive — for schemas, tables, columns, and vocabulary terms. | `/deriva:entity-naming` |
 | **Loading data** | Row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class with an upload spec), updates, deletes. | `/deriva:load-data` |
+| **Exporting data as a BDBag** | Self-describing, checksummed archive of a catalog slice + FK-reachable rows + Hatrac assets. Two paths: server-side export service (`DerivaExport`) or client-side orchestration (`deriva-download-cli` / `DerivaDownload`). Inverse of loading. | `/deriva:download-bag` |
 | **Catalog errors** | Auth, permissions, invalid RIDs, missing records, vocab term not found. | `/deriva:troubleshoot-deriva-errors` |
 | **Server reachability** | `server_status(hostname=...)` returns the running framework version and loaded plugins. | (no skill — direct tool call) |
 

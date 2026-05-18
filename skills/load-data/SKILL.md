@@ -283,5 +283,6 @@ For row-load script templates (CSV with pandas, JSON, upsert), read `references/
 - **`/deriva:troubleshoot-deriva-errors`** — When inserts fail with auth, FK-constraint, or vocabulary-term-not-found errors.
 - **`/deriva:semantic-awareness`** — The duplicate-prevention discipline ("find before you create") applies to row loads as well as to schema entities.
 - **`/deriva:evolve-schema`** — When the load isn't just new rows but requires restructuring the existing schema (splitting a table, moving an FK, changing a column type). Schema migrations use the same snapshot-before-mutating discipline.
+- **`/deriva:download-bag`** — The inverse operation. Where this skill covers loading rows + assets *into* a catalog, that one covers exporting them back *out* as a BDBag. The upload-spec format (`asset_mappings`) and the export-spec format are siblings — both declarative JSON configs that describe file ↔ row bridging.
 
 The plugin-wide modeling checklist lives in the always-on `deriva-context` skill; pillar 5 (evolve, don't overwrite) is the load-time discipline that motivates the soft-delete preference and the snapshot-before-bulk-load pattern.
