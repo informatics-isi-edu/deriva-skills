@@ -34,7 +34,6 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 | **Naming conventions** | PascalCase, singular nouns, descriptive — for schemas, tables, columns, and vocabulary terms. | `/deriva:entity-naming` |
 | **Loading data** | Row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class with an upload spec), updates, deletes. | `/deriva:load-data` |
 | **Exporting data as a BDBag** | Self-describing, checksummed archive of a catalog slice + FK-reachable rows + Hatrac assets. Two paths: server-side export service (`DerivaExport`) or client-side orchestration (`deriva-download-cli` / `DerivaDownload`). Inverse of loading. | `/deriva:download-bag` |
-| **Catalog stewardship** | Quarterly / handoff-time review for missing descriptions, naming violations, dangling FKs, and (when present) DerivaML-specific drift. Read-only audit script + interpretation skill. | `/deriva:audit-catalog-health` |
 | **Catalog errors** | Auth, permissions, invalid RIDs, missing records, vocab term not found. | `/deriva:troubleshoot-deriva-errors` |
 | **Server reachability** | `server_status(hostname=...)` returns the running framework version and loaded plugins. | (no skill — direct tool call) |
 
