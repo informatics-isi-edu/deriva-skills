@@ -102,6 +102,16 @@ Mechanics:
 - **Universal.** Every row in every table in every Deriva catalog has a RID. There are no RID-less rows. The RID is each table's primary key.
 - **Resolvable via the `/id/` resolver.** Each RID has a permanent URL of the form `/id/<catalog>/<rid>` (catalog-relative) or `https://<host>/id/<catalog>/<rid>` (absolute). The `/id/` resolver is **UI-agnostic** — it redirects to whichever client is appropriate for the row (typically Chaise, but the URL itself is not Chaise-specific). **Always link to RIDs via `/id/...`, never via Chaise-specific paths** like `/chaise/record/#<catalog>/schema:Table/RID=<rid>`. The `/chaise/...` form ties the link to one particular UI; the `/id/...` form survives UI changes, deployment changes, and renders correctly anywhere the catalog is reachable. Inside the catalog (descriptions, annotations, anything stored as data), prefer the **catalog-relative** form so the link doesn't hardcode a hostname and stays correct under multi-host deployments and clones.
 
+### RID opacity rule — what this means for code and tests
+
+A RID's **only valid operation is equality comparison**. Treat it as an opaque token. In particular, **do not**:
+
+- **Hard-code RIDs as literals.** Tests, fixtures, scripts, and configs must obtain RIDs from a fresh catalog lookup or fixture call — never from a string written by a human. A test that writes `rid = "1-IMG1"` and then builds a path or asserts equality against it is testing the test's own assumption, not the catalog. The failure mode is silent: the literal happens to round-trip through whatever you're calling, the test passes, and production breaks the first time a real RID flows through the same code.
+- **Parse, slice, or pattern-match RIDs.** The format (`<catalog-prefix>-<encoded-counter>`) is an implementation detail. Code like `rid.startswith("4")`, `rid.split("-")`, `rid[:3]`, or regex-matching against RID structure is invalid — even when it appears to work in dev, it's coincidence.
+- **Order RIDs lexicographically and treat the order as meaningful.** RIDs sort as strings, but that ordering has no relationship to catalog insertion order, row identity, or anything else. (Cursor pagination via `after_rid` is a server-supported equality boundary on the indexed RID column — that's not a violation; client-side ordering by RID for display purposes is.)
+- **Compare RIDs across catalogs.** RID `4CY` in catalog 46 has nothing to do with RID `4CY` in catalog 42. The unit of identity across catalogs is `(host, catalog_id, RID)`. A clone preserves RIDs *within the clone*; it does not establish identity with the source.
+- **Compare RIDs across snapshots and assume column values match.** The same RID at two snaptimes refers to the same *row*, but its column values can differ. RID identity is constant; row data is not. If your code cares about row state, fetch the row at the relevant snaptime; don't infer state from the RID alone.
+
 For *why* RIDs are the canonical identity (and why you should FK to RIDs rather than domain keys), see the "RIDs are the canonical identity" pillar in the SKILL.md design philosophy section.
 
 ---
