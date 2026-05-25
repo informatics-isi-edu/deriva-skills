@@ -24,7 +24,7 @@ This skill covers how to find, filter, and explore data in a Deriva catalog usin
 |------|---------|
 | `get_schema(hostname, catalog_id)` | Full schema JSON (large — use only when needed) |
 | `get_table(hostname, catalog_id, schema, table)` | One table's complete structure |
-| `catalog_tables(hostname, catalog_id)` | All tables with row counts |
+| `deriva://catalog/{hostname}/{catalog_id}/tables` (resource) | All tables with row counts (read via `ReadMcpResourceTool`) |
 | `list_vocabulary_terms(hostname, catalog_id, schema, table)` | Complete vocabulary term list |
 | `lookup_term(hostname, catalog_id, schema, table, name)` | Look up a vocabulary term (synonym-aware) |
 

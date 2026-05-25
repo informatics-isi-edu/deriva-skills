@@ -16,7 +16,7 @@ There is no unified update command. Each lives in a different world (Python pack
 
 | Component | How to check installed version |
 |---|---|
-| **deriva-mcp-core** (the MCP server) | `server_status(hostname=...)` — returns the running framework version plus the list of loaded plugins. Or read the `deriva://server/version` resource directly. |
+| **deriva-mcp-core** (the MCP server) | Read the `deriva://server/status` resource — returns the running framework version plus the list of loaded plugins. |
 | **deriva-py** (the Python client) | `uv pip show deriva-py` (in your project venv), or `python -c "import deriva; print(deriva.__version__)"` |
 | **`deriva` plugin** (this Claude Code plugin) | `cat ~/.claude/plugins/cache/deriva-plugins/deriva/*/plugin.json` — the `version` field |
 

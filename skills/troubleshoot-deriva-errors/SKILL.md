@@ -1,7 +1,7 @@
 ---
 name: troubleshoot-deriva-errors
 description: "Use when any Deriva catalog operation fails with auth, permissions, missing record, invalid RID, vocabulary term not found, or generic catalog connection / state errors. Also covers checking and updating the three core Deriva components (deriva-py, deriva-mcp-core MCP server, deriva plugin) — version mismatches between them are a common cause of confusing errors. Triggers on: 'permission denied', 'auth error', 'globus login', 'invalid RID', 'record not found', 'wrong catalog', 'vocabulary term missing', 'connect failed', 'catalog connection', 'unauthorized', 'check versions', 'am I up to date', 'update deriva', 'what version', 'upgrade packages'."
-user-invocable: false
+user-invocable: true
 disable-model-invocation: true
 ---
 
@@ -87,8 +87,8 @@ This guide covers errors that surface in any Deriva catalog operation — auth, 
 ## Reference Resources
 
 - `get_catalog_info(hostname, catalog_id)` — Verify the catalog exists and your credential reaches it
-- `server_status(hostname=None)` — MCP server health + framework version + the list of loaded plugins
-- `catalog_tables(hostname, catalog_id)` — List all tables in the catalog (filter for vocabulary tables to verify term existence)
+- `deriva://server/status` (resource) — MCP server health + framework version + list of loaded plugins (read via `ReadMcpResourceTool`)
+- `deriva://catalog/{hostname}/{catalog_id}/tables` (resource) — list all tables in the catalog (filter for vocabulary tables to verify term existence)
 
 ## General Debugging Tips
 
@@ -120,7 +120,7 @@ If errors started "out of nowhere" — especially "tool not found," "unknown par
 
 **The short version of the fix:**
 
-- **Check** which version is running: `server_status(hostname=...)` for the MCP server; `uv pip show deriva-py` for the Python library; `cat ~/.claude/plugins/cache/deriva-plugins/deriva/*/plugin.json` for the plugin.
+- **Check** which version is running: read the `deriva://server/status` resource for the MCP server (framework version + loaded plugins); `uv pip show deriva-py` for the Python library; `cat ~/.claude/plugins/cache/deriva-plugins/deriva/*/plugin.json` for the plugin.
 - **Update the plugin** by setting `"autoUpdate": true` in `~/.claude/settings.json` (for the `deriva-plugins` marketplace) and restarting Claude Code.
 - **Update the MCP server** by `docker pull ghcr.io/informatics-isi-edu/deriva-mcp-core:latest && docker restart deriva-mcp-core` (Docker), or `uv lock --upgrade-package deriva-mcp-core && uv sync` then restart the server (native install).
 - **Update deriva-py** in the project that uses it: `uv lock --upgrade-package deriva-py && uv sync`.

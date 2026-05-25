@@ -64,13 +64,18 @@ create_table(
 Foreign keys link tables together, establishing relationships.
 
 ```python
+# Prerequisite: the `Sample_Type` vocabulary table already exists
+# (created via /deriva:manage-vocabulary with create_vocabulary +
+# add_term for "Blood", "Tissue", etc.). Categorical fields belong
+# in a vocabulary FK, not a free-text column — see SKILL.md
+# "Vocabularies first" and /deriva:manage-vocabulary for the why.
+
 create_table(
     hostname="data.example.org", catalog_id="1",
     schema="myproject", table_name="Sample",
     columns=[
         {"name": "Sample_ID", "type": "text", "nullok": false, "comment": "Unique sample identifier"},
         {"name": "Collection_Date", "type": "date", "nullok": false, "comment": "Date sample was collected"},
-        {"name": "Sample_Type", "type": "text", "nullok": false, "comment": "Type of sample (Blood, Tissue, etc.)"},
         {"name": "Volume_mL", "type": "float8", "nullok": true, "comment": "Sample volume in milliliters"},
         {"name": "Notes", "type": "markdown", "nullok": true, "comment": "Collection notes"}
     ],
@@ -81,11 +86,19 @@ create_table(
             "referenced_table": "Subject",
             "on_delete": "CASCADE",
             "comment": "The subject this sample was collected from",
+        },
+        {
+            "column": "Sample_Type",
+            "referenced_schema": "myproject",
+            "referenced_table": "Sample_Type",
+            "comment": "Categorical sample type from the Sample_Type vocabulary",
         }
     ],
     comment="Biological samples collected from subjects",
 )
 ```
+
+Both `Subject` and `Sample_Type` are FK columns. Neither needs to appear in the `columns` list when it's also in `foreign_keys` — the MCP tool auto-creates the FK column from the FK definition (see `column` field doc below). The FK to `Sample_Type` gives you dropdown entry in Chaise and faceted search, both of which a free-text column would lose.
 
 **Foreign key specification fields:**
 - `column` (required): Name of the FK column to create in this table (auto-created if not in columns list)
