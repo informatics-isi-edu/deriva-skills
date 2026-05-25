@@ -9,7 +9,9 @@ This guide covers creating standard domain tables and vocabulary tables in a Der
 | Standard table | `create_table` | Regular data table with columns and foreign keys |
 | Vocabulary table | `create_vocabulary` | Controlled vocabulary with Name, Description, Synonyms, ID, URI |
 
-> **Asset tables:** create asset tables via `create_table` with the standard hatrac column shape (see "Creating an Asset Table" below) and add the `Asset_Type` FK column separately. There is no single-call asset-table convenience tool in `deriva-mcp-core`.
+> **Asset tables:** create asset tables via `create_table` with the standard hatrac column shape (see "Creating an Asset Table" below) plus your domain-specific columns and FKs. There is no single-call asset-table convenience tool in `deriva-mcp-core`.
+>
+> If the catalog is a DerivaML catalog (the `deriva-ml-skills` plugin is loaded), an asset table also needs an `Asset_Type` vocabulary term plus an `Asset_Type` FK column — see `/deriva-ml:work-with-assets` for that overlay. The generic recipe below is sufficient on non-DerivaML catalogs.
 
 ## Planning Your Table Structure
 
@@ -113,7 +115,9 @@ Both `Subject` and `Sample_Type` are FK columns. Neither needs to appear in the 
 
 ## Creating an Asset Table (manual hatrac column setup)
 
-In the new MCP architecture, there is no dedicated `create_asset_table` tool. Build an asset table by combining `create_table` with the standard hatrac column shape:
+In the new MCP architecture, there is no dedicated `create_asset_table` tool. Build an asset table by combining `create_table` with the standard hatrac column shape: five required columns (`URL`, `Filename`, `Length`, `MD5`, `Description`) that Hatrac and the upload tooling rely on, plus whatever domain-specific metadata columns and FKs the asset needs. The example below is for a histology `Slide_Image` table on a generic Deriva catalog.
+
+> **DerivaML overlay:** if this catalog is a DerivaML catalog (the `deriva-ml-skills` plugin is loaded), add two more things on top of the recipe below: an `Asset_Type` vocabulary term that names the table, and an `Asset_Type` FK column on the new table. Those let DerivaML's execution machinery register and look up files by asset type. See `/deriva-ml:work-with-assets` → "Creating an Asset Table on a DerivaML catalog" for the exact calls. On non-DerivaML catalogs, omit both — the hatrac shape below is everything the platform needs.
 
 ```python
 create_table(

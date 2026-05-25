@@ -18,7 +18,9 @@ Tables are the foundation of a Deriva catalog schema. Choose the right table typ
 | Standard table | `create_table` | Regular data with columns and foreign keys |
 | Vocabulary table | `create_vocabulary` | Controlled term lists for categorical data — **vocabulary CRUD lives in `/deriva:manage-vocabulary`**; come back here only for non-vocabulary tables |
 
-> **Asset tables:** create asset tables via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) and then add the `Asset_Type` FK column separately. There is no dedicated single-call asset-table convenience tool in `deriva-mcp-core`.
+> **Asset tables:** create asset tables via `create_table` with the standard hatrac column setup (`URL`, `Filename`, `Length`, `MD5`, `Description`) plus any domain-specific metadata columns and FKs. See "Creating an Asset Table" in `references/workflow.md` for the full recipe. There is no dedicated single-call asset-table convenience tool in `deriva-mcp-core`.
+>
+> If you are on a DerivaML catalog (the `deriva-ml-skills` plugin is loaded), an asset table also needs an `Asset_Type` vocabulary term and an `Asset_Type` FK column — the DerivaML execution machinery uses those to register and look up files. That overlay is documented in `/deriva-ml:work-with-assets` *(deriva-ml-skills, conditional)*; the generic recipe here is sufficient for non-DerivaML catalogs.
 
 ### Vocabularies first when a categorical column needs one
 
