@@ -35,7 +35,7 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 | **Loading data** | Row inserts, batch loads from CSV/JSON, asset uploads to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class with an upload spec), updates, deletes. | `/deriva:load-data` |
 | **Exporting data as a BDBag** | Self-describing, checksummed archive of a catalog slice + FK-reachable rows + Hatrac assets. Two paths: server-side export service (`DerivaExport`) or client-side orchestration (`deriva-download-cli` / `DerivaDownload`). Inverse of loading. | `/deriva:download-bag` |
 | **Catalog errors** | Auth, permissions, invalid RIDs, missing records, vocab term not found. | `/deriva:troubleshoot-deriva-errors` |
-| **Server reachability** | `server_status(hostname=...)` returns the running framework version and loaded plugins. | (no skill — direct tool call) |
+| **Server reachability** | Read the `deriva://server/status` resource — returns the running framework version and loaded plugins. | (no skill — direct resource read) |
 
 > **When to read `references/concepts.md`:** on cold-start (first Deriva-related action of the session), or any time you encounter a concept above whose mechanics you don't have a working model of — RID format, vocabulary column shape, snaptime semantics, asset-table column shape, association-table conventions. The reference is mechanics-focused (what each thing *is* and how it works); the design philosophy in `references/philosophy.md` is opinion-focused (what to *do* with it).
 

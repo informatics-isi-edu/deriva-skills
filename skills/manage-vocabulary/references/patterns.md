@@ -15,27 +15,32 @@ Reference material for vocabulary conventions and common usage patterns. For the
 
 ## Discovering Existing Vocabularies
 
-Browse vocabularies in a catalog by listing all tables and filtering for those with the standard vocabulary columns (Name, Description, Synonyms, ID, URI). The `catalog_tables(hostname=..., catalog_id=...)` tool returns the table list. Use `rag_search(..., doc_type="catalog-schema")` to find vocabularies and terms by concept (the RAG index includes term descriptions and synonyms, so fuzzy matching works).
+Browse vocabularies in a catalog by listing all tables and filtering for those with the standard vocabulary columns (Name, Description, Synonyms, ID, URI). Read `deriva://catalog/{hostname}/{catalog_id}/tables` for the table list (resource form, single round trip). Use `rag_search(hostname=..., catalog_id=..., query="...", doc_type="catalog-schema")` to find vocabularies and terms by concept (the RAG index includes term descriptions and synonyms, so fuzzy matching works).
 
 A fresh Deriva catalog typically has no built-in vocabularies — you create them as your domain schema needs them. Some Deriva-based applications and domain plugins ship their own built-in vocabularies in their own schemas; treat those as ordinary vocabulary tables and use the same `add_term` / `delete_term` / `add_synonym` tools, passing the appropriate `schema=` and `table=` arguments.
 
 ## Domain-Specific Vocabulary Examples
 
-Common patterns for scientific data:
+Common patterns for scientific data. All calls take `hostname=` and `catalog_id=` (stateless surface); `schema=` is your domain schema. Examples below show only the vocabulary-specific arguments for brevity.
 
 **Species vocabulary:**
-1. Call `create_vocabulary` with `vocabulary_name`: `"Species"`, `comment`: `"Biological species for experimental subjects"`
-2. Call `add_term` with `vocabulary_name`: `"Species"`, `term_name`: `"Homo sapiens"`, `description`: `"Human"`
-3. Call `add_term` with `vocabulary_name`: `"Species"`, `term_name`: `"Mus musculus"`, `description`: `"House mouse, common lab strain"`, `synonyms`: `["Mouse"]`
+
+1. `create_vocabulary(hostname=..., catalog_id=..., schema=..., vocabulary_name="Species", comment="Biological species for experimental subjects")`
+2. `add_term(hostname=..., catalog_id=..., schema=..., table="Species", name="Homo sapiens", description="Human")`
+3. `add_term(hostname=..., catalog_id=..., schema=..., table="Species", name="Mus musculus", description="House mouse, common lab strain", synonyms=["Mouse"])`
 
 **Diagnosis vocabulary:**
-1. Call `create_vocabulary` with `vocabulary_name`: `"Diagnosis"`, `comment`: `"Clinical diagnostic categories"`
-2. Call `add_term` with terms like `"Normal"` (`"No pathological findings"`), `"Benign"` (`"Non-cancerous abnormality"`), `"Malignant"` (`"Cancerous, requires staging"`)
+
+1. `create_vocabulary(hostname=..., catalog_id=..., schema=..., vocabulary_name="Diagnosis", comment="Clinical diagnostic categories")`
+2. `add_term(hostname=..., catalog_id=..., schema=..., table="Diagnosis", name="Normal", description="No pathological findings")`
+3. `add_term(hostname=..., catalog_id=..., schema=..., table="Diagnosis", name="Benign", description="Non-cancerous abnormality")`
+4. `add_term(hostname=..., catalog_id=..., schema=..., table="Diagnosis", name="Malignant", description="Cancerous, requires staging")`
 
 **Stain type vocabulary:**
-1. Call `create_vocabulary` with `vocabulary_name`: `"Stain_Type"`, `comment`: `"Histological staining protocols"`
-2. Call `add_term` with `term_name`: `"H&E"`, `description`: `"Hematoxylin and eosin, standard morphology stain"`, `synonyms`: `["HE", "Hematoxylin and Eosin"]`
-3. Call `add_term` with `term_name`: `"IHC"`, `description`: `"Immunohistochemistry for protein detection"`
+
+1. `create_vocabulary(hostname=..., catalog_id=..., schema=..., vocabulary_name="Stain_Type", comment="Histological staining protocols")`
+2. `add_term(hostname=..., catalog_id=..., schema=..., table="Stain_Type", name="H&E", description="Hematoxylin and eosin, standard morphology stain", synonyms=["HE", "Hematoxylin and Eosin"])`
+3. `add_term(hostname=..., catalog_id=..., schema=..., table="Stain_Type", name="IHC", description="Immunohistochemistry for protein detection")`
 
 ## Using Vocabularies as Column Values
 

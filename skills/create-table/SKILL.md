@@ -123,7 +123,7 @@ add_column(
 - `rag_search("your concept", doc_type="catalog-schema")` — **Search first** to find existing tables, columns, and relationships by concept
 - `get_schema(hostname, catalog_id)` — Full catalog schema as structured JSON (large; use when you need the complete output)
 - `get_table(hostname, catalog_id, schema, table)` — Table details including columns and foreign keys
-- `catalog_tables(hostname, catalog_id)` — All tables with row counts
+- `deriva://catalog/{hostname}/{catalog_id}/tables` (resource) — all tables with row counts (read via `ReadMcpResourceTool`)
 
 For the full guide with column types table, FK specification, common patterns, and examples, read `references/workflow.md`.
 

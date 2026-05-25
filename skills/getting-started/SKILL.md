@@ -35,7 +35,7 @@ Before doing anything, confirm the MCP server is reachable and you know which ca
 
 If they don't know, point them at the deployment they got the credentials from — the server administrator can tell them. If they're testing locally or with a sandbox, common hostnames are `localhost` (Docker dev setup) or a project-specific dev host.
 
-**Verify reachability:** call `server_status(hostname="...")`. The response includes the running `deriva-mcp-core` framework version plus the list of loaded plugins. If this fails with a connection error, jump to `/deriva:troubleshoot-deriva-errors` immediately — there is no point continuing until the connection works.
+**Verify reachability:** read the `deriva://server/status` resource (via `ReadMcpResourceTool(uri="deriva://server/status")`). The response includes the running `deriva-mcp-core` framework version plus the list of loaded plugins. If this fails with a connection error, jump to `/deriva:troubleshoot-deriva-errors` immediately — there is no point continuing until the connection works.
 
 **If it returns successfully**, mention to the user what they're connected to (server version, hostname). This grounds the rest of the session in a known good state.
 

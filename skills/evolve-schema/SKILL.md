@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 This is the runbook for **restructuring an existing catalog** — the operations you reach for after the initial design proves wrong, the requirements change, or the data outgrows its original shape. For initial schema creation, use `/deriva:create-table`. For what to call new entities and the cost framing of renames, see `/deriva:entity-naming` — its `references/naming-conventions.md` has the 7-step rename procedure, which this skill won't duplicate.
 
-> **Before you start: catalog evolution is mostly Python-API work, not MCP-tool work.** The MCP surface has `create_table` and `add_column` (additive operations) but not `drop_table`, `drop_column`, or FK mutation. Renames and drops happen through `deriva-py`'s model API (`Schema.alter`, `Table.alter`, `Column.alter`, `Column.drop`, `ForeignKey.drop`, etc.). Plan to write a committed Python migration script per `/deriva-ml:catalog-operations-workflow` discipline — interactive MCP calls aren't the right surface for migrations.
+> **Before you start: catalog evolution is mostly Python-API work, not MCP-tool work.** The MCP surface has `create_table` and `add_column` (additive operations) but not `drop_table`, `drop_column`, or FK mutation. Renames and drops happen through `deriva-py`'s model API (`Schema.alter`, `Table.alter`, `Column.alter`, `Column.drop`, `ForeignKey.drop`, etc.). Plan to write a committed Python migration script — interactive MCP calls aren't the right surface for migrations. If you have the `deriva-ml` plugin loaded, follow `/deriva-ml:generate-scripts` for the committed-script-with-provenance discipline.
 
 ## The four-step shape
 
@@ -16,7 +16,7 @@ Every catalog evolution follows the same arc regardless of which specific change
 
 1. **Plan the cutover state.** Name where the catalog is, where it will be after, and the operations to get there in order. Identify what survives the migration unchanged and what changes shape.
 2. **Take a snapshot before mutating.** The pre-migration catalog state remains queryable through its snaptime forever; this is your rollback safety net. Capture the snaptime *before* running the migration script. See `/deriva:load-data` "Snapshot before any bulk mutation" for the mechanics.
-3. **Run the migration as a tracked operation.** A committed Python script via the `/deriva-ml:catalog-operations-workflow` pattern (if you're in a deriva-ml project) or a documented standalone script otherwise. The script does the structural mutations + the row-data backfill + the validation queries, all in one place so the migration itself has provenance.
+3. **Run the migration as a tracked operation.** A committed Python script via `/deriva-ml:generate-scripts` (if you have the `deriva-ml` plugin loaded — committed script + execution context manager gives you full git-hash provenance) or a documented standalone script otherwise. The script does the structural mutations + the row-data backfill + the validation queries, all in one place so the migration itself has provenance.
 4. **Validate, then update downstream consumers.** Confirm the migration landed correctly (validation queries for each shape, below). Then bump versions on downstream Datasets affected by the change so consumers see the drift; update any scripts, configs, or notebooks that reference moved/renamed columns. Use `grep -r '\bOldName\b'` across your codebase as a starting point for finding hardcoded references.
 
 ## The four canonical migration shapes
@@ -317,7 +317,7 @@ After a migration lands, things that referenced the old structure need to know:
 ## Anti-patterns
 
 - **Mutating the live catalog without a snapshot first.** Take the snaptime before the migration runs — the cost is one MCP call, the benefit is a permanent rollback address.
-- **Running the migration interactively via MCP tool calls.** The `/deriva-ml:catalog-operations-workflow` discipline applies: a committed Python script means the migration itself has provenance and is reproducible. Interactive migrations are unrepeatable and unauditable.
+- **Running the migration interactively via MCP tool calls.** A committed Python script means the migration itself has provenance and is reproducible; interactive migrations are unrepeatable and unauditable. If you have the `deriva-ml` plugin loaded, the `/deriva-ml:generate-scripts` discipline (script + execution context manager) is the natural fit.
 - **Dropping anything before validation passes.** The old column / FK / table is your safety net until the new structure is confirmed correct. Drops are irreversible without restoring from a snapshot.
 - **Skipping the downstream update.** A migration that succeeds in the catalog but leaves dangling references in scripts and configs is half-done. Use `grep -r` aggressively.
 - **Attempting in-place rename of a column that's an FK target.** `Column.alter(name=...)` doesn't propagate to FK constraints pointing at the renamed column. Use the add-backfill-drop pattern (Shape D applied to a renamed column) when the column is referenced by FKs from other tables.

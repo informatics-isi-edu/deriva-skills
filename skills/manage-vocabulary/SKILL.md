@@ -50,7 +50,7 @@ lookup_term(
 )
 ```
 
-To **list all vocabulary tables in a catalog**, call `catalog_tables(...)` and filter for tables that have the standard vocabulary columns (Name, Description, Synonyms, ID, URI), or use `rag_search(..., doc_type="catalog-schema")` to find them by concept.
+To **list all vocabulary tables in a catalog**, read `deriva://catalog/{hostname}/{catalog_id}/tables` and filter for tables that have the standard vocabulary columns (Name, Description, Synonyms, ID, URI), or use `rag_search(hostname=..., catalog_id=..., query="...", doc_type="catalog-schema")` to find them by concept.
 
 ## Description Guidance
 

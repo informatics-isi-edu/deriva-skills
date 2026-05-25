@@ -50,7 +50,7 @@ Helpers: `OutboundFK`, `InboundFK` (FK path navigation), `Aggregate` (COUNT, ARR
 
 Handlebars templates (`{{{Column}}}`) are used in row name patterns and markdown patterns. Use `validate_template_syntax`, `get_handlebars_template_variables`, and `preview_handlebars_template` to test patterns.
 
-For the full API reference of each builder class, see `references/builder-api.md`.
+For the full API reference of each builder class, read the docstrings in the source: `deriva_ml.model.annotations` (the package `__init__` lists the public classes, and each builder carries an `Example:` block in its class docstring).
 
 ## Complete Example: Configuring an Image Table
 

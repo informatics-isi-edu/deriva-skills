@@ -1,5 +1,7 @@
 # Annotation Reference
 
+> **Call shape.** Every annotation tool below takes `hostname=` and `catalog_id=` (the stateless-MCP convention used across the plugin). Examples below omit them for readability — substitute your catalog's hostname and ID at every call site. The first **table-targeted** positional arg is `schema=` then `table=`; **column-targeted** tools take `schema=`, `table=`, then `column=`. Examples use `schema="myproject"` as the placeholder.
+
 ## Table of Contents
 
 - [Understanding Contexts](#understanding-contexts)
@@ -44,10 +46,10 @@ Controls basic display properties for tables and columns.
 ### MCP tools
 
 ```
-set_table_display_name(table_name="Image", display_name="Images")
-set_column_display_name(table_name="Image", column_name="URL", display_name="Image File")
-set_column_description(table_name="Image", column_name="URL", description="Direct download link")
-set_table_description(table_name="Image", description="Microscopy images with metadata")
+set_table_display_name(schema="myproject", table="Image", display_name="Images")
+set_column_display_name(schema="myproject", table="Image", column="URL", display_name="Image File")
+set_column_description(schema="myproject", table="Image", column="URL", description="Direct download link")
+set_table_description(schema="myproject", table="Image", description="Microscopy images with metadata")
 ```
 
 ## Visible Columns
@@ -58,26 +60,26 @@ Control which columns appear and in what order per context.
 
 ```
 # Add individual columns
-add_visible_column(table_name="Image", context="compact", column="Filename")
+add_visible_column(schema="myproject", table="Image", context="compact", column="Filename")
 
 # Remove columns
-remove_visible_column(table_name="Image", context="compact", column="RCT")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RCT")
 
 # Reorder
 reorder_visible_columns(
-    table_name="Image", context="compact",
+    schema="myproject", table="Image", context="compact",
     new_order=["Filename", "Subject", "Diagnosis", "URL"]
 )
 
 # Set all at once
 set_visible_columns(
-    table_name="Image",
+    schema="myproject", table="Image",
     annotation={"compact": ["Filename", "Subject", "Diagnosis"]}
 )
 
 # Different columns per context
 set_visible_columns(
-    table_name="Image",
+    schema="myproject", table="Image",
     annotation={
         "compact": ["Filename", "Subject", "Diagnosis"],
         "detailed": ["Filename", "Subject", "Diagnosis", "Image_Type", "URL", "File_Size"],
@@ -95,19 +97,19 @@ Control which related tables appear as sections on the detail page.
 ```
 # Add
 add_visible_foreign_key(
-    table_name="Subject", context="detailed",
+    schema="myproject", table="Subject", context="detailed",
     foreign_key=["myproject", "Image_Subject_fkey"]
 )
 
 # Remove
 remove_visible_foreign_key(
-    table_name="Subject", context="detailed",
+    schema="myproject", table="Subject", context="detailed",
     foreign_key=["myproject", "Image_Subject_fkey"]
 )
 
 # Reorder
 reorder_visible_foreign_keys(
-    table_name="Subject", context="detailed",
+    schema="myproject", table="Subject", context="detailed",
     new_order=[
         ["myproject", "Image_Subject_fkey"],
         ["myproject", "Sample_Subject_fkey"]
@@ -116,7 +118,7 @@ reorder_visible_foreign_keys(
 
 # Set all at once
 set_visible_foreign_keys(
-    table_name="Subject",
+    schema="myproject", table="Subject",
     annotation={"detailed": [
         {"source": [{"inbound": ["myproject", "Image_Subject_fkey"]}, "RID"]},
         {"source": [{"inbound": ["myproject", "Sample_Subject_fkey"]}, "RID"]}
@@ -132,14 +134,14 @@ Controls table-level options: row naming, ordering, pagination.
 
 ```
 # Row name pattern (used in FK dropdowns, breadcrumbs)
-set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
+set_row_name_pattern(schema="myproject", table="Subject", pattern="{{{Name}}}")
 
 # Composite row name
-set_row_name_pattern(table_name="Subject", pattern="{{{Last_Name}}}, {{{First_Name}}}")
+set_row_name_pattern(schema="myproject", table="Subject", pattern="{{{Last_Name}}}, {{{First_Name}}}")
 
 # Table display with ordering
 set_table_display(
-    table_name="Subject",
+    schema="myproject", table="Subject",
     annotation={
         "compact": {
             "row_markdown_pattern": "{{{Name}}} (Age: {{{Age}}})",
@@ -157,12 +159,12 @@ Controls how column values are rendered.
 
 ```
 set_column_display(
-    table_name="Image", column_name="URL",
+    schema="myproject", table="Image", column="URL",
     annotation={"compact": {"markdown_pattern": "[Download]({{{URL}}})"}}
 )
 
 set_column_display(
-    table_name="Measurement", column_name="Value",
+    schema="myproject", table="Measurement", column="Value",
     annotation={"compact": {"markdown_pattern": "{{{Value}}} {{{Units}}}"}}
 )
 ```
@@ -228,14 +230,14 @@ Many annotations support Handlebars templates for custom formatting.
 Use the `get_handlebars_template_variables` tool to discover available variables for a table:
 
 ```
-get_handlebars_template_variables(table_name="Subject")
+get_handlebars_template_variables(schema="myproject", table="Subject")
 ```
 
 Or use `preview_handlebars_template` to test a template against actual data:
 
 ```
 preview_handlebars_template(
-    table_name="Subject",
+    schema="myproject", table="Subject",
     template="{{{Name}}} ({{{Species}}})"
 )
 ```
@@ -248,21 +250,21 @@ Annotations are JSON objects; any Python code can construct them as plain dicts 
 
 ### Hide system columns from compact view
 ```
-remove_visible_column(table_name="Image", context="compact", column="RID")
-remove_visible_column(table_name="Image", context="compact", column="RCT")
-remove_visible_column(table_name="Image", context="compact", column="RMT")
-remove_visible_column(table_name="Image", context="compact", column="RCB")
-remove_visible_column(table_name="Image", context="compact", column="RMB")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RID")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RCT")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RMT")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RCB")
+remove_visible_column(schema="myproject", table="Image", context="compact", column="RMB")
 ```
 
 ### Set up a domain table with key info
 
 ```
 set_visible_columns(
-    table_name="Subject",
+    schema="myproject", table="Subject",
     annotation={"compact": ["Name", "Age", "Sex", "Species", "Diagnosis"]}
 )
-set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
+set_row_name_pattern(schema="myproject", table="Subject", pattern="{{{Name}}}")
 # (changes apply immediately — no separate apply step)
 ```
 
@@ -270,17 +272,17 @@ set_row_name_pattern(table_name="Subject", pattern="{{{Name}}}")
 
 ```
 set_visible_columns(
-    table_name="Diagnosis",
+    schema="myproject", table="Diagnosis",
     annotation={"compact": ["Name", "Description", "Synonyms"]}
 )
-set_row_name_pattern(table_name="Diagnosis", pattern="{{{Name}}}")
+set_row_name_pattern(schema="myproject", table="Diagnosis", pattern="{{{Name}}}")
 ```
 
 ### Show image previews in compact view
 
 ```
 set_column_display(
-    table_name="Image", column_name="URL",
+    schema="myproject", table="Image", column="URL",
     annotation={"compact": {"markdown_pattern": "[![Preview]({{{URL}}})]({{{URL}}})"}}
 )
 ```
@@ -303,15 +305,15 @@ vc.compact([
 
 ```
 set_visible_columns(
-    table_name="Image",
+    schema="myproject", table="Image",
     annotation={
         "compact": ["Filename", "Subject", "Diagnosis", "URL"],
         "detailed": ["Filename", "Subject", "Diagnosis", "URL", "Length", "MD5", "Description"]
     }
 )
-set_row_name_pattern(table_name="Image", pattern="{{{Filename}}}")
+set_row_name_pattern(schema="myproject", table="Image", pattern="{{{Filename}}}")
 set_column_display(
-    table_name="Image", column_name="URL",
+    schema="myproject", table="Image", column="URL",
     annotation={"compact": {"markdown_pattern": "[Download]({{{URL}}})"}}
 )
 ```
