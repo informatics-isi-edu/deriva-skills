@@ -4,13 +4,13 @@
     {
       "id": 1,
       "prompt": "I need to create a vocabulary for classifying chest X-ray images into 5 diagnosis categories: Normal, Pneumonia, COVID-19, Tuberculosis, and Lung_Cancer. Show me the steps.",
-      "expected_output": "Should first check existing vocabularies via deriva://catalog/vocabularies. Should create vocabulary with create_vocabulary and a meaningful comment. Should add all 5 terms with add_term, each with a descriptive description (not just the name). Should use PascalCase naming. Should mention that this vocabulary can be used by features.",
+      "expected_output": "Should first check existing vocabularies — read `deriva://catalog/{hostname}/{catalog_id}/tables` (resource form) and filter for vocabulary tables, or use `rag_search(..., doc_type=\"catalog-schema\")` for semantic matching. Should create the vocabulary with `create_vocabulary(hostname=..., catalog_id=..., schema=..., vocabulary_name=..., comment=...)` with a meaningful comment. Should add all 5 terms with `add_term(hostname=..., catalog_id=..., schema=..., table=..., name=..., description=...)`, each with a descriptive description (not just the name). Should use PascalCase naming. Should mention that this vocabulary can be used by features.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "I already have a Species vocabulary with 'Homo sapiens' and 'Mus musculus'. I want to add 'Rattus norvegicus' with the synonym 'Rat'. How?",
-      "expected_output": "Should first check existing terms via deriva://vocabulary/Species to avoid duplicates. Should call add_term with term_name='Rattus norvegicus', description explaining what it is, and synonyms=['Rat']. Should verify the addition afterward.",
+      "expected_output": "Should first check existing terms with `list_vocabulary_terms(hostname=..., catalog_id=..., schema=..., table=\"Species\")` or `lookup_term(...)` to avoid duplicates (case-insensitive, synonym-aware). Should call `add_term(hostname=..., catalog_id=..., schema=..., table=\"Species\", name=\"Rattus norvegicus\", description=...)` with a description explaining what it is and `synonyms=[\"Rat\"]`. Should verify the addition afterward via another `list_vocabulary_terms` or `lookup_term` call.",
       "files": []
     },
     {
@@ -22,19 +22,19 @@
     {
       "id": 4,
       "prompt": "What vocabularies exist in my catalog and what terms does the Species vocabulary have?",
-      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should then read deriva://vocabulary/Species to browse its terms (or note that Species may not exist if the catalog has not yet defined it). Should explain that vocabularies in a fresh Deriva catalog are user-defined — the assistant should NOT claim Dataset_Type / Workflow_Type are built-in unless the deriva-ml-mcp plugin is mentioned. Cross-reference to the patterns.md domain-plugin section is acceptable.",
+      "expected_output": "Should read `deriva://catalog/{hostname}/{catalog_id}/tables` (resource form) and filter for tables with the standard vocabulary columns (Name, Description, Synonyms, ID, URI), or call `rag_search(..., doc_type=\"catalog-schema\")` for semantic matching. Should then call `list_vocabulary_terms(hostname=..., catalog_id=..., schema=..., table=\"Species\")` to browse its terms (or note that Species may not exist if the catalog has not yet defined it). Should explain that vocabularies in a fresh Deriva catalog are user-defined — the assistant should NOT claim Dataset_Type / Workflow_Type are built-in unless the deriva-ml-mcp plugin is mentioned. Cross-reference to the patterns.md domain-plugin section is acceptable.",
       "files": []
     },
     {
       "id": 5,
       "prompt": "I have a Sample_Type vocabulary with terms 'Tissue', 'Blood', 'Saliva'. I want to add a new term 'Cerebrospinal_Fluid' with the synonym 'CSF'. How do I do that?",
-      "expected_output": "Should call add_term with vocabulary_name='Sample_Type', term_name='Cerebrospinal_Fluid', a meaningful description (e.g., explaining what CSF is and when it would be collected), and synonyms=['CSF']. Should suggest first reading deriva://vocabulary/Sample_Type to confirm the new term doesn't already exist (or exist as a synonym of an existing term). Should verify the addition afterward.",
+      "expected_output": "Should call `add_term(hostname=..., catalog_id=..., schema=..., table=\"Sample_Type\", name=\"Cerebrospinal_Fluid\", description=..., synonyms=[\"CSF\"])` with a meaningful description (e.g., explaining what CSF is and when it would be collected). Should suggest first calling `lookup_term(...)` or `list_vocabulary_terms(...)` on Sample_Type to confirm the new term doesn't already exist (or exist as a synonym of an existing term). Should verify the addition afterward.",
       "files": []
     },
     {
       "id": 6,
       "prompt": "I'm not sure if a vocabulary called 'Stain_Type' or 'Staining_Protocol' already exists. How do I check, and what if something similar exists under a different name?",
-      "expected_output": "Should read deriva://catalog/vocabularies to list all vocabularies. Should mention that the semantic-awareness skill is the guardrail (the new MCP server does not perform automatic duplicate detection on create_vocabulary; the legacy server's similar_existing field was not ported to deriva-mcp-core). Should suggest using rag_search for semantic matching if the name isn't an exact match. Should advise extending the existing vocabulary rather than creating a duplicate.",
+      "expected_output": "Should read `deriva://catalog/{hostname}/{catalog_id}/tables` (resource form) to list all tables and identify vocabularies. Should mention that the semantic-awareness skill is the guardrail (the MCP server does not perform automatic duplicate detection on `create_vocabulary`). Should suggest using `rag_search(..., doc_type=\"catalog-schema\")` for semantic matching if the name isn't an exact match. Should advise extending the existing vocabulary rather than creating a duplicate.",
       "files": []
     }
   ]

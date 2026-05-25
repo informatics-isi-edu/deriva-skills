@@ -1,6 +1,7 @@
 ---
 name: evolve-schema
 description: "ALWAYS use this skill when restructuring an existing Deriva catalog's schema — splitting a table into two, moving a foreign key to a new target, merging tables, changing a column's type, dropping columns or tables, or any operation where existing data has to migrate to a new structure. This is the runbook for catalog evolution after the initial schema is in place; for the initial schema creation use /deriva:create-table, for naming conventions and the rename mechanics use /deriva:entity-naming. Triggers on: 'migrate schema', 'evolve schema', 'restructure tables', 'split a table', 'merge tables', 'move a foreign key', 'change column type', 'drop a column', 'backfill column', 'rename a column', 'restructure the catalog', 'schema migration', 'how do I refactor', 'change the table structure', 'pull X out into a separate table', 'old design needs to change'."
+user-invocable: true
 disable-model-invocation: true
 ---
 

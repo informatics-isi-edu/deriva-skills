@@ -1,6 +1,7 @@
 ---
 name: customize-display
 description: "ALWAYS use this skill when adjusting how Deriva catalog data appears in the Chaise web UI: setting or reordering visible columns, changing display names, configuring row name patterns, controlling foreign-key reference rendering, hiding columns from list/detail/edit views, rendering columns as images/links/markdown, or adding any of the standard Chaise annotations (visible-columns, table-display, column-display, foreign-key, source-definitions, etc.). Triggers on: 'chaise', 'chaise display', 'chaise annotation', 'visible columns', 'column order', 'reorder columns', 'display name', 'pretty name', 'row name', 'row name pattern', 'hide column', 'show column in detail view', 'foreign key display', 'mark down a column', 'render as image', 'render as link', 'visible-columns annotation', 'tag:isrd.isi.edu', 'how this table looks in the browser', 'fix the chaise UI', 'customize the web UI'."
+user-invocable: true
 disable-model-invocation: true
 ---
 
@@ -8,7 +9,7 @@ disable-model-invocation: true
 
 Deriva catalogs are browsed through the Chaise web application. The display is controlled by annotations -- JSON metadata attached to schemas, tables, and columns. MCP tools provide a high-level interface for setting these annotations without writing raw JSON.
 
-**This skill covers the interactive MCP tool approach.** For production Python scripts that need type-safe annotation builders with IDE autocompletion (`Display`, `VisibleColumns`, `PseudoColumn`, `FacetList`, etc.), see `/deriva:use-annotation-builders` instead. Production code can also write annotations as plain dicts using the JSON shapes documented in `references/annotation-reference.md`.
+**This skill covers the interactive MCP tool approach.** For production Python scripts that need type-safe annotation builders with IDE autocompletion (`Display`, `VisibleColumns`, `PseudoColumn`, `FacetList`, etc.), see `/deriva-ml:use-annotation-builders` *(deriva-ml-skills, if loaded — the builders ship in the `deriva-ml` Python package)*. Production code without the deriva-ml package can also write annotations as plain dicts using the JSON shapes documented in `references/annotation-reference.md`.
 
 ## Immediate apply
 
@@ -269,7 +270,7 @@ There is no bulk "apply sensible defaults to all tables" convenience tool — se
 
 ## Related Skills
 
-- **`/deriva:use-annotation-builders`** — Type-safe Python builder classes for production deployment scripts and reusable catalog configuration. Use when writing Python code; this skill (interactive MCP tools) is the right choice for one-off tweaks and exploration.
+- **`/deriva-ml:use-annotation-builders`** *(deriva-ml-skills)* — Type-safe Python builder classes for production deployment scripts and reusable catalog configuration. Use when writing Python code with the deriva-ml package installed; this skill (interactive MCP tools) is the right choice for one-off tweaks and exploration, or for production scripts when the deriva-ml package isn't available (annotations can be written as plain dicts using the JSON shapes in `references/annotation-reference.md`).
 
 ## Tips
 
