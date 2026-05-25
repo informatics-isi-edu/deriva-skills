@@ -39,8 +39,7 @@ These are the skills you invoke directly by typing `/deriva:<name>` or by asking
 |----------|-------|-------------|
 | **Onboarding** | `/deriva:getting-started` | Five-step orientation for a new user or a new catalog: connection → explore schema → look at data → small safe mutation → load data |
 | **Catalog schema** | `/deriva:create-table` | Create domain tables with columns and foreign keys |
-| | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools (interactive path) |
-| | `/deriva:use-annotation-builders` | Type-safe Python builder classes for production deployment scripts (Python path) |
+| | `/deriva:customize-display` | Customize Chaise web UI using MCP annotation tools (interactive path). For production Python scripts that need type-safe builder classes, see `/deriva-ml:use-annotation-builders` *(deriva-ml-skills, if loaded)*. |
 | | `/deriva:manage-vocabulary` | Create and manage controlled vocabularies |
 | | `/deriva:entity-naming` | Naming conventions for schemas, tables, columns, and vocabulary terms |
 | **Data loading** | `/deriva:load-data` | Insert rows, batch-load CSV/JSON, upload assets to Hatrac (MCP tool, `deriva-upload-cli`, or `DerivaUpload` Python class), update, delete |

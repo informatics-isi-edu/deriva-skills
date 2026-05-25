@@ -47,6 +47,23 @@ These concepts come from `deriva-mcp-core` and apply to every Deriva catalog. Ea
 
 The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and `catalog_id=` arguments — there is no implicit "active catalog" or "default schema". Every example in every skill in this plugin shows the full parameter set; substitute your catalog's hostname and ID.
 
+## Reads: resource URIs first, tools as fallback
+
+For read-shaped questions ("what tables are in this catalog?", "what's the schema look like?", "show me one table's columns"), prefer the `deriva://` resource form over the equivalent tool call. The resource form is one round trip, page-free, cached, and produces no audit-log entries — strictly preferable for reads.
+
+`deriva-mcp-core` ships four resource templates:
+
+| URI | Returns | Equivalent tool (use only when you need filters / paginated browsing) |
+|---|---|---|
+| `deriva://server/status` | Server health, framework version, list of loaded plugins | (no tool equivalent — resource is the only path) |
+| `deriva://catalog/{hostname}/{catalog_id}/schema` | Full catalog schema JSON | `get_schema(hostname, catalog_id)` |
+| `deriva://catalog/{hostname}/{catalog_id}/tables` | All tables, grouped by schema, with row counts | (no tool equivalent — resource is the only path) |
+| `deriva://catalog/{hostname}/{catalog_id}/table/{schema}/{table}` | One table's complete structure | `get_table(hostname, catalog_id, schema, table)` |
+
+Read a resource with `ReadMcpResourceTool(uri="...")` — the URI is constructable from the hostname and catalog_id, no tool lookup needed. **The failure mode this rule prevents:** reaching reflexively for a list-style tool when the same answer is already cached at a resource URI. The cost of an unnecessary tool call is one audit row + one round trip; the cost of an unnecessary list-fetch + filter cycle is several.
+
+For read-shaped questions with **filters** (e.g., "tables in this schema whose names contain `Image`"), or paginated browsing beyond what a single resource fetch returns, the corresponding tool is the right answer. The rule is "resource first, tool as fallback when the shape genuinely doesn't fit."
+
 ## Modeling checklist
 
 When you're creating a new table or evaluating an existing model, work through these seven questions. Each maps to one of the seven design pillars; the full rationale for each pillar is in `references/philosophy.md`.

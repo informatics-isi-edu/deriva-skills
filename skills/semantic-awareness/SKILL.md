@@ -2,6 +2,7 @@
 name: semantic-awareness
 description: "ALWAYS use before creating new tables, vocabularies, vocabulary terms, or any other catalog entity. Search the catalog for existing entities that serve the same or similar purpose — even if names are misspelled, abbreviated, or use synonyms. Also use when looking up or referencing any catalog entity by name or concept. The MCP server does not enforce duplicate prevention; this skill is the only guardrail."
 user-invocable: false
+disable-model-invocation: false
 ---
 
 # Catalog Semantic Awareness — Find Before You Create
