@@ -68,8 +68,7 @@ The 12 skills divide into two shapes — user commands (what a person invokes) a
 | Skill | Covers |
 |-------|--------|
 | `create-table` | Create domain tables with columns + foreign keys |
-| `customize-display` | Chaise display annotations via MCP tools (interactive path) |
-| `use-annotation-builders` | Type-safe Python builder classes for production deployment scripts (Python path) |
+| `customize-display` | Chaise display annotations via MCP tools (interactive path). The Python-builder-class path (`use-annotation-builders`) moved to `deriva-ml-skills` because it requires the `deriva-ml` Python package. |
 | `entity-naming` | Naming conventions for schemas, tables, columns, vocabulary terms |
 | `getting-started` | Five-step new-user onboarding walkthrough; routes through the per-task skills |
 | `load-data` | Loading data into tables: row inserts, batch CSV/JSON, asset uploads via deriva-upload-cli or MCP, updates, deletes |

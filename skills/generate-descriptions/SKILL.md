@@ -2,6 +2,7 @@
 name: generate-descriptions
 description: "ALWAYS use when creating any Deriva catalog entity (table, column, vocabulary, vocabulary term) and the user hasn't provided a description. Auto-generate a meaningful description from context (the user's request, repository structure, conversation history, existing catalog entities) and present it for confirmation before creating the entity."
 user-invocable: false
+disable-model-invocation: false
 ---
 
 # Generate Descriptions for Catalog Entities
