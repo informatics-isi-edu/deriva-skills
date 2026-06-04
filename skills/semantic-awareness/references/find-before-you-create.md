@@ -27,11 +27,11 @@ Before querying, expand the user's term into a set of candidates:
 
 The expansion is what makes the search robust against the catalog already containing the concept under a different surface form.
 
-### 3. Query the catalog
+### 3. Query the catalog — route by what you're looking for
 
-**Use `rag_search` as the primary discovery tool.** The RAG index includes the catalog's schema (tables, columns, FKs, vocabulary terms with descriptions and synonyms). Semantic embeddings make it ideal for fuzzy matching across synonyms, misspellings, and related concepts.
+`rag_search` is the fuzzy-matching engine (semantic embeddings over descriptions + synonyms), but it is not uniformly the *first* move. How you reach it depends on whether you're matching **schema/vocabulary** or **data records**, and on whether the query is fuzzy or fully structured.
 
-**For tables, columns, and vocabulary terms** — use `doc_type="catalog-schema"`:
+**Schema, columns, and vocabulary terms — search immediately.** These are indexed catalog-wide and searchable the moment you ask. Lead with `rag_search(..., doc_type="catalog-schema")`:
 
 ```
 rag_search("patient demographics subject", doc_type="catalog-schema")
@@ -39,13 +39,23 @@ rag_search("quality label score", doc_type="catalog-schema")
 rag_search("diagnosis classification", doc_type="catalog-schema")
 ```
 
-**For data records** — use `doc_type="catalog-data"`:
+**Data records — list/find FIRST, then rag_search.** The `catalog-data` index is populated **read-through**: a data row enters the index only once it has been listed or fetched (the read warms it). A bare `rag_search(doc_type="catalog-data")` against a freshly-started server can therefore miss rows nobody has touched yet. So for data records, do the structured `list` / `find` step first — it both **narrows deterministically** *and* **warms the index** — then run `rag_search` to fuzzy-rank the warmed rows:
 
 ```
+# 1. structured list/find (deterministic; also warms the catalog-data index)
+# 2. then, for free-text ranking over the warmed rows:
 rag_search("training split labeled images", doc_type="catalog-data")
 ```
 
-**Fall back to dedicated tools** only when you need full structured details of a specific entity already identified via RAG:
+**Structured vs. fuzzy vs. hybrid** — pick the cheapest path that answers the question:
+
+| The query is… | Use | Why |
+|---|---|---|
+| Fully specified by a **structured attribute** (a type, a status, an ID) | the deterministic `list` / `find` filter — no `rag_search` | An exact filter is precise and complete; fuzzy ranking adds nothing |
+| A **free-text description** ("the run about retinopathy") | `rag_search` | Only semantic matching can rank by description |
+| **Both** ("Training records matching `<description text>`") | structured filter to narrow → then `rag_search` to rank within | The filter cuts the candidate set; fuzzy ranks what's left |
+
+**Fall back to dedicated tools** when you need full structured details of a specific entity already identified, or to perform the structured list/find step above:
 
 ```python
 get_table(hostname=..., catalog_id=..., schema=..., table=...)              # Full table structure
