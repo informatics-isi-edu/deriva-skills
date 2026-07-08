@@ -1,6 +1,6 @@
 ---
 name: query-catalog-data
-description: "ALWAYS use this skill when querying, filtering, searching, browsing, or exploring data and schema in a Deriva catalog — including the cold-start case of 'I just connected to a catalog, what's in it?' Use this skill *before* any catalog mutation so you understand what already exists. The skill leads with `rag_search` for natural-language discovery (the recommended starting point for almost any exploration question) and falls through to ERMrest queries for precise / programmatic reads. Triggers on: 'query table', 'find records', 'filter by', 'how many records', 'count rows', 'look up RID', 'get record by RID', 'show me the data', 'explore the catalog', 'discover schema', 'discover the schema', 'what tables exist', 'what vocabularies exist', 'what columns does this table have', 'rag_search', 'semantic search the catalog', 'natural language search the catalog', 'find by description', 'wide table', 'flat table', 'denormalize', 'join tables', 'select columns', 'project columns', 'first time looking at this catalog', 'cold start exploration'."
+description: "ALWAYS use this skill when querying, filtering, searching, browsing, or exploring data and schema in a Deriva catalog — including the cold-start case of 'I just connected to a catalog, what's in it?' Use this skill *before* any catalog mutation so you understand what already exists. The skill routes by question shape: a specific named table or schema ('columns on Subject', 'tables in the eye-ai schema', 'foreign keys on Image') goes straight to the exact `deriva://…/table/{schema}/{table}` resource (or `get_table`/`get_schema`); concept discovery ('which tables hold imaging data') leads with `rag_search`; precise filtered reads use ERMrest queries. Triggers on: 'query table', 'find records', 'filter by', 'how many records', 'count rows', 'look up RID', 'get record by RID', 'show me the data', 'explore the catalog', 'discover schema', 'discover the schema', 'what tables exist', 'what vocabularies exist', 'what columns does this table have', 'rag_search', 'semantic search the catalog', 'natural language search the catalog', 'find by description', 'wide table', 'flat table', 'denormalize', 'join tables', 'select columns', 'project columns', 'first time looking at this catalog', 'cold start exploration'."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -9,23 +9,28 @@ disable-model-invocation: true
 
 This skill covers how to find, filter, and explore data in a Deriva catalog using the `deriva-mcp-core` MCP tools and resources.
 
-## Discovery: Start with RAG Search
+## Discovery: RAG for concepts, resources for named tables
 
-**Always use `rag_search` first** for discovery and exploration questions — "what tables exist", "what features are available", "how are images classified", "what datasets are there". RAG search indexes the catalog schema, vocabulary terms, feature definitions, datasets, and executions, and returns focused, relevant results without flooding context.
+Match the tool to the question's shape:
+
+- **You name a specific table or schema** ("columns on `Subject`", "tables in the `eye-ai` schema", "does `Image` have a `Diagnosis` foreign key") → go straight to the exact **resource** (`deriva://catalog/{hostname}/{catalog_id}/table/{schema}/{table}`) or its tool (`get_table` / `get_schema`). It is the complete, authoritative answer in one cached read. `rag_search` here is a fuzzy detour that can return a *partial* column list — never trust it for an exact structure question.
+- **You're discovering by concept** ("what tables hold imaging data", "how are images classified", "what features are available") → **use `rag_search` first**. It indexes the catalog schema, vocabulary terms, feature definitions, datasets, and executions semantically, and returns focused results without flooding context.
 
 | Query type | RAG call |
 |------------|----------|
-| Tables, columns, relationships | `rag_search("...", doc_type="catalog-schema")` |
+| Finding tables/columns *by concept* (you don't know the name yet) | `rag_search("...", doc_type="catalog-schema")` |
 | Vocabulary terms and meanings | `rag_search("...", doc_type="catalog-schema")` |
 | Records by description or content | `rag_search("...", doc_type="catalog-data")` |
 
-**Only use raw schema tools when you need the complete, machine-readable output** — e.g., for programmatic processing or when RAG results don't answer the question:
+(Once you know the table's name, switch to the exact resource below — RAG is for finding *which* table, not for reading a known table's structure.)
 
-| Tool | Purpose |
+**The exact schema surfaces** — the right first call for any named-table/named-schema question, and the fallback whenever RAG results don't fully answer:
+
+| Surface | Purpose |
 |------|---------|
-| `get_schema(hostname, catalog_id)` | Full schema JSON (large — use only when needed) |
-| `get_table(hostname, catalog_id, schema, table)` | One table's complete structure |
-| `deriva://catalog/{hostname}/{catalog_id}/tables` (resource) | All tables with row counts (read via `ReadMcpResourceTool`) |
+| `deriva://catalog/{hostname}/{catalog_id}/table/{schema}/{table}` (resource) | One named table's complete structure — columns, keys, foreign keys. **Prefer this for "columns on X" / "FKs on X".** Tool equivalent: `get_table(hostname, catalog_id, schema, table)`. |
+| `get_schema(hostname, catalog_id, schema)` | Every table in one schema with its columns — the answer to "what tables are in the `eye-ai` schema". |
+| `deriva://catalog/{hostname}/{catalog_id}/tables` (resource) | All tables across the catalog with row counts (read via `ReadMcpResourceTool`) — for the catalog-wide inventory. |
 | `list_vocabulary_terms(hostname, catalog_id, schema, table)` | Complete vocabulary term list |
 | `lookup_term(hostname, catalog_id, schema, table, name)` | Look up a vocabulary term (synonym-aware) |
 

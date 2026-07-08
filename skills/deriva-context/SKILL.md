@@ -51,7 +51,7 @@ The `deriva-mcp-core` server is stateless. Every tool call takes `hostname=` and
 
 ## Reads: resource URIs first, tools as fallback
 
-For read-shaped questions ("what tables are in this catalog?", "what's the schema look like?", "show me one table's columns"), prefer the `deriva://` resource form over the equivalent tool call. The resource form is one round trip, page-free, cached, and produces no audit-log entries — strictly preferable for reads.
+For read-shaped questions ("what tables are in this catalog?", "what's the schema look like?", "show me one table's columns"), prefer the `deriva://` resource form over the equivalent tool call. The resource form is one round trip, page-free, cached, and produces no audit-log entries — strictly preferable for reads. **This especially applies when the question names a specific table or schema** ("columns on `Subject`", "foreign keys on `Image`"): read the exact `deriva://catalog/{hostname}/{catalog_id}/table/{schema}/{table}` resource — it is the complete, authoritative answer. Do not reach for `rag_search` on a named-table structure question; semantic search is for finding *which* table by concept, not for reading a known table's columns/keys, and can return a partial list.
 
 `deriva-mcp-core` ships four resource templates:
 
